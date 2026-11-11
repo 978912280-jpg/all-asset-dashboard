@@ -118,14 +118,9 @@
         delta: "占比 " + num(s.crypto_weight) + "% · " +
           (cryptoPnl === null || cryptoPnl === undefined ? '<span class="muted">盈亏—</span>' :
             '<span class="' + cls(cryptoPnl) + '">总盈亏 ' + (cryptoPnl >= 0 ? "+" : "") +
-            num(cryptoPnl) + "（" + pct(s.crypto_pnl_pct) + "）</span>"),
-      },
-      {
-        label: '<i class="dot cash"></i>现金（稳定币）',
-        value: "¥" + num(s.cash_cny || 0),
-        small: true,
-        delta: "占比 " + num(s.cash_weight || 0) + "% · " +
-          '<span class="muted">按 1:1 计价，不随币价波动</span>',
+            num(cryptoPnl) + "（" + pct(s.crypto_pnl_pct) + "）</span>") +
+          (s.cash_cny ? '<div class="kpi-sub">现金 ¥' + num(s.cash_cny) + " · " +
+            num(s.cash_weight) + "%</div>" : ""),
       },
     ];
     $("kpi-grid").innerHTML = cards.map(function (c) {
