@@ -30,9 +30,12 @@ sys.path.insert(0, HERE)
 import sources  # noqa: E402
 
 CST = timezone(timedelta(hours=8))
-PAGE_VERSION = "20261112j"  # 页面逻辑版本：改动 index.html / admin.html / js / css 时同步 +1
+PAGE_VERSION = "20261112m"  # 页面逻辑版本：改动 index.html / admin.html / js / css 时同步 +1
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
+CASH_GROUP = "cash"
+# 稳定币按 1:1 计价、不参与币价波动，单列为「现金」
+STABLE_COINS = {"USDT", "USDC", "USDG", "USDGO", "DAI", "FDUSD", "TUSD", "USDP", "PYUSD"}
 
 
 def now_cst():
@@ -201,11 +204,12 @@ def load_crypto(cfg, rate):
         chg = ((a["price"] - pp) / pp * 100) if (pp and a["price"]) else None
         value_cny = a["usdt"] * rate
         day_cny = (a["amount"] * (a["price"] - pp) * rate) if (pp and a["price"]) else 0.0
+        is_cash = coin.upper() in STABLE_COINS
         rows.append({
             "id": coin,
             "name": coin,
-            "asset_class": "加密货币",
-            "group": CRYPTO_GROUP,
+            "asset_class": "现金（稳定币）" if is_cash else "加密货币",
+            "group": CASH_GROUP if is_cash else CRYPTO_GROUP,
             "shares": r2(a["amount"], 8),
             "price": r2(a["price"], 4),
             "currency": "USDT",
@@ -278,8 +282,10 @@ def main():
             crypto_meta.get("total_usdt") or 0))
 
     trad_cny = sum(r["value_cny"] or 0 for r in trad_rows)
-    crypto_cny = sum(r["value_cny"] or 0 for r in crypto_rows)
-    total_cny = trad_cny + crypto_cny
+    crypto_cny = sum(r["value_cny"] or 0 for r in crypto_rows if r["group"] == CRYPTO_GROUP)
+    cash_cny = sum(r["value_cny"] or 0 for r in crypto_rows if r["group"] == CASH_GROUP)
+    crypto_account_cny = crypto_cny + cash_cny
+    total_cny = trad_cny + crypto_account_cny
     day_change = sum(r["day_change_cny"] or 0 for r in trad_rows) + \
                  sum(r["day_change_cny"] or 0 for r in crypto_rows)
     trad_cost = sum(r["cost_cny"] or 0 for r in trad_rows)
@@ -305,7 +311,7 @@ def main():
         "date": today,
         "total_cny": r2(total_cny, 2),
         "traditional_cny": r2(trad_cny, 2),
-        "crypto_cny": r2(crypto_cny, 2),
+        "crypto_cny": r2(crypto_account_cny, 2),
         "fx_usdcny": r2(rate, 4),
         "crypto_usdt": crypto_meta.get("total_usdt"),
     }
@@ -335,8 +341,11 @@ def main():
             "total_cny": r2(total_cny, 2),
             "traditional_cny": r2(trad_cny, 2),
             "crypto_cny": r2(crypto_cny, 2),
+            "cash_cny": r2(cash_cny, 2),
+            "crypto_account_cny": r2(crypto_account_cny, 2),
             "traditional_weight": weight(trad_cny),
             "crypto_weight": weight(crypto_cny),
+            "cash_weight": weight(cash_cny),
             "day_change_cny": r2(day_change, 2),
             "day_change_pct": round(day_change / (total_cny - day_change) * 100, 2)
             if total_cny - day_change else 0.0,
@@ -368,8 +377,16 @@ def main():
                 "name": "加密货币",
                 "cny": r2(crypto_cny, 2),
                 "weight": weight(crypto_cny),
-                "count": len(crypto_rows),
-                "items": [r["id"] for r in crypto_rows],
+                "count": len([r for r in crypto_rows if r["group"] == CRYPTO_GROUP]),
+                "items": [r["id"] for r in crypto_rows if r["group"] == CRYPTO_GROUP],
+            },
+            {
+                "key": CASH_GROUP,
+                "name": "现金（稳定币）",
+                "cny": r2(cash_cny, 2),
+                "weight": weight(cash_cny),
+                "count": len([r for r in crypto_rows if r["group"] == CASH_GROUP]),
+                "items": [r["id"] for r in crypto_rows if r["group"] == CASH_GROUP],
             },
         ],
         "items": trad_rows + crypto_rows,

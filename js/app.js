@@ -7,7 +7,7 @@
     group: "all",
     donut: null,
     trend: null,
-    groupColors: { traditional: "#1d4ed8", crypto: "#b45309" },
+    groupColors: { traditional: "#1d4ed8", crypto: "#b45309", cash: "#0f766e" },
   };
 
   function $(id) { return document.getElementById(id); }
@@ -117,7 +117,9 @@
         delta: "占比 " + num(s.crypto_weight) + "% · " +
           (cryptoPnl === null || cryptoPnl === undefined ? '<span class="muted">盈亏—</span>' :
             '<span class="' + cls(cryptoPnl) + '">总盈亏 ' + (cryptoPnl >= 0 ? "+" : "") +
-            num(cryptoPnl) + "（" + pct(s.crypto_pnl_pct) + "）</span>"),
+            num(cryptoPnl) + "（" + pct(s.crypto_pnl_pct) + "）</span>") +
+          (s.cash_cny ? '<div class="kpi-sub">现金 ¥' + num(s.cash_cny) + " · " +
+            num(s.cash_weight) + "%</div>" : ""),
       },
     ];
     $("kpi-grid").innerHTML = cards.map(function (c) {
@@ -160,7 +162,8 @@
         var k = i.asset_class || "其他";
         byClass[k] = (byClass[k] || 0) + (i.value_cny || 0);
       });
-      var subRows = Object.keys(byClass).map(function (k) {
+      var clsKeys = Object.keys(byClass);
+      var subRows = (clsKeys.length < 2 ? [] : clsKeys).map(function (k) {
         var v = byClass[k];
         var p = (v / (g.cny || 1)) * 100;
         return '<div class="legend-sub"><span>' + escapeHtml(k) + "</span><span>" +
@@ -239,11 +242,11 @@
       var priceTxt = i.price === null || i.price === undefined ? "—" :
         (i.currency === "USD" ? "$" : i.currency === "USDT" ? "" : "¥") + num(i.price, i.price < 10 ? 4 : 2);
       var sharesTxt = num(i.shares, i.shares < 1 ? 6 : 4);
-      var costTxt = i.group === "crypto" ? '<span class="muted">—</span>'
+      var costTxt = (i.group === "crypto" || i.group === "cash") ? '<span class="muted">—</span>'
         : (!i.cost_price ? '<span class="muted">待填</span>'
           : (i.currency === "USD" ? "$" : "¥") + num(i.cost_price, i.cost_price < 10 ? 4 : 2));
       var pnlTxt;
-      if (i.group === "crypto") {
+      if (i.group === "crypto" || i.group === "cash") {
         pnlTxt = '<span class="muted">—</span>';
       } else if (i.pnl_cny === null || i.pnl_cny === undefined) {
         pnlTxt = '<span class="muted">—</span>';

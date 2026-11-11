@@ -3,8 +3,8 @@
     "title": "全维度资产统计",
     "subtitle": "传统股票/基金 + 加密货币 合并统计 · 份额 × 价格 = 市值",
     "version": "1.0.0",
-    "generated_at": "2026-11-12T05:09:55+08:00",
-    "page_version": "20261112j",
+    "generated_at": "2026-11-12T05:15:25+08:00",
+    "page_version": "20261112m",
     "base_currency": "CNY",
     "fx": {
       "usdcny": 6.6878,
@@ -20,9 +20,12 @@
   "summary": {
     "total_cny": 128853.8,
     "traditional_cny": 22840.12,
-    "crypto_cny": 106013.68,
+    "crypto_cny": 66603.62,
+    "cash_cny": 39410.06,
+    "crypto_account_cny": 106013.68,
     "traditional_weight": 17.73,
-    "crypto_weight": 82.27,
+    "crypto_weight": 51.69,
+    "cash_weight": 30.59,
     "day_change_cny": 1323.03,
     "day_change_pct": 1.04,
     "crypto_usdt": 15851.91,
@@ -56,16 +59,25 @@
     {
       "key": "crypto",
       "name": "加密货币",
-      "cny": 106013.68,
-      "weight": 82.27,
-      "count": 6,
+      "cny": 66603.62,
+      "weight": 51.69,
+      "count": 4,
       "items": [
         "BTC",
-        "USDC",
         "SOL",
-        "USDT",
         "BGB",
         "RNVDA"
+      ]
+    },
+    {
+      "key": "cash",
+      "name": "现金（稳定币）",
+      "cny": 39410.06,
+      "weight": 30.59,
+      "count": 2,
+      "items": [
+        "USDC",
+        "USDT"
       ]
     }
   ],
@@ -187,8 +199,8 @@
     {
       "id": "USDC",
       "name": "USDC",
-      "asset_class": "加密货币",
-      "group": "crypto",
+      "asset_class": "现金（稳定币）",
+      "group": "cash",
       "shares": 5699.10791863,
       "price": 1.0,
       "currency": "USDT",
@@ -223,8 +235,8 @@
     {
       "id": "USDT",
       "name": "USDT",
-      "asset_class": "加密货币",
-      "group": "crypto",
+      "asset_class": "现金（稳定币）",
+      "group": "cash",
       "shares": 193.76066435,
       "price": 1.0,
       "currency": "USDT",
