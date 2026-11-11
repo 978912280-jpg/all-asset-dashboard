@@ -79,7 +79,43 @@
           : "当前为 GitHub Pages 静态页面：填入下方 GitHub Token 后点「保存并计算」，直接提交 <code>data/holdings.json</code> 并触发 Actions 重建。";
         renderTable();
         syncGhUi();
+        restoreDraftIfAny();
       });
+  }
+
+  function restoreDraftIfAny() {
+    var raw = null;
+    try { raw = localStorage.getItem(DRAFT_KEY); } catch (e) { return; }
+    if (!raw) return;
+    var d = null;
+    try { d = JSON.parse(raw); } catch (e) { return; }
+    if (!d || !d.data || !d.data.traditional) return;
+    var same = JSON.stringify(d.data.traditional) === JSON.stringify(state.holdings.traditional);
+    if (same) { clearDraft(); return; }
+    state.pendingDraft = d.data;
+    draftBanner(d.ts);
+  }
+
+  // ---------- 草稿（防刷新丢失） ----------
+  var DRAFT_KEY = "aad_holdings_draft_v1";
+  function persistDraft() {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ ts: Date.now(), data: state.holdings }));
+    } catch (e) { /* 隐私模式可能不可用，忽略 */ }
+  }
+  function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+  function markDirty() { state.dirty = true; persistDraft(); updateSaveHint(); }
+  function updateSaveHint() {
+    var btn = $("btn-save");
+    if (!btn) return;
+    if (state.dirty) { btn.classList.add("dirty"); btn.setAttribute("title", "有未保存的修改"); }
+    else { btn.classList.remove("dirty"); btn.removeAttribute("title"); }
+  }
+  function draftBanner(ts) {
+    var el = $("draft-banner");
+    if (!el) return;
+    $("draft-time").textContent = new Date(ts).toLocaleString("zh-CN", { hour12: false });
+    el.hidden = false;
   }
 
   function priceMap() {
@@ -139,7 +175,7 @@
       var v = Number(input.value);
       if (isNaN(v) || v < 0) return;
       state.holdings.traditional[idx][field] = v;
-      state.dirty = true;
+      markDirty();
       if (field === "shares") updatePendingPill();
     };
 
@@ -150,7 +186,7 @@
       var item = state.holdings.traditional[idx];
       if (!confirm("确定删除标的「" + (item.name || item.symbol) + "」？")) return;
       state.holdings.traditional.splice(idx, 1);
-      state.dirty = true;
+      markDirty();
       renderTable();
     };
   }
@@ -193,7 +229,7 @@
         cost_price: Number(f.cost_price.value) || 0,
         note: "",
       });
-      state.dirty = true;
+      markDirty();
       f.reset();
       f.asset_class.value = "美股基金";
       renderTable();
@@ -338,7 +374,7 @@
           x.hit.cost_price = x.row.cost;
         }
       });
-      state.dirty = true;
+      markDirty();
       renderTable();
       box.hidden = true;
       state.importRows = null;
@@ -521,6 +557,7 @@
       })
       .then(function () {
         state.dirty = false;
+        clearDraft(); updateSaveHint();
         ghMsg("✅ 已提交到 " + gh.repo + "（" + gh.branch + "），正在触发构建…", "ok");
         return ghDispatch();
       })
@@ -579,6 +616,7 @@
         .then(function (res) {
           if (!res.ok || !res.body.ok) throw new Error(res.body.error || "保存失败");
           state.dirty = false;
+          clearDraft();
           toast("已保存并重建：" + (res.body.message || "OK"));
           return fetch("data/dashboard.json?t=" + Date.now())
             .then(function (r) { return r.json(); })
@@ -609,6 +647,32 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
 
+  function bindDraftUi() {
+    var banner = $("draft-banner");
+    if (banner) {
+      $("draft-restore").onclick = function () {
+        if (state.pendingDraft && state.pendingDraft.traditional) {
+          state.holdings = state.pendingDraft;
+          renderTable();
+          markDirty();
+          banner.hidden = true;
+          toast("已恢复未保存的修改，请点「保存并计算」写入");
+        }
+      };
+      $("draft-discard").onclick = function () {
+        state.pendingDraft = null;
+        clearDraft();
+        banner.hidden = true;
+        toast("已丢弃未保存的修改");
+      };
+    }
+    window.addEventListener("beforeunload", function (e) {
+      if (!state.dirty) return;
+      e.preventDefault();
+      e.returnValue = "";
+    });
+  }
+
   function bindButtons() {
     $("btn-save").onclick = save;
     $("btn-gh-test").onclick = ghTest;
@@ -624,6 +688,7 @@
         : "静态模式：保存后需下载 holdings.json 上传仓库";
     };
     $("gh-token").addEventListener("change", readGhForm);
+    bindDraftUi();
     $("btn-download").onclick = function () { download(); };
     $("btn-copy").onclick = function () {
       var text = JSON.stringify(payload(), null, 2);
@@ -635,6 +700,10 @@
       }
     };
     $("btn-rebuild").onclick = function () {
+      if (state.dirty) {
+        toast("有未保存的修改：抓价不会保存它们，请先点「保存并计算」");
+        return;
+      }
       if (!state.serverMode) {
         readGhForm();
         if (!gh.token) {

@@ -134,3 +134,14 @@
 .gh-form .remember input { width: 15px; height: 15px; }
 .gh-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 #gh-msg { margin: 10px 0 0; min-height: 18px; }
+
+/* 未保存修改提示条 */
+.draft-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 0 0 16px; padding: 12px 16px; border-radius: 10px;
+  background: #fff7e6; border: 1px solid #ffd591; color: #874d00; font-size: 14px;
+  flex-wrap: wrap;
+}
+.draft-banner b { font-weight: 600; }
+.draft-actions { display: flex; gap: 8px; }
+.btn.dirty { box-shadow: 0 0 0 3px rgba(230, 145, 20, 0.25); }

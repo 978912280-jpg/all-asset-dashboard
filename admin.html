@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-version="20261112e">
+<html lang="zh-CN" data-page-version="20261112f">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,9 +20,9 @@
   })();
   </script>
   <link rel="stylesheet" href="css/style.css?v=20261112a">
-  <link rel="stylesheet" href="css/admin.css?v=20261112e">
+  <link rel="stylesheet" href="css/admin.css?v=20261112f">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-  <script src="js/admin.js?v=20261112e" defer></script>
+  <script src="js/admin.js?v=20261112f" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -54,6 +54,14 @@
         <p class="upload-hint">表头需包含「项目名称」或「代码」+「持有数量」，可选「成本价 / 累计投入成本」；加密货币无需上传，自动从加密货币仪表台合并</p>
       <div class="import-result" id="import-result" hidden></div>
     </section>
+
+    <div class="draft-banner" id="draft-banner" hidden>
+      <span>检测到 <b id="draft-time">—</b> 尚未写入 GitHub 的修改（可能是刷新前输入的内容）。</span>
+      <span class="draft-actions">
+        <button class="btn ghost" id="draft-restore" type="button">恢复这些修改</button>
+        <button class="btn ghost" id="draft-discard" type="button">丢弃</button>
+      </span>
+    </div>
 
     <section class="card">
       <div class="card-head">
