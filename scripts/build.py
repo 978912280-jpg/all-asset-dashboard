@@ -30,7 +30,7 @@ sys.path.insert(0, HERE)
 import sources  # noqa: E402
 
 CST = timezone(timedelta(hours=8))
-PAGE_VERSION = "20261112s"  # 页面逻辑版本：改动 index.html / admin.html / js / css 时同步 +1
+PAGE_VERSION = "20261112t"  # 页面逻辑版本：改动 index.html / admin.html / js / css 时同步 +1
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
 CASH_GROUP = "cash"

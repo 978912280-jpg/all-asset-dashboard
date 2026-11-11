@@ -267,7 +267,6 @@
       return "<tr>" +
         '<td class="name-cell"><div class="nm">' + escapeHtml(i.name) +
         (i.pending ? '<span class="tag pending">待填份额</span>' : "") +
-        (i.note ? '<div class="sub">' + escapeHtml(i.note) + "</div>" : "") +
         "</div></td>" +
         '<td><span class="tag" style="border-color:' + color + '33;color:' + color +
         '">' + escapeHtml(i.asset_class) + "</span></td>" +
