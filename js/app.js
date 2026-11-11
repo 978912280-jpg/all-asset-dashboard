@@ -94,7 +94,7 @@
         value: "¥" + num(s.total_cny),
         small: false,
         delta: (day === null || day === undefined ? "" :
-          '<span class="' + cls(day) + '">今日 ' + (day >= 0 ? "+" : "") + num(day) +
+          '<span class="' + cls(day) + '">今日浮动收益 ' + (day >= 0 ? "+" : "") + num(day) +
           "（" + pct(s.day_change_pct) + "）</span>"),
       },
       {
@@ -106,7 +106,7 @@
             ? '<span class="muted">盈亏待填成本价</span>'
             : (tradPnl === null || tradPnl === undefined
               ? '<span class="muted">盈亏—</span>'
-              : '<span class="' + cls(tradPnl) + '">盈亏 ' + (tradPnl >= 0 ? "+" : "−") +
+              : '<span class="' + cls(tradPnl) + '">总盈亏 ' + (tradPnl >= 0 ? "+" : "−") +
                 "¥" + num(Math.abs(tradPnl)) + "（" + pct(s.traditional_pnl_pct) + "）</span>")) +
           (hasTradCost ? '<div class="kpi-sub">成本 ¥' + num(s.traditional_cost_cny) + "</div>" : ""),
       },
@@ -116,7 +116,7 @@
         small: true,
         delta: "占比 " + num(s.crypto_weight) + "% · " +
           (cryptoPnl === null || cryptoPnl === undefined ? '<span class="muted">盈亏—</span>' :
-            '<span class="' + cls(cryptoPnl) + '">盈亏 ' + (cryptoPnl >= 0 ? "+" : "") +
+            '<span class="' + cls(cryptoPnl) + '">总盈亏 ' + (cryptoPnl >= 0 ? "+" : "") +
             num(cryptoPnl) + "（" + pct(s.crypto_pnl_pct) + "）</span>"),
       },
     ];
