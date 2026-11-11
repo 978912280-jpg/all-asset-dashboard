@@ -110,3 +110,27 @@
 @media (max-width: 860px) {
   .add-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ---------- GitHub 直连 ---------- */
+.gh-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, .7fr);
+  gap: 10px 12px;
+  align-items: end;
+}
+.gh-form label {
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 12.5px; color: var(--muted);
+}
+.gh-form input {
+  padding: 8px; border: 1px solid var(--line-strong); border-radius: 8px;
+  font-size: 13px; color: var(--text);
+}
+.gh-form input[type="password"] { letter-spacing: .5px; }
+.gh-form .wide { grid-column: 1 / -1; }
+.gh-form .remember {
+  flex-direction: row; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted);
+}
+.gh-form .remember input { width: 15px; height: 15px; }
+.gh-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+#gh-msg { margin: 10px 0 0; min-height: 18px; }

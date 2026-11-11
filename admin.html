@@ -85,16 +85,42 @@
     </section>
 
     <section class="card">
-      <div class="card-head"><h2>保存方式</h2></div>
+      <div class="card-head">
+        <h2>GitHub 直连更新（免下载）</h2>
+        <span class="pill" id="gh-pill">未配置</span>
+      </div>
+      <p class="card-desc" style="margin:0 0 10px">
+        填入一个有本仓库写权限的 Token，网页即可直接把份额提交到 <code>data/holdings.json</code> 并触发 Actions 重建，无需下载再上传。
+      </p>
+      <div class="gh-form">
+        <label>仓库<input id="gh-repo" placeholder="owner/repo" value="978912280-jpg/all-asset-dashboard"></label>
+        <label>分支<input id="gh-branch" value="main"></label>
+        <label class="wide">Token（Fine-grained，仅本仓库 Contents + Actions 读写）
+          <input id="gh-token" type="password" placeholder="github_pat_… / ghp_…" autocomplete="off"></label>
+        <label class="remember"><input id="gh-remember" type="checkbox"> 记住到本机浏览器</label>
+        <div class="gh-actions">
+          <button class="btn" id="btn-gh-test" type="button">测试连接</button>
+          <button class="btn" id="btn-gh-clear" type="button">清除 Token</button>
+        </div>
+      </div>
+      <p class="import-msg" id="gh-msg"></p>
+      <p class="foot-note">
+        权限最小化：GitHub → Settings → Developer settings → Fine-grained tokens → 只勾选本仓库，
+        权限选 <code>Contents: Read and write</code> 与 <code>Actions: Read and write</code>。
+        Token 只保存在你本机浏览器（勾选“记住”时），不写入仓库、不上传到任何第三方；公用电脑请勿勾选。
+      </p>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>其它保存方式</h2></div>
       <div class="save-note" id="save-note"></div>
       <div class="save-actions">
         <button class="btn" id="btn-download" type="button">下载 holdings.json</button>
         <button class="btn" id="btn-copy" type="button">复制 JSON</button>
       </div>
       <p class="foot-note">
-        部署在 GitHub Pages 时页面无法直接写入仓库：保存后下载 holdings.json，到仓库
-        <code>data/holdings.json</code> 覆盖上传，Actions 会在下一次构建时生效（也可手动 Run workflow）。
-        本地运行 <code>python3 scripts/server.py</code> 打开本页时可直接保存并自动重建。
+        没填 Token 时：保存后下载 holdings.json，到仓库 <code>data/holdings.json</code> 覆盖上传，Actions 下次构建生效。
+        本地运行 <code>python3 scripts/server.py</code> 打开本页时可直接写入并自动重建。
       </p>
     </section>
   </main>

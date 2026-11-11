@@ -71,6 +71,7 @@
           ? "当前运行在本地后台（<code>scripts/server.py</code>）：保存后自动写入 <code>data/holdings.json</code> 并立即重建 <code>data/dashboard.json</code>。"
           : "当前为 GitHub Pages 静态页面：保存后下载 <code>holdings.json</code>，覆盖仓库 <code>data/holdings.json</code>；Actions 每日构建或手动 Run workflow 后生效。";
         renderTable();
+        syncGhUi();
       });
   }
 
@@ -297,6 +298,217 @@
     return h;
   }
 
+  // ---------- GitHub 直连更新 ----------
+  var GH_KEY = "asset_dash_gh";
+  var gh = { token: "", repo: "978912280-jpg/all-asset-dashboard", branch: "main" };
+
+  function ghMsg(text, kind) {
+    var el = $("gh-msg");
+    if (!el) return;
+    el.textContent = text;
+    el.className = "import-msg" + (kind ? " " + kind : "");
+  }
+
+  function ghLoad() {
+    $("gh-repo").value = gh.repo;
+    $("gh-branch").value = gh.branch;
+    try {
+      var saved = JSON.parse(localStorage.getItem(GH_KEY) || "{}");
+      if (saved.repo) gh.repo = saved.repo;
+      if (saved.branch) gh.branch = saved.branch;
+      if (saved.token) {
+        gh.token = saved.token;
+        $("gh-token").value = saved.token;
+        $("gh-remember").checked = true;
+      }
+      $("gh-repo").value = gh.repo;
+      $("gh-branch").value = gh.branch;
+    } catch (e) { /* localStorage 不可用时忽略 */ }
+    syncGhUi();
+  }
+
+  function readGhForm() {
+    gh.repo = ($("gh-repo").value || "").trim() || gh.repo;
+    gh.branch = ($("gh-branch").value || "").trim() || "main";
+    gh.token = ($("gh-token").value || "").trim();
+    try {
+      if ($("gh-remember").checked && gh.token) {
+        localStorage.setItem(GH_KEY, JSON.stringify({ token: gh.token, repo: gh.repo, branch: gh.branch }));
+      } else {
+        localStorage.removeItem(GH_KEY);
+      }
+    } catch (e) { /* 隐私模式下忽略 */ }
+    syncGhUi();
+  }
+
+  function syncGhUi() {
+    var pill = $("gh-pill");
+    if (!pill) return;
+    var on = !!gh.token;
+    pill.textContent = on ? "已配置 · 可直接更新" : "未配置";
+    pill.className = "pill" + (on ? "" : " warn");
+    if (on) {
+      $("mode-badge").textContent = "GitHub 直连模式：保存后自动提交并触发构建";
+    }
+  }
+
+  function ghFetch(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({
+      "Accept": "application/vnd.github+json",
+      "Authorization": "Bearer " + gh.token,
+      "X-GitHub-Api-Version": "2022-11-28",
+    }, opts.headers || {});
+    return fetch("https://api.github.com" + path, opts).then(function (r) {
+      return r.text().then(function (t) {
+        var body = null;
+        try { body = t ? JSON.parse(t) : null; } catch (e) { body = { message: t }; }
+        return { ok: r.ok, status: r.status, body: body };
+      });
+    });
+  }
+
+  function ghB64(str) {
+    var bytes = new TextEncoder().encode(str);
+    var bin = "";
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+
+  function ghPutHoldings(data) {
+    var apiPath = "/repos/" + gh.repo + "/contents/data/holdings.json";
+    var content = ghB64(JSON.stringify(data, null, 2) + "\n");
+    return ghFetch(apiPath + "?ref=" + encodeURIComponent(gh.branch)).then(function (res) {
+      var sha = (res.ok && res.body && res.body.sha) ? res.body.sha : null;
+      var body = {
+        message: "chore(holdings): 网页更新份额 " +
+          new Date().toLocaleString("zh-CN", { hour12: false }),
+        content: content,
+        branch: gh.branch,
+      };
+      if (sha) body.sha = sha;
+      return ghFetch(apiPath, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    });
+  }
+
+  function ghDispatch() {
+    return ghFetch("/repos/" + gh.repo + "/actions/workflows/daily.yml/dispatches", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ref: gh.branch }),
+    });
+  }
+
+  function setSaveBusy(busy, label) {
+    $("btn-save").disabled = busy;
+    $("btn-save").textContent = busy ? (label || "保存中…") : "保存并计算";
+  }
+
+  function refreshDashboard() {
+    return fetch("data/dashboard.json?t=" + Date.now())
+      .then(function (r) { return r.json(); })
+      .then(function (d) { state.dashboard = d; renderTable(); });
+  }
+
+  function pollBuild() {
+    var tries = 0;
+    var timer = setInterval(function () {
+      tries++;
+      ghFetch("/repos/" + gh.repo + "/actions/runs?per_page=1").then(function (res) {
+        var runs = res.ok && res.body && res.body.workflow_runs;
+        if (!runs || !runs.length) return;
+        var run = runs[0];
+        if (run.status === "completed") {
+          clearInterval(timer);
+          if (run.conclusion === "success") {
+            ghMsg("✅ 构建完成，已重新抓价并计算，正在刷新数据…", "ok");
+            refreshDashboard().then(function () {
+              setSaveBusy(false);
+              toast("已更新：页面数据已刷新");
+            });
+          } else {
+            ghMsg("⚠ 构建结束但未成功（" + run.conclusion + "），请到 Actions 查看日志。", "warn");
+            setSaveBusy(false);
+          }
+        } else if (tries >= 20) {
+          clearInterval(timer);
+          ghMsg("构建仍在进行（" + run.status + "），约 1 分钟后刷新页面即可看到。", "");
+          setSaveBusy(false);
+        }
+      }).catch(function () { /* 忽略单次轮询失败 */ });
+    }, 6000);
+  }
+
+  function ghSave() {
+    readGhForm();
+    if (!gh.token) {
+      ghMsg("请先填入 GitHub Token（需 Contents 与 Actions 读写权限）", "warn");
+      return false;
+    }
+    if (!/^[\w.-]+\/[\w.-]+$/.test(gh.repo)) {
+      ghMsg("仓库格式应为 owner/repo", "warn");
+      return false;
+    }
+    setSaveBusy(true, "提交中…");
+    ghMsg("正在提交 data/holdings.json …", "");
+
+    ghPutHoldings(payload())
+      .then(function (res) {
+        if (res.status === 409) return ghPutHoldings(payload()); // sha 冲突时重取一次
+        if (!res.ok) {
+          throw new Error("提交失败（HTTP " + res.status + "）：" +
+            ((res.body && res.body.message) || "请检查 Token 权限"));
+        }
+        return res;
+      })
+      .then(function () {
+        state.dirty = false;
+        ghMsg("✅ 已提交到 " + gh.repo + "（" + gh.branch + "），正在触发构建…", "ok");
+        return ghDispatch();
+      })
+      .then(function (res) {
+        if (res.status === 204) {
+          ghMsg("✅ 已触发 Actions 构建，约 1–2 分钟后生效，正在等待…", "ok");
+          pollBuild();
+        } else if (res.status === 403 || res.status === 404) {
+          ghMsg("⚠ 份额已提交，但触发构建失败（HTTP " + res.status +
+            "）：Token 缺少 Actions: Read and write 权限。可等每日定时构建生效。", "warn");
+          setSaveBusy(false);
+        } else {
+          throw new Error("触发构建失败（HTTP " + res.status + "）");
+        }
+      })
+      .catch(function (e) {
+        ghMsg("保存失败：" + e.message, "warn");
+        toast("保存失败：" + e.message);
+        setSaveBusy(false);
+      });
+    return true;
+  }
+
+  function ghTest() {
+    readGhForm();
+    if (!gh.token) { ghMsg("请先填入 Token", "warn"); return; }
+    ghMsg("正在验证连接…", "");
+    ghFetch("/repos/" + gh.repo)
+      .then(function (res) {
+        if (!res.ok) {
+          throw new Error("HTTP " + res.status + " · " +
+            ((res.body && res.body.message) || "请检查仓库名 / Token 权限"));
+        }
+        return ghFetch("/repos/" + gh.repo + "/actions/workflows").then(function (w) {
+          ghMsg("已连接 " + (res.body.full_name || gh.repo) +
+            "（默认分支 " + (res.body.default_branch || "") + "）· " +
+            (w.ok ? "Actions 可读写" : "⚠ Actions 无权限，提交后需等定时构建"), w.ok ? "ok" : "warn");
+        });
+      })
+      .catch(function (e) { ghMsg("连接失败：" + e.message, "warn"); });
+  }
+
   function save() {
     var data = payload();
     if (state.serverMode) {
@@ -323,9 +535,11 @@
           $("btn-save").disabled = false;
           $("btn-save").textContent = "保存并计算";
         });
+    } else if (gh.token || (($("gh-token").value || "").trim())) {
+      ghSave();
     } else {
       download();
-      toast("已下载 holdings.json，请上传覆盖仓库 data/holdings.json");
+      toast("未填 Token：已下载 holdings.json，请上传覆盖仓库 data/holdings.json");
     }
   }
 
@@ -343,6 +557,19 @@
 
   function bindButtons() {
     $("btn-save").onclick = save;
+    $("btn-gh-test").onclick = ghTest;
+    $("btn-gh-clear").onclick = function () {
+      $("gh-token").value = "";
+      gh.token = "";
+      try { localStorage.removeItem(GH_KEY); } catch (e) { /* ignore */ }
+      $("gh-remember").checked = false;
+      ghMsg("已清除本机保存的 Token", "");
+      syncGhUi();
+      $("mode-badge").textContent = state.serverMode
+        ? "本地后台模式：可直接保存并重建"
+        : "静态模式：保存后需下载 holdings.json 上传仓库";
+    };
+    $("gh-token").addEventListener("change", readGhForm);
     $("btn-download").onclick = function () { download(); };
     $("btn-copy").onclick = function () {
       var text = JSON.stringify(payload(), null, 2);
@@ -395,6 +622,7 @@
     bindUpload();
     bindAdd();
     bindButtons();
+    ghLoad();
     loadAll().catch(function (e) { toast("加载失败：" + e.message); });
   }
 
