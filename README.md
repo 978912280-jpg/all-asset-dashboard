@@ -84,15 +84,20 @@ python3 -m http.server 8080
 
 站点地址：`https://<用户名>.github.io/all-asset-dashboard/`
 
-### 静态站点的写入限制
+### 三种保存方式
 
-GitHub Pages 是纯静态托管，`admin.html` 无法直接写仓库。因此在线上保存时：
+| 方式 | 适用 | 做什么 |
+|---|---|---|
+| **GitHub 直连（推荐）** | 线上 Pages 页面 | 在 `admin.html` 填一个本仓库 Token，「保存并计算」会自动 commit `data/holdings.json` → 触发 Actions 构建 → 页面自动刷新 |
+| 下载 JSON 上传 | 不想在浏览器存 Token | 下载 `holdings.json`，到仓库覆盖 `data/holdings.json`，等下次构建 |
+| 本地后台 | 在自己电脑上跑 | `python3 scripts/server.py`，直接写入并重建 |
 
-1. 点「下载 holdings.json」
-2. 到仓库 `data/holdings.json` 覆盖上传（网页端可直接拖拽提交）
-3. Actions 下一次构建（或手动 Run workflow）后生效
+**Token 怎么给**：GitHub → Settings → Developer settings → **Fine-grained personal access tokens** → 只选本仓库 →
+权限勾 `Contents: Read and write` 与 `Actions: Read and write` → 生成后粘贴到后台页面。
 
-若想在线直接写入，把本仓库放到任意能跑 Python 的机器上，用 `scripts/server.py` 托管即可。
+- Token 只保存在你本机浏览器（勾选「记住到本机浏览器」时）；不勾选则关闭页面即失效。
+- 缺 `Actions` 权限也能提交文件，只是需要等每日定时构建；页面会明确提示。
+- 公用电脑上不要勾选「记住」；用完点「清除 Token」。
 
 ## 五、口径说明
 
