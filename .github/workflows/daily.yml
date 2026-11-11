@@ -33,15 +33,34 @@ jobs:
 
       - name: 提交每日快照与仪表盘数据
         run: |
-          if [ -n "$(git status --porcelain data/)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          STAMP="$(TZ=Asia/Shanghai date +%F)"
+          commit_if_any() {
             git add data/dashboard.json data/snapshots.json
-            git commit -m "chore(data): 更新资产快照 $(TZ=Asia/Shanghai date +%F)"
-            git push
-          else
-            echo "数据无变化，跳过提交"
-          fi
+            if git diff --cached --quiet; then
+              echo "数据无变化，跳过提交"
+              return 1
+            fi
+            git commit -m "chore(data): 更新资产快照 $STAMP"
+            return 0
+          }
+          # 其他 workflow（如手动触发）可能刚推送过数据，本地落后会导致 non-fast-forward。
+          # 策略：先 rebase 重试；冲突则丢弃 rebase，以 origin/main 为基重新提交我们的构建结果。
+          for i in 1 2 3; do
+            if ! commit_if_any; then exit 0; fi
+            if git pull --rebase origin "${GITHUB_REF_NAME:-main}" && git push; then
+              echo "已推送（第 $i 次尝试）"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            git fetch origin "${GITHUB_REF_NAME:-main}"
+            git reset --soft "origin/${GITHUB_REF_NAME:-main}"
+            echo "第 $i 次推送失败，已重置到远端最新后重试"
+            sleep 5
+          done
+          echo "三次推送均失败，请检查分支保护或权限" >&2
+          exit 1
 
       - name: 配置 Pages
         uses: actions/configure-pages@v5
