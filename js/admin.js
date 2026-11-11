@@ -504,33 +504,63 @@
       .then(function (d) { state.dashboard = d; renderTable(); });
   }
 
-  function pollBuild() {
-    var tries = 0;
+  function pollBuild(sinceMs, ui) {
+    ui = ui || {};
+    var btnId = ui.btn || "btn-save";
+    var prefix = ui.prefix || "构建中…";
+    var restore = ui.restore || "保存并计算";
+    function setBtn(disabled, text) {
+      var el = $(btnId);
+      if (!el) return;
+      el.disabled = disabled;
+      el.textContent = text;
+    }
+    function done(msg, level, toastMsg) {
+      ghMsg(msg, level || "");
+      setBtn(false, restore);
+      if (toastMsg) toast(toastMsg);
+    }
+    var started = sinceMs || Date.now();
     var timer = setInterval(function () {
-      tries++;
-      ghFetch("/repos/" + gh.repo + "/actions/runs?per_page=1").then(function (res) {
-        var runs = res.ok && res.body && res.body.workflow_runs;
-        if (!runs || !runs.length) return;
-        var run = runs[0];
-        if (run.status === "completed") {
-          clearInterval(timer);
-          if (run.conclusion === "success") {
-            ghMsg("✅ 构建完成，已重新抓价并计算，正在刷新数据…", "ok");
-            refreshDashboard().then(function () {
-              setSaveBusy(false);
-              toast("已更新：页面数据已刷新");
-            });
-          } else {
-            ghMsg("⚠ 构建结束但未成功（" + run.conclusion + "），请到 Actions 查看日志。", "warn");
-            setSaveBusy(false);
+      var elapsed = Math.round((Date.now() - started) / 1000);
+      setBtn(true, prefix + " " + elapsed + "s");
+      ghFetch("/repos/" + gh.repo + "/actions/runs?per_page=3").then(function (res) {
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            clearInterval(timer);
+            done("⚠ 无法读取 Actions 状态（HTTP " + res.status +
+              "）：Token 缺少 Actions: Read。数据已提交，约 1 分钟后刷新页面即可。", "warn");
           }
-        } else if (tries >= 20) {
-          clearInterval(timer);
-          ghMsg("构建仍在进行（" + run.status + "），约 1 分钟后刷新页面即可看到。", "");
-          setSaveBusy(false);
+          return;
         }
-      }).catch(function () { /* 忽略单次轮询失败 */ });
-    }, 6000);
+        var runs = (res.body && res.body.workflow_runs) || [];
+        var run = null;
+        for (var i = 0; i < runs.length; i++) {
+          if (new Date(runs[i].created_at).getTime() >= started - 10000) { run = runs[i]; break; }
+        }
+        if (!run) {
+          if (elapsed > 150) {
+            clearInterval(timer);
+            done("尚未检测到本次构建（可能仍在排队）。约 1 分钟后刷新页面即可看到结果。", "");
+          }
+          return;
+        }
+        if (run.status !== "completed") {
+          ghMsg("✅ 已提交，构建进行中（" + run.status + "）… " + elapsed + "s", "ok");
+          return;
+        }
+        clearInterval(timer);
+        if (run.conclusion === "success") {
+          ghMsg("✅ 构建完成，正在刷新页面数据…", "ok");
+          refreshDashboard().then(function () {
+            setBtn(false, restore);
+            toast("已更新：份额已写入，价格与市值已重算");
+          });
+        } else {
+          done("⚠ 构建结束但未成功（" + run.conclusion + "）：数据已提交，请到 Actions 查看日志。", "warn");
+        }
+      }).catch(function () { /* 单次轮询失败忽略，下轮继续 */ });
+    }, 4000);
   }
 
   function ghSave() {
@@ -544,6 +574,7 @@
       return false;
     }
     setSaveBusy(true, "提交中…");
+    var dispatchAt = Date.now();
     ghMsg("正在提交 data/holdings.json …", "");
 
     ghPutHoldings(payload())
@@ -558,13 +589,15 @@
       .then(function () {
         state.dirty = false;
         clearDraft(); updateSaveHint();
-        ghMsg("✅ 已提交到 " + gh.repo + "（" + gh.branch + "），正在触发构建…", "ok");
+        ghMsg("✅ 已写入 " + gh.repo + "（" + gh.branch + "），正在触发构建…", "ok");
+        setSaveBusy(true, "已提交，触发构建…");
         return ghDispatch();
       })
       .then(function (res) {
         if (res.status === 204) {
-          ghMsg("✅ 已触发 Actions 构建，约 1–2 分钟后生效，正在等待…", "ok");
-          pollBuild();
+          ghMsg("✅ 已触发 Actions 构建，正在等待（约 1 分钟）…", "ok");
+          setSaveBusy(true, "构建中…");
+          pollBuild(dispatchAt, { btn: "btn-save", prefix: "构建中…", restore: "保存并计算" });
         } else if (res.status === 403 || res.status === 404) {
           ghMsg("⚠ 份额已提交，但触发构建失败（HTTP " + res.status +
             "）：Token 缺少 Actions: Read and write 权限。可等每日定时构建生效。", "warn");
@@ -712,6 +745,7 @@
         }
         ghMsg("正在抓取最新价格：传统标的实时价 + 加密货币最新快照…", "");
         $("btn-rebuild").disabled = true;
+        var t0 = Date.now();
         ghDispatch().then(function (res) {
           $("btn-rebuild").disabled = false;
           if (!res.ok) {
@@ -719,7 +753,7 @@
             return;
           }
           ghMsg("已触发构建，约 1 分钟完成，完成后页面会自动刷新…", "ok");
-          pollBuild();
+          pollBuild(t0, { btn: "btn-rebuild", prefix: "抓取中…", restore: "立即抓取最新价格" });
         }).catch(function (e) {
           $("btn-rebuild").disabled = false;
           ghMsg("触发失败：" + e.message, "warn");
