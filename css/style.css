@@ -98,7 +98,7 @@ code {
 /* ---------- KPI ---------- */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 14px;
 }
@@ -126,7 +126,6 @@ code {
 }
 .dot.trad { background: var(--trad); }
 .dot.crypto { background: var(--crypto); }
-.dot.cash { background: #0f766e; }
 
 /* ---------- 提示条 ---------- */
 .alert-card[hidden], .draft-banner[hidden] { display: none; }
@@ -261,6 +260,7 @@ code {
 /* ---------- 移动端 ---------- */
 @media (max-width: 860px) {
   .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi-grid .kpi:first-child { grid-column: 1 / -1; }
   .split-body { grid-template-columns: 1fr; }
   .chart { height: 220px; }
   .topbar-inner { padding: 12px; }
