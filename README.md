@@ -116,3 +116,29 @@ python3 -m http.server 8080
 - 静态页面自身不能持久化写入，线上保存需下载 JSON 再上传（见上）。
 - 加密货币日变动基于快照价差，若某币当日无前值则记为 0。
 - 标的价格依赖免费源可用性；失败时该标的市值显示为空并保留 `price_source: 未取到`。
+
+## 定时触发（cron-job.org，不依赖 GitHub schedule）
+
+GitHub 自带的 `schedule` 经常延迟甚至漏跑（实测有延迟数小时的情况），因此本仓库**已移除 `schedule`**，只保留两个触发入口：
+
+| 入口 | 用途 |
+|---|---|
+| `workflow_dispatch` | 手动点「Run workflow」；后台「立即重建数据」按钮；cron-job.org 定时调用 |
+| `repository_dispatch` (`event_type=daily`) | 备用入口，也可被外部服务调用 |
+
+### 在 cron-job.org 建一个 Job
+
+- **标题**：全维度资产统计 · 每日构建
+- **URL**：`https://api.github.com/repos/978912280-jpg/all-asset-dashboard/actions/workflows/daily.yml/dispatches`
+- **请求方式**：`POST`
+- **执行计划**：每天 `08:15`，时区 `Asia/Shanghai`（必须在加密仪表台 07:00 快照之后）
+- **请求头**：
+  - `Authorization: Bearer <你的 GitHub Token>`
+  - `Accept: application/vnd.github+json`
+  - `Content-Type: application/json`
+- **请求体**：`{"ref":"main"}`
+- **成功判据**：GitHub 返回 `204 No Content`（cron-job.org 里把「成功状态码」设为 204）
+
+Token 建议单独建一个 **fine-grained PAT**，只授权本仓库、只勾 **Actions: Read and write**，不要复用其他项目的全权限 token。Token 会存在 cron-job.org 服务器上，属于必要风险，可随时吊销重建。
+
+调用成功后，构建约 1 分钟完成并自动部署 Pages；数据是否真的更新，看仓库最新提交是否为 `chore(data): 更新资产快照 <日期>`。
