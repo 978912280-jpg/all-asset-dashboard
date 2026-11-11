@@ -207,7 +207,7 @@ code {
 /* ---------- 表格 ---------- */
 .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .main-table {
-  width: 100%; min-width: 760px; border-collapse: collapse; font-size: 13.5px;
+  width: 100%; min-width: 940px; border-collapse: collapse; font-size: 13.5px;
 }
 .main-table thead th {
   text-align: left; color: var(--muted); font-weight: 600;
@@ -227,7 +227,7 @@ code {
 .tag {
   display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px;
   border: 1px solid var(--line-strong); color: var(--muted); margin-left: 6px;
-  vertical-align: middle;
+  vertical-align: middle; white-space: nowrap;
 }
 .tag.pending { color: #b45309; border-color: #fcd34d; background: #fffbeb; }
 .pos { color: var(--up); }

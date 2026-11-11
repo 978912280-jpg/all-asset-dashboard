@@ -58,7 +58,7 @@
       })
       .catch(function (e) {
         $("table-body").innerHTML =
-          '<tr><td colspan="8" class="muted" style="text-align:center;padding:24px">' +
+          '<tr><td colspan="10" class="muted" style="text-align:center;padding:24px">' +
           "数据加载失败：" + escapeHtml(e.message) +
           "（请确认 data/dashboard.json 已生成）</td></tr>";
       });
@@ -85,6 +85,8 @@
   function renderKpi() {
     var s = state.data.summary || {};
     var day = s.day_change_cny;
+    var tradPnl = s.traditional_pnl_cny;
+    var cryptoPnl = s.crypto_pnl_cny;
     var cards = [
       {
         label: "总资产 (CNY)",
@@ -98,27 +100,33 @@
         label: '<i class="dot trad"></i>传统股票 & 基金',
         value: "¥" + num(s.traditional_cny),
         small: true,
-        delta: "占比 " + num(s.traditional_weight) + "% · " +
-          (state.data.groups?.[0]?.count ?? 0) + " 个标的",
+        delta: "占比 " + num(s.traditional_weight) + "% · 成本 ¥" + num(s.traditional_cost_cny),
       },
       {
         label: '<i class="dot crypto"></i>加密货币',
         value: "¥" + num(s.crypto_cny),
         small: true,
         delta: "占比 " + num(s.crypto_weight) + "% · " +
-          (state.data.crypto_meta?.total_usdt ? num(state.data.crypto_meta.total_usdt) + " USDT" : ""),
+          (cryptoPnl === null || cryptoPnl === undefined ? "盈亏—" :
+            '<span class="' + cls(cryptoPnl) + '">盈亏 ' + (cryptoPnl >= 0 ? "+" : "") +
+            num(cryptoPnl) + "（" + pct(s.crypto_pnl_pct) + "）</span>"),
       },
       {
-        label: "标的数量",
-        value: String(s.count ?? "—"),
+        label: "传统持仓浮动盈亏",
+        value: (tradPnl === null || tradPnl === undefined ? "—" :
+          (tradPnl >= 0 ? "+" : "−") + "¥" + num(Math.abs(tradPnl))),
         small: true,
-        delta: (s.pending_count ? '<span class="neg">' + s.pending_count + " 个待填写份额</span>" : "份额已全部填写"),
+        cls: cls(tradPnl),
+        delta: (s.traditional_pnl_pct === null || s.traditional_pnl_pct === undefined
+          ? '<span class="muted">成本价待填写</span>'
+          : '<span class="' + cls(tradPnl) + '">收益率 ' + pct(s.traditional_pnl_pct) + "</span>" +
+            (s.cost_pending_count ? '<span class="muted"> · ' + s.cost_pending_count + " 个待填成本</span>" : "")),
       },
     ];
     $("kpi-grid").innerHTML = cards.map(function (c) {
       return '<div class="kpi">' +
         '<div class="kpi-label">' + c.label + "</div>" +
-        '<div class="kpi-value' + (c.small ? " small" : "") + '">' + c.value + "</div>" +
+        '<div class="kpi-value' + (c.small ? " small" : "") + (c.cls ? " " + c.cls : "") + '">' + c.value + "</div>" +
         '<div class="kpi-delta">' + c.delta + "</div>" +
         "</div>";
     }).join("");
@@ -126,15 +134,18 @@
 
   function renderPending() {
     var s = state.data.summary || {};
-    if (!s.pending_count) {
-      $("pending-alert").hidden = true;
-      return;
+    var msgs = [];
+    if (s.pending_count) {
+      msgs.push("<strong>" + s.pending_count + " 个标的份额未填写：</strong>" +
+        escapeHtml((s.pending_ids || []).join("、")) + "。填份额后市值与占比自动计算。");
     }
+    if (s.cost_pending_count) {
+      msgs.push("<strong>" + s.cost_pending_count + " 个标的成本价未填写：</strong>" +
+        escapeHtml((s.cost_pending_ids || []).join("、")) + "。填成本价后才会计算浮动盈亏与收益率。");
+    }
+    if (!msgs.length) { $("pending-alert").hidden = true; return; }
     $("pending-alert").hidden = false;
-    $("pending-text").innerHTML =
-      "<strong>" + s.pending_count + " 个标的份额未填写：</strong>" +
-      escapeHtml((s.pending_ids || []).join("、")) +
-      "。在后台填写持有份额后，市值与占比会自动计算。";
+    $("pending-text").innerHTML = msgs.join("<br>");
   }
 
   // ---------- 占比 ----------
@@ -231,6 +242,18 @@
       var priceTxt = i.price === null || i.price === undefined ? "—" :
         (i.currency === "USD" ? "$" : i.currency === "USDT" ? "" : "¥") + num(i.price, i.price < 10 ? 4 : 2);
       var sharesTxt = num(i.shares, i.shares < 1 ? 6 : 4);
+      var costTxt = i.group === "crypto" ? '<span class="muted">—</span>'
+        : (!i.cost_price ? '<span class="muted">待填</span>'
+          : (i.currency === "USD" ? "$" : "¥") + num(i.cost_price, i.cost_price < 10 ? 4 : 2));
+      var pnlTxt;
+      if (i.group === "crypto") {
+        pnlTxt = '<span class="muted">—</span>';
+      } else if (i.pnl_cny === null || i.pnl_cny === undefined) {
+        pnlTxt = '<span class="muted">—</span>';
+      } else {
+        pnlTxt = '<span class="' + cls(i.pnl_cny) + '">' + (i.pnl_cny >= 0 ? "+" : "") + num(i.pnl_cny) +
+          '<div class="sub ' + cls(i.pnl_pct) + '">' + pct(i.pnl_pct) + "</div></span>";
+      }
       return "<tr>" +
         '<td class="name-cell"><div class="nm">' + escapeHtml(i.name) +
         (i.pending ? '<span class="tag pending">待填份额</span>' : "") +
@@ -239,8 +262,10 @@
         '<td><span class="tag" style="border-color:' + color + '33;color:' + color +
         '">' + escapeHtml(i.asset_class) + "</span></td>" +
         '<td class="num">' + sharesTxt + "</td>" +
+        '<td class="num">' + costTxt + "</td>" +
         '<td class="num">' + priceTxt + "</td>" +
         '<td class="num">' + (i.value_cny === null ? "—" : num(i.value_cny)) + "</td>" +
+        '<td class="num">' + pnlTxt + "</td>" +
         '<td class="num"><div class="weight-cell">' + num(i.weight) + "%" +
         '<span class="mini-bar"><i style="width:' + Math.min(100, i.weight || 0) +
         "%;background:" + color + '"></i></span></div></td>' +
@@ -346,7 +371,7 @@
       " = " + num(cryptoMeta.total_usdt) + " USDT）</li>",
       "<li>汇率：USD/USDT → CNY = <strong>" + num((m.fx || {}).usdcny, 4) + "</strong>（" +
       escapeHtml((m.fx || {}).source || "—") + "）</li>",
-      "<li>份额维护：<code>data/holdings.json</code> 中的 shares 字段，其余全部由 <code>scripts/build.py</code> 自动计算</li>",
+      "<li>份额与成本维护：<code>data/holdings.json</code> 中的 <code>shares</code> 与 <code>cost_price</code>，市值/盈亏/占比/趋势全部由 <code>scripts/build.py</code> 自动计算</li>",
     ];
     $("source-list").innerHTML = rows.join("");
   }

@@ -107,6 +107,7 @@ def build_traditional(holdings, fund_items, rate):
     rows = []
     for it in holdings.get("traditional", []):
         shares = float(it.get("shares") or 0)
+        cost_price = float(it.get("cost_price") or 0)
         cur = (it.get("currency") or ("USD" if str(it.get("symbol", "")).upper() in
                                       ("QQQM", "VOO", "QQQI") else "CNY")).upper()
         q, src = resolve_price(it, fund_items)
@@ -116,17 +117,28 @@ def build_traditional(holdings, fund_items, rate):
         fx = rate if cur == "USD" else 1.0
         value_cny = value_native * fx if value_native is not None else None
         day_cny = value_cny * (chg or 0) / 100.0 if value_cny is not None else None
+        # 持仓成本与浮动盈亏（成本价按标的币种计价，与现价同币种）
+        cost_native = shares * cost_price if cost_price > 0 else None
+        cost_cny = cost_native * fx if cost_native is not None else None
+        pnl_cny = (value_cny - cost_cny) if (value_cny is not None and cost_cny is not None) else None
+        pnl_pct = (pnl_cny / cost_cny * 100.0) if (pnl_cny is not None and cost_cny) else None
         rows.append({
             "id": str(it.get("id") or it.get("symbol")),
             "name": it.get("name") or (q or {}).get("name") or str(it.get("symbol")),
             "asset_class": it.get("asset_class") or "其他",
             "group": TRADITIONAL_GROUP,
             "shares": r2(shares, 6),
+            "cost_price": r2(cost_price, 4),
             "price": r2(price, 4),
             "currency": cur,
             "change_pct": r2(chg, 2),
             "value_native": r2(value_native, 2),
             "value_cny": r2(value_cny, 2),
+            "cost_native": r2(cost_native, 2),
+            "cost_cny": r2(cost_cny, 2),
+            "pnl_cny": r2(pnl_cny, 2),
+            "pnl_pct": r2(pnl_pct, 2),
+            "cost_pending": cost_price <= 0,
             "day_change_cny": r2(day_cny, 2),
             "price_source": src,
             "price_ts": (q or {}).get("ts"),
@@ -216,6 +228,9 @@ def load_crypto(cfg, rate):
         "earn_usdt": r2(latest.get("earnUsdt"), 2),
         "coin_count": len(rows),
         "daily_change_usdt": r2(latest.get("dailyChangeUsdt"), 2),
+        "real_pnl_usdt": r2(latest.get("realPnlUsdt"), 2),
+        "real_pnl_pct": r2(latest.get("realPnlPct"), 2),
+        "net_deposit_usdt": r2(latest.get("netDepositUsdt"), 2),
     }
     return rows, meta
 
@@ -248,8 +263,9 @@ def main():
     print("[3/5] 计算传统标的市值 …")
     trad_rows = build_traditional(holdings, fund_items, rate)
     for r in trad_rows:
-        print("      %-8s 份额=%-12s 价格=%-10s 市值=%s CNY [%s]" % (
-            r["id"], r["shares"], r["price"], r["value_cny"], r["price_source"]))
+        print("      %-8s 份额=%-10s 成本价=%-9s 现价=%-9s 市值=%s 盈亏=%s [%s]" % (
+            r["id"], r["shares"], r["cost_price"], r["price"], r["value_cny"],
+            r["pnl_cny"], r["price_source"]))
 
     print("[4/5] 抓取加密货币资产仪表台 …")
     crypto_rows, crypto_meta = load_crypto(holdings, rate)
@@ -265,6 +281,12 @@ def main():
     total_cny = trad_cny + crypto_cny
     day_change = sum(r["day_change_cny"] or 0 for r in trad_rows) + \
                  sum(r["day_change_cny"] or 0 for r in crypto_rows)
+    trad_cost = sum(r["cost_cny"] or 0 for r in trad_rows)
+    trad_pnl = sum(r["pnl_cny"] or 0 for r in trad_rows)
+    cost_pending = [r["id"] for r in trad_rows if r.get("cost_pending") and r["shares"]]
+    crypto_pnl_usdt = crypto_meta.get("real_pnl_usdt")
+    crypto_pnl_cny = crypto_pnl_usdt * rate if crypto_pnl_usdt is not None else None
+    total_pnl = trad_pnl + (crypto_pnl_cny or 0) if (trad_cost or crypto_pnl_cny is not None) else None
     pending = [r["id"] for r in trad_rows if r["pending"]]
 
     def weight(v):
@@ -301,7 +323,7 @@ def main():
             "base_currency": "CNY",
             "fx": {"usdcny": r2(rate, 4), "source": fx_src},
             "sources": {
-                "traditional_price": "全球资产仪表台 → 腾讯实时 → 天天基金 → Yahoo",
+                "traditional_price": "全球资产仪表台 → 腾讯实时 → 东方财富基金 → Yahoo",
                 "traditional_price_url": sources.FUND_DASHBOARD_URL,
                 "crypto": crypto_meta.get("url"),
                 "crypto_dashboard": "https://978912280-jpg.github.io/bitget-pnl-dashboard/",
@@ -320,6 +342,15 @@ def main():
             "count": len(trad_rows) + len(crypto_rows),
             "pending_count": len(pending),
             "pending_ids": pending,
+            "traditional_cost_cny": r2(trad_cost, 2),
+            "traditional_pnl_cny": r2(trad_pnl, 2),
+            "traditional_pnl_pct": r2(trad_pnl / trad_cost * 100, 2) if trad_cost else None,
+            "cost_pending_count": len(cost_pending),
+            "cost_pending_ids": cost_pending,
+            "crypto_pnl_cny": r2(crypto_pnl_cny, 2),
+            "crypto_pnl_usdt": crypto_pnl_usdt,
+            "crypto_pnl_pct": crypto_meta.get("real_pnl_pct"),
+            "total_pnl_cny": r2(total_pnl, 2),
         },
         "groups": [
             {

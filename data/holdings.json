@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "base_currency": "CNY",
     "updated_at": "2026-11-12T02:37:11+08:00",
-    "_comment": "本文件是全维度资产统计的唯一份额来源：你只需要维护每个标的的 shares（持有份额），价格与市值全部由后台 build.py 抓取并计算。"
+    "_comment": "本文件是全维度资产统计的唯一份额来源：只需要维护每个传统标的的 shares（持有份额）与 cost_price（每份持仓成本价，按该标的币种计价），价格与市值、盈亏全部由后台 build.py 抓取并计算。"
   },
   "fx": {
     "usdcny_fallback": 7.12,
@@ -24,8 +24,9 @@
       "symbol": "QQQM",
       "currency": "USD",
       "asset_class": "美股基金",
-      "shares": 2.5382,
-      "note": "定投纳指，每月约 1350 USD"
+      "shares": 0,
+      "note": "定投纳指，每月约 1350 USD",
+      "cost_price": 0
     },
     {
       "id": "VOO",
@@ -33,8 +34,9 @@
       "symbol": "VOO",
       "currency": "USD",
       "asset_class": "美股基金",
-      "shares": 1.0697,
-      "note": ""
+      "shares": 0,
+      "note": "",
+      "cost_price": 0
     },
     {
       "id": "QQQI",
@@ -42,17 +44,19 @@
       "symbol": "QQQI",
       "currency": "USD",
       "asset_class": "美股基金",
-      "shares": 8.0522,
-      "note": ""
+      "shares": 0,
+      "note": "",
+      "cost_price": 0
     },
     {
-      "id": "008163",
-      "name": "南方标普 50 红利低波 ETF",
-      "symbol": "008163",
+      "id": "515450",
+      "name": "南方红利低波50ETF（515450）",
+      "symbol": "515450",
       "currency": "CNY",
       "asset_class": "国内基金",
-      "shares": 9456.78,
-      "note": ""
+      "shares": 0,
+      "note": "定投红利低波，每月约 8500 元",
+      "cost_price": 0
     }
   ]
 }

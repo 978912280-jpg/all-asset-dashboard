@@ -116,6 +116,14 @@ class Handler(SimpleHTTPRequestHandler):
             if v < 0:
                 return self._json(400, {"ok": False, "error": "traditional[%d] 的 shares 不能为负" % i})
             it["shares"] = v
+            cost = it.get("cost_price")
+            try:
+                cv = float(cost if cost is not None else 0)
+            except (TypeError, ValueError):
+                return self._json(400, {"ok": False, "error": "traditional[%d] 的 cost_price 非法" % i})
+            if cv < 0:
+                return self._json(400, {"ok": False, "error": "traditional[%d] 的 cost_price 不能为负" % i})
+            it["cost_price"] = cv
 
         # 保留可能被前端丢弃的固定段落
         old = read_json(os.path.join(DATA, "holdings.json"))

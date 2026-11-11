@@ -84,16 +84,29 @@
   }
 
   // ---------- 表格 ----------
+  function fxRate() {
+    var fx = state.dashboard && state.dashboard.meta && state.dashboard.meta.fx;
+    return (fx && fx.usdcny) ? Number(fx.usdcny) : 7.1;
+  }
+
   function renderTable() {
     var prices = priceMap();
+    var fx = fxRate();
     var rows = state.holdings.traditional || [];
-    var pending = rows.filter(function (r) { return !(Number(r.shares) > 0); }).length;
-
-    $("pending-pill").textContent = pending ? pending + " 个标的待填写份额" : "份额已全部填写";
-    $("pending-pill").className = "pill" + (pending ? " warn" : "");
+    updatePendingPill();
 
     $("holdings-body").innerHTML = rows.map(function (r, idx) {
       var p = prices[r.id] || {};
+      var shares = Number(r.shares) || 0;
+      var costPrice = Number(r.cost_price) || 0;
+      var cur = r.currency === "USD" ? fx : 1;
+      var costCny = shares && costPrice ? shares * costPrice * cur : null;
+      var valueCny = p.value_cny === undefined ? null : p.value_cny;
+      var pnl = (costCny !== null && valueCny !== null) ? valueCny - costCny : null;
+      var pnlCls = pnl === null ? "muted" : (pnl >= 0 ? "pos" : "neg");
+      var pnlTxt = pnl === null ? '<span class="muted">—</span>'
+        : '<span class="' + pnlCls + '">' + (pnl >= 0 ? "+" : "") + num(pnl) +
+          '<div class="sub ' + pnlCls + '">' + (costCny ? (pnl / costCny * 100).toFixed(2) + "%" : "—") + "</div></span>";
       return "<tr>" +
         '<td class="name-cell"><div class="nm">' + esc(r.name) + "</div>" +
         (r.note ? '<div class="sub">' + esc(r.note) + "</div>" : "") + "</td>" +
@@ -101,9 +114,12 @@
         "<td>" + esc(r.asset_class || "—") + "</td>" +
         "<td>" + esc(r.currency) + "</td>" +
         '<td class="num"><input type="number" step="0.000001" min="0" data-idx="' + idx +
-        '" value="' + (r.shares || 0) + '" aria-label="持有份额"></td>' +
+        '" data-field="shares" value="' + shares + '" aria-label="持有份额"></td>' +
+        '<td class="num"><input type="number" step="0.0001" min="0" data-idx="' + idx +
+        '" data-field="cost_price" value="' + costPrice + '" aria-label="成本价"></td>' +
         '<td class="num">' + (p.price === null || p.price === undefined ? "—" : num(p.price, p.price < 10 ? 4 : 2)) + "</td>" +
-        '<td class="num">' + (p.value_cny === undefined ? "—" : num(p.value_cny)) + "</td>" +
+        '<td class="num">' + (valueCny === null ? "—" : num(valueCny)) + "</td>" +
+        '<td class="num">' + pnlTxt + "</td>" +
         '<td><button class="row-del" data-del="' + idx + '" type="button">删除</button></td>' +
         "</tr>";
     }).join("");
@@ -112,11 +128,12 @@
       var input = e.target;
       if (input.tagName !== "INPUT") return;
       var idx = Number(input.getAttribute("data-idx"));
+      var field = input.getAttribute("data-field") || "shares";
       var v = Number(input.value);
       if (isNaN(v) || v < 0) return;
-      state.holdings.traditional[idx].shares = v;
+      state.holdings.traditional[idx][field] = v;
       state.dirty = true;
-      updatePendingPill();
+      if (field === "shares") updatePendingPill();
     };
 
     $("holdings-body").onclick = function (e) {
@@ -134,8 +151,14 @@
   function updatePendingPill() {
     var rows = state.holdings.traditional || [];
     var pending = rows.filter(function (r) { return !(Number(r.shares) > 0); }).length;
-    $("pending-pill").textContent = pending ? pending + " 个标的待填写份额" : "份额已全部填写";
-    $("pending-pill").className = "pill" + (pending ? " warn" : "");
+    var costPending = rows.filter(function (r) {
+      return Number(r.shares) > 0 && !(Number(r.cost_price) > 0);
+    }).length;
+    var parts = [];
+    if (pending) parts.push(pending + " 个待填份额");
+    if (costPending) parts.push(costPending + " 个待填成本价");
+    $("pending-pill").textContent = parts.length ? parts.join(" · ") : "份额与成本价已完整";
+    $("pending-pill").className = "pill" + (parts.length ? " warn" : "");
   }
 
   // ---------- 新增 ----------
@@ -160,6 +183,7 @@
         currency: f.currency.value,
         asset_class: f.asset_class.value.trim() || "其他",
         shares: Number(f.shares.value) || 0,
+        cost_price: Number(f.cost_price.value) || 0,
         note: "",
       });
       state.dirty = true;
@@ -193,6 +217,12 @@
     return -1;
   }
 
+  function toNum(v) {
+    var n = parseFloat(String(v === undefined || v === null ? "" : v)
+      .replace(/[,\s￥$%]/g, ""));
+    return isNaN(n) ? null : n;
+  }
+
   function parseSheet(rows) {
     var hi = findHeaderRow(rows);
     if (hi < 0) return null;
@@ -200,6 +230,12 @@
     var nameCol = pickCol(header, ["项目名称", "名称", "标的", "项目"]);
     var codeCol = pickCol(header, ["代码", "symbol", "代码/代码"]);
     var sharesCol = pickCol(header, ["持有数量", "持有份额", "份额", "数量", "持仓"]);
+    // 成本：优先「成本价/买入均价」，其次用「累计投入成本 / 成本总价 ÷ 份额」推导
+    var costCol = pickCol(header, ["成本价", "买入均价"]);
+    var totalCostCol = -1;
+    if (costCol < 0) {
+      totalCostCol = pickCol(header, ["累计投入成本", "成本总价", "投入成本", "持仓成本"]);
+    }
     if (sharesCol < 0) return null;
 
     var out = [];
@@ -207,10 +243,14 @@
       var row = rows[i] || [];
       var name = nameCol >= 0 ? String(row[nameCol] || "").trim() : "";
       var code = codeCol >= 0 ? String(row[codeCol] || "").trim().toUpperCase() : "";
-      var sharesRaw = row[sharesCol];
-      var shares = parseFloat(String(sharesRaw === undefined ? "" : sharesRaw).replace(/[,\s￥$]/g, ""));
+      var shares = toNum(row[sharesCol]);
       if (!name && !code) continue;
-      out.push({ name: name, code: code, shares: isNaN(shares) ? null : shares });
+      var cost = costCol >= 0 ? toNum(row[costCol]) : null;
+      if (cost === null && totalCostCol >= 0 && shares) {
+        var total = toNum(row[totalCostCol]);
+        if (total !== null && total > 0) cost = total / shares;
+      }
+      out.push({ name: name, code: code, shares: shares, cost: cost });
     }
     return out;
   }
@@ -266,14 +306,16 @@
 
     box.innerHTML =
       "<h3>解析结果：" + state.importRows.length + " 行，可匹配 " + matched.length + " 个标的</h3>" +
-      '<table class="import-table"><thead><tr><th>表格行</th><th>匹配标的</th><th>代码</th><th class="num">新份额</th><th>状态</th></tr></thead><tbody>' +
+      '<table class="import-table"><thead><tr><th>表格行</th><th>匹配标的</th><th>代码</th><th class="num">新份额</th><th class="num">成本价</th><th>状态</th></tr></thead><tbody>' +
       state.importRows.map(function (x) {
         var st = !x.hit ? '<span class="import-msg warn">未匹配</span>'
           : x.row.shares === null ? '<span class="import-msg warn">无份额值</span>'
             : '<span class="import-msg ok">将更新</span>';
         return "<tr><td>" + esc(x.row.name || "—") + "</td><td>" +
           esc(x.hit ? x.hit.name : "—") + "</td><td>" + esc(x.row.code || "—") + "</td>" +
-          '<td class="num">' + (x.row.shares === null ? "—" : num(x.row.shares, 4)) + "</td><td>" + st + "</td></tr>";
+          '<td class="num">' + (x.row.shares === null ? "—" : num(x.row.shares, 4)) + "</td>" +
+          '<td class="num">' + (x.row.cost === null || x.row.cost === undefined ? "—" : num(x.row.cost, 4)) + "</td>" +
+          "<td>" + st + "</td></tr>";
       }).join("") + "</tbody></table>" +
       '<div class="import-actions">' +
       '<button class="btn primary" id="btn-apply-import" type="button">应用 ' + matched.length + " 项</button>" +
@@ -283,7 +325,12 @@
 
     $("btn-cancel-import").onclick = function () { box.hidden = true; state.importRows = null; };
     $("btn-apply-import").onclick = function () {
-      matched.forEach(function (x) { x.hit.shares = x.row.shares; });
+      matched.forEach(function (x) {
+        x.hit.shares = x.row.shares;
+        if (x.row.cost !== null && x.row.cost !== undefined && x.row.cost >= 0) {
+          x.hit.cost_price = x.row.cost;
+        }
+      });
       state.dirty = true;
       renderTable();
       box.hidden = true;
