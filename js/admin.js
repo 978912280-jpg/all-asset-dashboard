@@ -66,10 +66,17 @@
       .then(function () {
         $("mode-badge").textContent = state.serverMode
           ? "本地后台模式：可直接保存并重建"
-          : "静态模式：保存后需下载 holdings.json 上传仓库";
+          : "静态模式：用下方 GitHub Token 直连更新";
+        var cm = state.dashboard && state.dashboard.crypto_meta;
+        var today = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Shanghai" });
+        if (cm && cm.snapshot_date) {
+          var stale = cm.snapshot_date !== today;
+          $("fresh-badge").textContent = "加密快照 " + cm.snapshot_date +
+            (stale ? "（每日约 07:00 汇总，点「立即重建数据」可抓取最新）" : "（已是最新）");
+        }
         $("save-note").innerHTML = state.serverMode
           ? "当前运行在本地后台（<code>scripts/server.py</code>）：保存后自动写入 <code>data/holdings.json</code> 并立即重建 <code>data/dashboard.json</code>。"
-          : "当前为 GitHub Pages 静态页面：保存后下载 <code>holdings.json</code>，覆盖仓库 <code>data/holdings.json</code>；Actions 每日构建或手动 Run workflow 后生效。";
+          : "当前为 GitHub Pages 静态页面：填入下方 GitHub Token 后点「保存并计算」，直接提交 <code>data/holdings.json</code> 并触发 Actions 重建。";
         renderTable();
         syncGhUi();
       });
@@ -628,7 +635,28 @@
       }
     };
     $("btn-rebuild").onclick = function () {
-      if (!state.serverMode) { toast("静态模式无法重建，请在 GitHub Actions 手动 Run workflow"); return; }
+      if (!state.serverMode) {
+        readGhForm();
+        if (!gh.token) {
+          toast("需先填写下方 GitHub Token（Actions 读写权限），或在 GitHub Actions 手动 Run workflow");
+          return;
+        }
+        ghMsg("正在触发后台重建：重新抓取传统标的价格与加密货币快照…", "");
+        $("btn-rebuild").disabled = true;
+        ghDispatch().then(function (res) {
+          $("btn-rebuild").disabled = false;
+          if (!res.ok) {
+            ghMsg("触发失败（HTTP " + res.status + "）：请确认 Token 有 Actions 读写权限", "warn");
+            return;
+          }
+          ghMsg("已触发构建，约 1 分钟完成，完成后页面会自动刷新…", "ok");
+          pollBuild();
+        }).catch(function (e) {
+          $("btn-rebuild").disabled = false;
+          ghMsg("触发失败：" + e.message, "warn");
+        });
+        return;
+      }
       fetch("api/rebuild", { method: "POST" })
         .then(function (r) { return r.json(); })
         .then(function (j) {

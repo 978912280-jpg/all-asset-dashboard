@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-version="20261112c">
+<html lang="zh-CN" data-page-version="20261112d">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,16 +20,16 @@
   })();
   </script>
   <link rel="stylesheet" href="css/style.css?v=20261112a">
-  <link rel="stylesheet" href="css/admin.css?v=20261112a">
+  <link rel="stylesheet" href="css/admin.css?v=20261112d">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-  <script src="js/admin.js?v=20261112a" defer></script>
+  <script src="js/admin.js?v=20261112d" defer></script>
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
         <h1 class="title">份额维护后台</h1>
-        <p class="subtitle">只维护份额，价格、市值、占比与趋势由后台自动计算</p>
+        <p class="subtitle">只维护份额与成本价，价格、市值、盈亏、占比与趋势由后台自动计算</p>
       </div>
       <div class="topbar-meta">
         <span class="meta-line">
@@ -37,6 +37,7 @@
           <button class="link-btn" id="btn-rebuild" type="button">立即重建数据</button>
         </span>
         <span class="meta-item" id="mode-badge">—</span>
+        <span class="meta-item" id="fresh-badge">—</span>
       </div>
     </div>
   </header>
@@ -50,8 +51,7 @@
       <div class="upload-zone" id="drop-zone">
         <input type="file" id="file-input" accept=".xlsx,.xls,.csv" hidden>
         <p class="upload-title">把持仓表格拖到这里，或<button class="link-btn" id="pick-file" type="button">选择文件</button></p>
-        <p class="upload-hint">表头需包含「项目名称」或「代码」+「持有数量」；加密货币无需上传，自动从加密货币仪表台合并</p>
-      </p>
+        <p class="upload-hint">表头需包含「项目名称」或「代码」+「持有数量」，可选「成本价 / 累计投入成本」；加密货币无需上传，自动从加密货币仪表台合并</p>
       <div class="import-result" id="import-result" hidden></div>
     </section>
 

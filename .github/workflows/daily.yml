@@ -4,6 +4,8 @@ on:
   schedule:
     # 每天 08:10（北京时间）= 00:10 UTC
     - cron: "10 0 * * *"
+  repository_dispatch:
+    types: [daily]
   workflow_dispatch:
 
 permissions:
