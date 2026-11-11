@@ -249,8 +249,15 @@
         : (!i.cost_price ? '<span class="muted">待填</span>'
           : (i.currency === "USD" ? "$" : "¥") + num(i.cost_price, i.cost_price < 10 ? 4 : 2));
       var pnlTxt;
-      if (i.group === "crypto" || i.group === "cash") {
+      if (i.group === "cash") {
         pnlTxt = '<span class="muted">—</span>';
+      } else if (i.group === "crypto") {
+        // 加密资产没有持仓成本口径，按当日涨跌计算日内浮动盈亏
+        var dc = i.day_change_cny;
+        pnlTxt = (dc === null || dc === undefined)
+          ? '<span class="muted">—</span>'
+          : '<span class="' + cls(dc) + '">' + (dc >= 0 ? "+" : "") + num(dc) +
+            '<div class="sub ' + cls(i.change_pct) + '">' + pct(i.change_pct) + "</div></span>";
       } else if (i.pnl_cny === null || i.pnl_cny === undefined) {
         pnlTxt = '<span class="muted">—</span>';
       } else {
