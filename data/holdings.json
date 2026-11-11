@@ -24,7 +24,7 @@
       "symbol": "QQQM",
       "currency": "USD",
       "asset_class": "美股基金",
-      "shares": 0,
+      "shares": 2.5382,
       "note": "定投纳指，每月约 1350 USD"
     },
     {
@@ -33,7 +33,7 @@
       "symbol": "VOO",
       "currency": "USD",
       "asset_class": "美股基金",
-      "shares": 0,
+      "shares": 1.0697,
       "note": ""
     },
     {
@@ -42,17 +42,17 @@
       "symbol": "QQQI",
       "currency": "USD",
       "asset_class": "美股基金",
-      "shares": 0,
+      "shares": 8.0522,
       "note": ""
     },
     {
-      "id": "515450",
-      "name": "南方红利低波50ETF（515450）",
-      "symbol": "515450",
+      "id": "008163",
+      "name": "南方标普 50 红利低波 ETF",
+      "symbol": "008163",
       "currency": "CNY",
       "asset_class": "国内基金",
-      "shares": 0,
-      "note": "定投红利低波，每月约 8500 元"
+      "shares": 9456.78,
+      "note": ""
     }
   ]
 }
