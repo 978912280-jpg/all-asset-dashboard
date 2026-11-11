@@ -1,9 +1,23 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-page-version="20261112c">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>全维度资产统计</title>
+  <script>
+  /* 页面版本自愈：若浏览器缓存了旧版 HTML，自动带版本号重新拉取一次 */
+  (function () {
+    if (location.search) return;
+    fetch("data/dashboard.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var want = (d.meta && d.meta.page_version) || "";
+        var have = document.documentElement.getAttribute("data-page-version") || "";
+        if (want && want !== have) location.replace(location.pathname + "?pv=" + want + location.hash);
+      })
+      .catch(function () {});
+  })();
+  </script>
   <link rel="stylesheet" href="css/style.css?v=20261112a">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231f2329'/%3E%3Cpath d='M5 17 L10 11 L13 14 L18 7' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <script src="https://fastly.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" defer></script>

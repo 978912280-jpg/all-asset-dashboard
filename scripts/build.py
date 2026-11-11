@@ -30,6 +30,7 @@ sys.path.insert(0, HERE)
 import sources  # noqa: E402
 
 CST = timezone(timedelta(hours=8))
+PAGE_VERSION = "20261112c"  # 页面逻辑版本：改动 index.html / admin.html / js / css 时同步 +1
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
 
@@ -320,6 +321,7 @@ def main():
             "subtitle": "传统股票/基金 + 加密货币 合并统计 · 份额 × 价格 = 市值",
             "version": (holdings.get("meta") or {}).get("version") or "1.0.0",
             "generated_at": generated_at,
+            "page_version": PAGE_VERSION,
             "base_currency": "CNY",
             "fx": {"usdcny": r2(rate, 4), "source": fx_src},
             "sources": {
