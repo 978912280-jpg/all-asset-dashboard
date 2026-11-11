@@ -47,16 +47,6 @@
       "shares": 0,
       "note": "",
       "cost_price": 0
-    },
-    {
-      "id": "515450",
-      "name": "南方红利低波50ETF（515450）",
-      "symbol": "515450",
-      "currency": "CNY",
-      "asset_class": "国内基金",
-      "shares": 0,
-      "note": "定投红利低波，每月约 8500 元",
-      "cost_price": 0
     }
   ]
 }
