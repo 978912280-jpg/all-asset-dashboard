@@ -2,9 +2,9 @@
   "meta": {
     "title": "全维度资产统计",
     "subtitle": "传统股票/基金 + 加密货币 合并统计 · 份额 × 价格 = 市值",
-    "version": "1.0.1",
-    "generated_at": "2026-11-12T05:40:59+08:00",
-    "page_version": "1.0.1",
+    "version": "1.0.2",
+    "generated_at": "2026-11-12T05:43:34+08:00",
+    "page_version": "1.0.2",
     "base_currency": "CNY",
     "fx": {
       "usdcny": 6.6878,
