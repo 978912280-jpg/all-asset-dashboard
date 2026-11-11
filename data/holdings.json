@@ -33,7 +33,7 @@
       "symbol": "VOO",
       "currency": "USD",
       "asset_class": "美股基金",
-      "shares": 0.0,
+      "shares": 0,
       "note": ""
     },
     {
@@ -42,7 +42,7 @@
       "symbol": "QQQI",
       "currency": "USD",
       "asset_class": "美股基金",
-      "shares": 0.0,
+      "shares": 0,
       "note": ""
     },
     {
