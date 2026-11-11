@@ -72,7 +72,7 @@
         if (cm && cm.snapshot_date) {
           var stale = cm.snapshot_date !== today;
           $("fresh-badge").textContent = "加密快照 " + cm.snapshot_date +
-            (stale ? "（每日约 07:00 汇总，点「立即重建数据」可抓取最新）" : "（已是最新）");
+            (stale ? "（每日约 07:00 汇总，点上方「立即抓取最新价格」可更新）" : "（已是最新）");
         }
         $("save-note").innerHTML = state.serverMode
           ? "当前运行在本地后台（<code>scripts/server.py</code>）：保存后自动写入 <code>data/holdings.json</code> 并立即重建 <code>data/dashboard.json</code>。"
@@ -641,7 +641,7 @@
           toast("需先填写下方 GitHub Token（Actions 读写权限），或在 GitHub Actions 手动 Run workflow");
           return;
         }
-        ghMsg("正在触发后台重建：重新抓取传统标的价格与加密货币快照…", "");
+        ghMsg("正在抓取最新价格：传统标的实时价 + 加密货币最新快照…", "");
         $("btn-rebuild").disabled = true;
         ghDispatch().then(function (res) {
           $("btn-rebuild").disabled = false;

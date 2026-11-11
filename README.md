@@ -123,7 +123,7 @@ GitHub 自带的 `schedule` 经常延迟甚至漏跑（实测有延迟数小时�
 
 | 入口 | 用途 |
 |---|---|
-| `workflow_dispatch` | 手动点「Run workflow」；后台「立即重建数据」按钮；cron-job.org 定时调用 |
+| `workflow_dispatch` | 手动点「Run workflow」；后台「立即抓取最新价格」按钮；cron-job.org 定时调用 |
 | `repository_dispatch` (`event_type=daily`) | 备用入口，也可被外部服务调用 |
 
 ### 在 cron-job.org 建一个 Job
