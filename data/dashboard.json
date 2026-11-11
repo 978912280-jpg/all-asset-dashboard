@@ -3,7 +3,7 @@
     "title": "全维度资产统计",
     "subtitle": "传统股票/基金 + 加密货币 合并统计 · 份额 × 价格 = 市值",
     "version": "1.0.0",
-    "generated_at": "2026-11-12T04:02:11+08:00",
+    "generated_at": "2026-11-12T04:09:34+08:00",
     "page_version": "20261112g",
     "base_currency": "CNY",
     "fx": {
@@ -18,51 +18,46 @@
     }
   },
   "summary": {
-    "total_cny": 105807.09,
-    "traditional_cny": 0.0,
+    "total_cny": 128647.21,
+    "traditional_cny": 22840.12,
     "crypto_cny": 105807.09,
-    "traditional_weight": 0.0,
-    "crypto_weight": 100.0,
-    "day_change_cny": -2194.9,
-    "day_change_pct": -2.03,
+    "traditional_weight": 17.75,
+    "crypto_weight": 82.25,
+    "day_change_cny": -2041.15,
+    "day_change_pct": -1.56,
     "crypto_usdt": 15821.02,
     "count": 10,
-    "pending_count": 4,
-    "pending_ids": [
-      "QQQM",
-      "VOO",
-      "QQQI",
-      "515450"
-    ],
-    "traditional_cost_cny": 0.0,
-    "traditional_pnl_cny": 0.0,
-    "traditional_pnl_pct": null,
+    "pending_count": 0,
+    "pending_ids": [],
+    "traditional_cost_cny": 22899.02,
+    "traditional_pnl_cny": -58.89,
+    "traditional_pnl_pct": -0.26,
     "cost_pending_count": 0,
     "cost_pending_ids": [],
     "crypto_pnl_cny": 3049.75,
     "crypto_pnl_usdt": 456.02,
     "crypto_pnl_pct": 2.97,
-    "total_pnl_cny": 3049.75
+    "total_pnl_cny": 2990.86
   },
   "groups": [
     {
       "key": "traditional",
       "name": "传统股票 & 基金",
-      "cny": 0.0,
-      "weight": 0.0,
+      "cny": 22840.12,
+      "weight": 17.75,
       "count": 4,
       "items": [
         "QQQM",
         "VOO",
         "QQQI",
-        "515450"
+        "008163"
       ]
     },
     {
       "key": "crypto",
       "name": "加密货币",
       "cny": 105807.09,
-      "weight": 100.0,
+      "weight": 82.25,
       "count": 6,
       "items": [
         "BTC",
@@ -80,96 +75,96 @@
       "name": "纳指100 ETF（QQQM）",
       "asset_class": "美股基金",
       "group": "traditional",
-      "shares": 0.0,
-      "cost_price": 0.0,
+      "shares": 2.5382,
+      "cost_price": 296.214,
       "price": 285.12,
       "currency": "USD",
       "change_pct": 2.61,
-      "value_native": 0.0,
-      "value_cny": 0.0,
-      "cost_native": null,
-      "cost_cny": null,
-      "pnl_cny": null,
-      "pnl_pct": null,
-      "cost_pending": true,
-      "day_change_cny": 0.0,
+      "value_native": 723.69,
+      "value_cny": 4839.87,
+      "cost_native": 751.85,
+      "cost_cny": 5028.19,
+      "pnl_cny": -188.32,
+      "pnl_pct": -3.75,
+      "cost_pending": false,
+      "day_change_cny": 126.32,
       "price_source": "全球资产仪表台",
       "price_ts": "2026-11-11 14:11:19",
-      "pending": true,
+      "pending": false,
       "note": "定投纳指，每月约 1350 USD",
-      "weight": 0.0
+      "weight": 3.76
     },
     {
       "id": "VOO",
       "name": "标普500 ETF（VOO）",
       "asset_class": "美股基金",
       "group": "traditional",
-      "shares": 0.0,
-      "cost_price": 0.0,
+      "shares": 1.0697,
+      "cost_price": 702.131,
       "price": 699.0,
       "currency": "USD",
       "change_pct": 1.38,
-      "value_native": 0.0,
-      "value_cny": 0.0,
-      "cost_native": null,
-      "cost_cny": null,
-      "pnl_cny": null,
-      "pnl_pct": null,
-      "cost_pending": true,
-      "day_change_cny": 0.0,
+      "value_native": 747.72,
+      "value_cny": 5000.57,
+      "cost_native": 751.07,
+      "cost_cny": 5022.97,
+      "pnl_cny": -22.4,
+      "pnl_pct": -0.45,
+      "cost_pending": false,
+      "day_change_cny": 69.01,
       "price_source": "全球资产仪表台",
       "price_ts": "2026-11-11 14:11:19",
-      "pending": true,
+      "pending": false,
       "note": "",
-      "weight": 0.0
+      "weight": 3.89
     },
     {
       "id": "QQQI",
       "name": "纳指100高收益 ETF（QQQI）",
       "asset_class": "美股基金",
       "group": "traditional",
-      "shares": 0.0,
-      "cost_price": 0.0,
+      "shares": 8.0522,
+      "cost_price": 53.067,
       "price": 51.9,
       "currency": "USD",
       "change_pct": 2.2,
-      "value_native": 0.0,
-      "value_cny": 0.0,
-      "cost_native": null,
-      "cost_cny": null,
-      "pnl_cny": null,
-      "pnl_pct": null,
-      "cost_pending": true,
-      "day_change_cny": 0.0,
+      "value_native": 417.91,
+      "value_cny": 2794.87,
+      "cost_native": 427.31,
+      "cost_cny": 2857.72,
+      "pnl_cny": -62.84,
+      "pnl_pct": -2.2,
+      "cost_pending": false,
+      "day_change_cny": 61.49,
       "price_source": "全球资产仪表台",
       "price_ts": "2026-11-11 14:11:12",
-      "pending": true,
+      "pending": false,
       "note": "",
-      "weight": 0.0
+      "weight": 2.17
     },
     {
-      "id": "515450",
-      "name": "南方红利低波50ETF（515450）",
+      "id": "008163",
+      "name": "南方红利低波50ETF联接A",
       "asset_class": "国内基金",
       "group": "traditional",
-      "shares": 0.0,
-      "cost_price": 0.0,
-      "price": 1.442,
+      "shares": 9456.78,
+      "cost_price": 1.0564,
+      "price": 1.0791,
       "currency": "CNY",
-      "change_pct": -0.89,
-      "value_native": 0.0,
-      "value_cny": 0.0,
-      "cost_native": null,
-      "cost_cny": null,
-      "pnl_cny": null,
-      "pnl_pct": null,
-      "cost_pending": true,
-      "day_change_cny": -0.0,
-      "price_source": "全球资产仪表台",
-      "price_ts": "20261111161455",
-      "pending": true,
-      "note": "定投红利低波，每月约 8500 元",
-      "weight": 0.0
+      "change_pct": -1.01,
+      "value_native": 10204.81,
+      "value_cny": 10204.81,
+      "cost_native": 9990.14,
+      "cost_cny": 9990.14,
+      "pnl_cny": 214.67,
+      "pnl_pct": 2.15,
+      "cost_pending": false,
+      "day_change_cny": -103.07,
+      "price_source": "东方财富基金净值",
+      "price_ts": "2026-11-11",
+      "pending": false,
+      "note": "",
+      "weight": 7.93
     },
     {
       "id": "BTC",
@@ -187,7 +182,7 @@
       "price_ts": "2026-11-12",
       "pending": false,
       "note": "现货+理财（earn/spot）",
-      "weight": 38.99
+      "weight": 32.07
     },
     {
       "id": "USDC",
@@ -205,7 +200,7 @@
       "price_ts": "2026-11-12",
       "pending": false,
       "note": "现货+理财（earn/spot）",
-      "weight": 36.02
+      "weight": 29.63
     },
     {
       "id": "SOL",
@@ -223,7 +218,7 @@
       "price_ts": "2026-11-12",
       "pending": false,
       "note": "现货+理财（earn/spot）",
-      "weight": 23.58
+      "weight": 19.39
     },
     {
       "id": "USDT",
@@ -241,7 +236,7 @@
       "price_ts": "2026-11-12",
       "pending": false,
       "note": "现货+理财（earn/spot）",
-      "weight": 1.22
+      "weight": 1.01
     },
     {
       "id": "BGB",
@@ -259,7 +254,7 @@
       "price_ts": "2026-11-12",
       "pending": false,
       "note": "现货+理财（spot）",
-      "weight": 0.14
+      "weight": 0.11
     },
     {
       "id": "RNVDA",
@@ -277,7 +272,7 @@
       "price_ts": "2026-11-12",
       "pending": false,
       "note": "现货+理财（spot）",
-      "weight": 0.05
+      "weight": 0.04
     }
   ],
   "crypto_meta": {
@@ -296,8 +291,8 @@
   "history": [
     {
       "date": "2026-11-12",
-      "total_cny": 105807.09,
-      "traditional_cny": 0.0,
+      "total_cny": 128647.21,
+      "traditional_cny": 22840.12,
       "crypto_cny": 105807.09
     }
   ]
