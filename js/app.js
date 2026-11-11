@@ -53,6 +53,7 @@
         renderPending();
         renderSplit();
         renderTable();
+        renderCalendar();
         renderTrend();
         renderSources();
       })
@@ -284,6 +285,114 @@
         b.classList.toggle("active", b === btn);
       });
       renderTable();
+    });
+  }
+
+  // ---------- 盈亏日历 ----------
+  function cstToday() {
+    var d = new Date(Date.now() + 8 * 3600 * 1000);
+    return d.toISOString().slice(0, 10);
+  }
+  function calState() {
+    if (!state.calY) {
+      var latest = (state.data.history || []).slice(-1)[0];
+      var ds = (latest && latest.date) || cstToday();
+      state.calY = +ds.slice(0, 4);
+      state.calM = +ds.slice(5, 7) - 1;
+    }
+  }
+  function renderCalendar() {
+    calState();
+    var y = state.calY, m = state.calM;
+    var hist = state.data.history || [];
+    var today = cstToday();
+    var first = new Date(y, m, 1);
+    var lastDay = new Date(y, m + 1, 0).getDate();
+    var startDow = (first.getDay() + 6) % 7;
+    var prefix = y + "-" + String(m + 1).padStart(2, "0");
+    var dows = ["一", "二", "三", "四", "五", "六", "日"];
+    var html = '<div class="cal-nav"><button type="button" id="cal-prev" aria-label="上个月">‹</button>' +
+      "<span>" + y + "-" + String(m + 1).padStart(2, "0") + "</span>" +
+      '<button type="button" id="cal-next" aria-label="下个月">›</button></div>';
+    html += '<div class="cal-grid">' + dows.map(function (d) { return '<div class="cal-dow">' + d + "</div>"; }).join("");
+    for (var day = 1; day <= lastDay; day++) {
+      var ds = prefix + "-" + String(day).padStart(2, "0");
+      var rec = null;
+      for (var k = 0; k < hist.length; k++) { if (hist[k].date === ds) { rec = hist[k]; break; } }
+      var v = rec && rec.day_change_cny !== null && rec.day_change_cny !== undefined ? rec.day_change_cny : null;
+      var cls = "cal-cell";
+      if (v !== null) cls += v >= 0 ? " pos" : " neg";
+      if (ds === today) cls += " today";
+      if (ds > today && v === null) cls += " future";
+      if (rec) cls += " has";
+      if (ds === state.calSel) cls += " sel";
+      var vStr = v !== null ? (v >= 0 ? "+" : "−") + num(Math.abs(v), 0) : "—";
+      var colStyle = day === 1 ? ' style="grid-column-start:' + (startDow + 1) + '"' : "";
+      var dataAttr = rec ? ' data-date="' + ds + '"' : "";
+      var titleAttr = rec ? ' title="点击查看 ' + ds + " 的当日快照\"" : "";
+      html += '<div class="' + cls + '"' + colStyle + dataAttr + titleAttr + '><div class="d">' + day +
+        '</div><div class="v">' + vStr + "</div></div>";
+    }
+    html += "</div>";
+    $("pnl-calendar").innerHTML = html;
+
+    $("cal-prev").onclick = function () {
+      state.calM--; if (state.calM < 0) { state.calM = 11; state.calY--; } renderCalendar();
+    };
+    $("cal-next").onclick = function () {
+      state.calM++; if (state.calM > 11) { state.calM = 0; state.calY++; } renderCalendar();
+    };
+    $("pnl-calendar").onclick = function (e) {
+      var cell = e.target.closest("[data-date]");
+      if (!cell) return;
+      var ds = cell.getAttribute("data-date");
+      state.calSel = (state.calSel === ds) ? null : ds;
+      renderCalendar();
+      if (state.calSel) openSnapshot(state.calSel);
+    };
+  }
+
+  function openSnapshot(ds) {
+    var hist = state.data.history || [];
+    var rec = null;
+    for (var k = 0; k < hist.length; k++) { if (hist[k].date === ds) { rec = hist[k]; break; } }
+    if (!rec) return;
+    var chg = rec.day_change_cny;
+    var chgCls = chg === null || chg === undefined ? "" : cls(chg);
+    var chgTxt = chg === null || chg === undefined ? "—" :
+      (chg >= 0 ? "+" : "−") + "¥" + num(Math.abs(chg)) +
+      (rec.day_change_pct !== null && rec.day_change_pct !== undefined ? "（" + pct(rec.day_change_pct) + "）" : "");
+    var cash = rec.cash_cny;
+    var rows = [
+      ["总资产", "¥" + num(rec.total_cny)],
+      ["传统股票 & 基金", "¥" + num(rec.traditional_cny)],
+      ["加密货币账户合计", "¥" + num(rec.crypto_cny)],
+      ["其中 现金（稳定币）", cash === null || cash === undefined ? "—" : "¥" + num(cash)],
+      ["当日浮动收益", '<span class="' + chgCls + '">' + chgTxt + "</span>"],
+      ["USD→CNY 汇率", rec.fx_usdcny ? num(rec.fx_usdcny, 4) : "—"],
+      ["加密账户 USDT 总额", rec.crypto_usdt ? num(rec.crypto_usdt, 2) : "—"],
+    ];
+    var html = '<div class="snap-box"><div class="snap-head"><h3>' + ds + " 快照</h3>" +
+      '<button type="button" id="snap-close" aria-label="关闭">×</button></div>' +
+      '<div class="snap-rows">' + rows.map(function (r) {
+        return '<div class="snap-row"><span>' + r[0] + "</span><span>" + r[1] + "</span></div>";
+      }).join("") + "</div>" +
+      '<p class="snap-note">快照为当日构建时落库的数据；份额、成本价与价格均按当日口径。</p></div>';
+    var mask = document.createElement("div");
+    mask.className = "snap-mask";
+    mask.id = "snap-mask";
+    mask.innerHTML = html;
+    document.body.appendChild(mask);
+    function close() {
+      var el = $("snap-mask");
+      if (el) el.parentNode.removeChild(el);
+      state.calSel = null;
+      renderCalendar();
+    }
+    mask.onclick = function (e) { if (e.target === mask) close(); };
+    $("snap-close").onclick = close;
+    document.addEventListener("keydown", function esc(ev) {
+      if (ev.key === "Escape") { close(); document.removeEventListener("keydown", esc); }
     });
   }
 

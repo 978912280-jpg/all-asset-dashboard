@@ -1,10 +1,14 @@
 [
   {
     "date": "2026-11-12",
-    "total_cny": 128853.8,
+    "total_cny": 128866.34,
     "traditional_cny": 22840.12,
-    "crypto_cny": 106013.68,
+    "crypto_cny": 106026.22,
+    "crypto_account_cny": 106026.22,
+    "cash_cny": 39411.05,
+    "day_change_cny": 1334.49,
+    "day_change_pct": 1.05,
     "fx_usdcny": 6.6878,
-    "crypto_usdt": 15851.91
+    "crypto_usdt": 15853.78
   }
 ]

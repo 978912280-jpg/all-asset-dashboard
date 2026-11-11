@@ -30,7 +30,7 @@ sys.path.insert(0, HERE)
 import sources  # noqa: E402
 
 CST = timezone(timedelta(hours=8))
-PAGE_VERSION = "20261112m"  # 页面逻辑版本：改动 index.html / admin.html / js / css 时同步 +1
+PAGE_VERSION = "20261112n"  # 页面逻辑版本：改动 index.html / admin.html / js / css 时同步 +1
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
 CASH_GROUP = "cash"
@@ -312,11 +312,24 @@ def main():
         "total_cny": r2(total_cny, 2),
         "traditional_cny": r2(trad_cny, 2),
         "crypto_cny": r2(crypto_account_cny, 2),
+        "crypto_account_cny": r2(crypto_account_cny, 2),
+        "cash_cny": r2(cash_cny, 2),
+        "day_change_cny": r2(day_change, 2),
+        "day_change_pct": round(day_change / (total_cny - day_change) * 100, 2)
+        if total_cny - day_change else 0.0,
         "fx_usdcny": r2(rate, 4),
         "crypto_usdt": crypto_meta.get("total_usdt"),
     }
     snapshots = [s for s in snapshots if s.get("date") != today] + [entry]
     snapshots.sort(key=lambda s: s.get("date") or "")
+    prev_total = None
+    for sn in snapshots:
+        if sn.get("day_change_cny") is None and prev_total is not None:
+            d = (sn.get("total_cny") or 0) - prev_total
+            sn["day_change_cny"] = r2(d, 2)
+            base = prev_total
+            sn["day_change_pct"] = round(d / base * 100, 2) if base else 0.0
+        prev_total = sn.get("total_cny")
     save_json(snapshots_path, snapshots)
 
     print("[5/5] 写出 dashboard.json …")
@@ -394,7 +407,12 @@ def main():
         "history": [{"date": s.get("date"),
                      "total_cny": s.get("total_cny"),
                      "traditional_cny": s.get("traditional_cny"),
-                     "crypto_cny": s.get("crypto_cny")} for s in snapshots][-240:],
+                     "crypto_cny": s.get("crypto_cny"),
+                     "cash_cny": s.get("cash_cny"),
+                     "day_change_cny": s.get("day_change_cny"),
+                     "day_change_pct": s.get("day_change_pct"),
+                     "fx_usdcny": s.get("fx_usdcny"),
+                     "crypto_usdt": s.get("crypto_usdt")} for s in snapshots][-400:],
     }
     save_json(dashboard_path, dashboard)
 
