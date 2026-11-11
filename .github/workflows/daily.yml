@@ -55,7 +55,13 @@ jobs:
             fi
             git rebase --abort 2>/dev/null || true
             git fetch origin "${GITHUB_REF_NAME:-main}"
-            git reset --soft "origin/${GITHUB_REF_NAME:-main}"
+            # 关键：只保留本次构建出的数据文件，其余文件一律回到远端最新，
+            # 否则 reset --soft 会把「旧版页面文件」留在暂存区，跟着数据一起提交，回滚线上代码。
+            cp data/dashboard.json /tmp/_dash.json
+            cp data/snapshots.json /tmp/_snap.json
+            git reset --hard "origin/${GITHUB_REF_NAME:-main}"
+            cp /tmp/_dash.json data/dashboard.json
+            cp /tmp/_snap.json data/snapshots.json
             echo "第 $i 次推送失败，已重置到远端最新后重试"
             sleep 5
           done
