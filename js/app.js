@@ -59,7 +59,7 @@
       })
       .catch(function (e) {
         $("table-body").innerHTML =
-          '<tr><td colspan="10" class="muted" style="text-align:center;padding:24px">' +
+          '<tr><td colspan="9" class="muted" style="text-align:center;padding:24px">' +
           "数据加载失败：" + escapeHtml(e.message) +
           "（请确认 data/dashboard.json 已生成）</td></tr>";
       });
@@ -279,7 +279,6 @@
         '<td class="num"><div class="weight-cell">' + num(i.weight) + "%" +
         '<span class="mini-bar"><i style="width:' + Math.min(100, i.weight || 0) +
         "%;background:" + color + '"></i></span></div></td>' +
-        '<td class="num ' + cls(i.change_pct) + '">' + pct(i.change_pct) + "</td>" +
         '<td class="src-cell">' + escapeHtml(i.price_source) + "</td>" +
         "</tr>";
     }).join("");
