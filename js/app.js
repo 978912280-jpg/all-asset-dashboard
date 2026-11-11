@@ -113,12 +113,12 @@
       },
       {
         label: "传统持仓浮动盈亏",
-        value: (tradPnl === null || tradPnl === undefined ? "—" :
+        value: (tradPnl === null || tradPnl === undefined || !s.traditional_cost_cny ? "—" :
           (tradPnl >= 0 ? "+" : "−") + "¥" + num(Math.abs(tradPnl))),
         small: true,
         cls: cls(tradPnl),
         delta: (s.traditional_pnl_pct === null || s.traditional_pnl_pct === undefined
-          ? '<span class="muted">成本价待填写</span>'
+          ? '<span class="muted">待填份额与成本价</span>'
           : '<span class="' + cls(tradPnl) + '">收益率 ' + pct(s.traditional_pnl_pct) + "</span>" +
             (s.cost_pending_count ? '<span class="muted"> · ' + s.cost_pending_count + " 个待填成本</span>" : "")),
       },
