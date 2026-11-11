@@ -59,7 +59,7 @@
       })
       .catch(function (e) {
         $("table-body").innerHTML =
-          '<tr><td colspan="9" class="muted" style="text-align:center;padding:24px">' +
+          '<tr><td colspan="8" class="muted" style="text-align:center;padding:24px">' +
           "数据加载失败：" + escapeHtml(e.message) +
           "（请确认 data/dashboard.json 已生成）</td></tr>";
       });
@@ -249,7 +249,7 @@
     $("table-body").innerHTML = items.map(function (i) {
       var color = state.groupColors[i.group] || "#374151";
       var priceTxt = i.price === null || i.price === undefined ? "—" :
-        (i.currency === "USD" ? "$" : i.currency === "USDT" ? "" : "¥") + num(i.price, i.price < 10 ? 4 : 2);
+        (i.currency === "USD" || i.currency === "USDT" ? "$" : "¥") + num(i.price, i.price < 10 ? 4 : 2);
       var sharesTxt = num(i.shares, i.shares < 1 ? 6 : 4);
       var costTxt = (i.group === "crypto" || i.group === "cash") ? '<span class="muted">—</span>'
         : (!i.cost_price ? '<span class="muted">待填</span>'
@@ -276,12 +276,20 @@
         '<td class="num">' + priceTxt + "</td>" +
         '<td class="num">' + (i.value_cny === null ? "—" : num(i.value_cny)) + "</td>" +
         '<td class="num">' + pnlTxt + "</td>" +
-        '<td class="num"><div class="weight-cell">' + num(i.weight) + "%" +
-        '<span class="mini-bar"><i style="width:' + Math.min(100, i.weight || 0) +
-        "%;background:" + color + '"></i></span></div></td>' +
-        '<td class="src-cell">' + escapeHtml(i.price_source) + "</td>" +
+        '<td class="num">' + num(i.weight) + "%</td>" +
         "</tr>";
     }).join("");
+
+    // 合计行：市值与当日浮动收益按当前筛选求和
+    var sumVal = items.reduce(function (a, i) { return a + (i.value_cny || 0); }, 0);
+    var sumPnl = items.reduce(function (a, i) { return a + (i.day_change_cny || 0); }, 0);
+    var sumW = items.reduce(function (a, i) { return a + (i.weight || 0); }, 0);
+    var sumWTxt = Math.abs(sumW - 100) < 0.05 ? "100.00%" : num(sumW, 2) + "%";
+    $("table-foot").innerHTML = "<tr>" +
+      '<td class="name-cell">合计</td><td></td><td></td><td></td><td></td>' +
+      '<td class="num">' + num(sumVal) + "</td>" +
+      '<td class="num ' + cls(sumPnl) + '">' + (sumPnl >= 0 ? "+" : "") + num(sumPnl) + "</td>" +
+      '<td class="num">' + sumWTxt + "</td></tr>";
   }
 
   function bindTabs() {

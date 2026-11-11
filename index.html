@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-version="1.0.6">
+<html lang="zh-CN" data-page-version="1.0.7">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -18,10 +18,10 @@
       .catch(function () {});
   })();
   </script>
-  <link rel="stylesheet" href="css/style.css?v=1.0.6">
+  <link rel="stylesheet" href="css/style.css?v=1.0.7">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231f2329'/%3E%3Cpath d='M5 17 L10 11 L13 14 L18 7' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <script src="https://fastly.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" defer></script>
-  <script src="js/app.js?v=1.0.6" defer></script>
+  <script src="js/app.js?v=1.0.7" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -92,14 +92,14 @@
               <th class="num">市值 (CNY)</th>
               <th class="num">当日浮动收益</th>
               <th class="num">占比</th>
-              <th class="col-src">价格来源</th>
             </tr>
           </thead>
           <tbody id="table-body"></tbody>
+          <tfoot id="table-foot"></tfoot>
         </table>
       </div>
       <p class="empty-tip" id="empty-tip" hidden>当前分组暂无数据。</p>
-      <p class="table-hint">「当日浮动收益」= 持仓份额 × 当日价差 × 汇率，用上一份快照的份额计算，事后补录份额不会改写历史日期。累计总盈亏（相对成本价）见顶部卡片。</p>
+      <p class="table-hint">「当日浮动收益」= 持仓份额 × 当日价差 × 汇率，用上一份快照的份额计算，事后补录份额不会改写历史日期；累计总盈亏（相对成本价）见顶部卡片。<br>价格来源：优先「全球资产仪表台」，缺失时依次回退腾讯实时行情、东方财富基金净值、Yahoo；加密资产读取「加密货币资产仪表台」快照。</p>
     </section>
 
     <section class="card">

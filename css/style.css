@@ -355,3 +355,11 @@ code {
 /* 防止连点/双击把页面放大 */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body, a, button, .seg-btn, .cal-cell, .pnl-block, .kpi, .tag, input, select { touch-action: manipulation; }
+
+.main-table tfoot td {
+  font-weight: 700;
+  background: #f8fafc;
+  border-top: 1px solid #e5e7eb;
+  color: #111827;
+  font-variant-numeric: tabular-nums;
+}
