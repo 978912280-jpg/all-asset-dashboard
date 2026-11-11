@@ -89,6 +89,7 @@
     var tradPnl = s.traditional_pnl_cny;
     var cryptoPnl = s.crypto_pnl_cny;
     var hasTradCost = !!(s.traditional_cost_cny && s.traditional_cost_cny > 0);
+    var fxRate = (((state.data || {}).meta || {}).fx || {}).usdcny || 0;
     var cards = [
       {
         label: "总资产 (CNY)",
@@ -102,30 +103,26 @@
         label: '<i class="dot trad"></i>传统股票 & 基金',
         value: "¥" + num(s.traditional_cny),
         small: true,
-        delta: "占比 " + num(s.traditional_weight) + "% · " +
-          (!hasTradCost
-            ? '<span class="muted">盈亏待填成本价</span>'
-            : (tradPnl === null || tradPnl === undefined
-              ? '<span class="muted">盈亏—</span>'
-              : '<span class="' + cls(tradPnl) + '">总盈亏 ' + (tradPnl >= 0 ? "+" : "−") +
-                "¥" + num(Math.abs(tradPnl)) + "（" + pct(s.traditional_pnl_pct) + "）</span>")) +
-          (hasTradCost ? '<div class="kpi-sub">成本 ¥' + num(s.traditional_cost_cny) + "</div>" : ""),
+        delta: (!hasTradCost
+          ? '<span class="muted">盈亏待填成本价</span>'
+          : (tradPnl === null || tradPnl === undefined
+            ? '<span class="muted">盈亏—</span>'
+            : '<span class="' + cls(tradPnl) + '">总盈亏 ' + (tradPnl >= 0 ? "+" : "−") +
+              "¥" + num(Math.abs(tradPnl)) + "（" + pct(s.traditional_pnl_pct) + "）</span>")),
       },
       {
         label: '<i class="dot crypto"></i>加密货币',
         value: "¥" + num(s.crypto_cny),
         small: true,
-        delta: "占比 " + num(s.crypto_weight) + "% · " +
-          (cryptoPnl === null || cryptoPnl === undefined ? '<span class="muted">盈亏—</span>' :
-            '<span class="' + cls(cryptoPnl) + '">总盈亏 ' + (cryptoPnl >= 0 ? "+" : "") +
-            num(cryptoPnl) + "（" + pct(s.crypto_pnl_pct) + "）</span>"),
+        delta: (cryptoPnl === null || cryptoPnl === undefined ? '<span class="muted">盈亏—</span>' :
+          '<span class="' + cls(cryptoPnl) + '">总盈亏 ' + (cryptoPnl >= 0 ? "+" : "") +
+          num(cryptoPnl) + "（" + pct(s.crypto_pnl_pct) + "）</span>"),
       },
       {
         label: '<i class="dot cash"></i>现金（稳定币）',
         value: "¥" + num(s.cash_cny || 0),
         small: true,
-        delta: "占比 " + num(s.cash_weight || 0) + "% · " +
-          '<span class="muted">按 1:1 计价，不随币价波动</span>',
+        delta: '<span class="muted">≈ $' + num((s.cash_cny || 0) / (fxRate || 1), 2) + " USDT</span>",
       },
     ];
     $("kpi-grid").innerHTML = cards.map(function (c) {
