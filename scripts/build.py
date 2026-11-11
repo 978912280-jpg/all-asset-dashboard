@@ -32,7 +32,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.0.3"
+PAGE_VERSION = "1.0.4"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
 CASH_GROUP = "cash"
@@ -109,7 +109,8 @@ def resolve_price(item, fund_items):
     return None, "未取到"
 
 
-def build_traditional(holdings, fund_items, rate):
+def build_traditional(holdings, fund_items, rate, prev_items=None):
+    prev_items = prev_items or {}
     rows = []
     for it in holdings.get("traditional", []):
         shares = float(it.get("shares") or 0)
@@ -122,7 +123,17 @@ def build_traditional(holdings, fund_items, rate):
         value_native = shares * price if price is not None else None
         fx = rate if cur == "USD" else 1.0
         value_cny = value_native * fx if value_native is not None else None
-        day_cny = value_cny * (chg or 0) / 100.0 if value_cny is not None else None
+        # 当日浮动收益：优先用「上一份快照的份额 × 当日价差」，这样补录份额不会改写历史日期
+        sid = str(it.get("id") or it.get("symbol"))
+        prev = prev_items.get(sid) or {}
+        prev_price = prev.get("price")
+        base_shares = prev.get("shares") if prev.get("shares") else shares
+        if prev_price is not None and price is not None:
+            day_cny = base_shares * (price - prev_price) * fx
+            day_basis = "prev_snapshot" if prev.get("shares") else "prev_price"
+        else:
+            day_cny = value_cny * (chg or 0) / 100.0 if value_cny is not None else None
+            day_basis = "pct"
         # 持仓成本与浮动盈亏（成本价按标的币种计价，与现价同币种）
         cost_native = shares * cost_price if cost_price > 0 else None
         cost_cny = cost_native * fx if cost_native is not None else None
@@ -146,6 +157,7 @@ def build_traditional(holdings, fund_items, rate):
             "pnl_pct": r2(pnl_pct, 2),
             "cost_pending": cost_price <= 0,
             "day_change_cny": r2(day_cny, 2),
+            "day_basis": day_basis,
             "price_source": src,
             "price_ts": (q or {}).get("ts"),
             "pending": shares <= 0,
@@ -158,7 +170,8 @@ def build_traditional(holdings, fund_items, rate):
 # 加密货币：读取加密货币资产仪表台
 # --------------------------------------------------------------------------
 
-def load_crypto(cfg, rate):
+def load_crypto(cfg, rate, prev_items=None):
+    prev_items = prev_items or {}
     url = (cfg.get("crypto") or {}).get("source_url")
     raw = sources._fetch(url, retries=2)
     if not raw:
@@ -205,7 +218,8 @@ def load_crypto(cfg, rate):
         pp = prev_prices.get(coin)
         chg = ((a["price"] - pp) / pp * 100) if (pp and a["price"]) else None
         value_cny = a["usdt"] * rate
-        day_cny = (a["amount"] * (a["price"] - pp) * rate) if (pp and a["price"]) else 0.0
+        prev_amt = (prev_items.get(coin) or {}).get("shares") or a["amount"]
+        day_cny = (prev_amt * (a["price"] - pp) * rate) if (pp and a["price"]) else 0.0
         is_cash = coin.upper() in STABLE_COINS
         rows.append({
             "id": coin,
@@ -219,6 +233,7 @@ def load_crypto(cfg, rate):
             "value_native": r2(a["usdt"], 2),
             "value_cny": r2(value_cny, 2),
             "day_change_cny": r2(day_cny, 2),
+            "day_basis": "prev_snapshot" if prev_items.get(coin) else "prev_price",
             "price_source": "加密货币资产仪表台",
             "price_ts": latest.get("date"),
             "pending": False,
@@ -256,6 +271,16 @@ def main():
         print("[error] holdings.json 缺少 traditional 列表")
         return 1
 
+    snapshots = load_json(snapshots_path, [])
+    if not isinstance(snapshots, list):
+        snapshots = []
+    today = now_cst().strftime("%Y-%m-%d")
+    prev_items = {}
+    for sn in reversed(snapshots):
+        if sn.get("date") and sn.get("date") < today and sn.get("items"):
+            prev_items = {str(x.get("id")): x for x in sn["items"]}
+            break
+
     print("[1/5] 抓取全球资产仪表台价格 …")
     fund_items = sources.fund_dashboard_items()
     print("      命中的标的：%s" % (", ".join(sorted(fund_items.keys())) or "无"))
@@ -268,14 +293,14 @@ def main():
     print("      USD→CNY = %.4f（%s）" % (rate, fx_src))
 
     print("[3/5] 计算传统标的市值 …")
-    trad_rows = build_traditional(holdings, fund_items, rate)
+    trad_rows = build_traditional(holdings, fund_items, rate, prev_items)
     for r in trad_rows:
         print("      %-8s 份额=%-10s 成本价=%-9s 现价=%-9s 市值=%s 盈亏=%s [%s]" % (
             r["id"], r["shares"], r["cost_price"], r["price"], r["value_cny"],
             r["pnl_cny"], r["price_source"]))
 
     print("[4/5] 抓取加密货币资产仪表台 …")
-    crypto_rows, crypto_meta = load_crypto(holdings, rate)
+    crypto_rows, crypto_meta = load_crypto(holdings, rate, prev_items)
     if crypto_meta.get("error"):
         print("      [warn] " + crypto_meta["error"])
     else:
@@ -305,10 +330,6 @@ def main():
         r["weight"] = weight(r["value_cny"] or 0)
 
     # ---- 历史快照累积 ----
-    today = now_cst().strftime("%Y-%m-%d")
-    snapshots = load_json(snapshots_path, [])
-    if not isinstance(snapshots, list):
-        snapshots = []
     entry = {
         "date": today,
         "total_cny": r2(total_cny, 2),
@@ -321,6 +342,8 @@ def main():
         if total_cny - day_change else 0.0,
         "fx_usdcny": r2(rate, 4),
         "crypto_usdt": crypto_meta.get("total_usdt"),
+        "items": [{"id": r["id"], "shares": r.get("shares"), "price": r.get("price")}
+                  for r in trad_rows + crypto_rows],
     }
     snapshots = [s for s in snapshots if s.get("date") != today] + [entry]
     snapshots.sort(key=lambda s: s.get("date") or "")
@@ -336,8 +359,18 @@ def main():
 
     print("[5/5] 写出 dashboard.json …")
     generated_at = now_cst().strftime("%Y-%m-%dT%H:%M:%S+08:00")
+    # 份额新鲜度：holdings.json 的 updated_at 距今多少天，用于前端提醒核对
+    h_upd = (holdings.get("meta") or {}).get("updated_at")
+    shares_age = None
+    if h_upd:
+        try:
+            shares_age = (now_cst() - datetime.fromisoformat(h_upd)).days + 1
+        except Exception:
+            shares_age = None
     dashboard = {
         "meta": {
+            "holdings_updated_at": h_upd,
+            "shares_age_days": shares_age,
             "title": "全维度资产统计",
             "subtitle": "传统股票/基金 + 加密货币 合并统计 · 份额 × 价格 = 市值",
             "version": (holdings.get("meta") or {}).get("version") or "1.0.0",

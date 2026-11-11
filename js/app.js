@@ -145,6 +145,12 @@
       msgs.push("<strong>" + s.cost_pending_count + " 个标的成本价未填写：</strong>" +
         escapeHtml((s.cost_pending_ids || []).join("、")) + "。填成本价后才会计算浮动盈亏与收益率。");
     }
+    var m = state.data.meta || {};
+    if (m.shares_age_days && m.shares_age_days >= 7) {
+      msgs.push("<strong>份额已 " + m.shares_age_days + " 天未更新</strong>（最后更新 " +
+        escapeHtml(String(m.holdings_updated_at || "").slice(0, 10)) +
+        "）。市值、盈亏与占比都按现有份额计算，若期间买卖或定投过，数字会偏离真实持仓。");
+    }
     if (!msgs.length) { $("pending-alert").hidden = true; return; }
     $("pending-alert").hidden = false;
     $("pending-text").innerHTML = msgs.join("<br>");

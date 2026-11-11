@@ -149,3 +149,10 @@ Token 建议单独建一个 **fine-grained PAT**，只授权本仓库、只勾 *
 - 每次发布新的页面改动，版本号 **+0.0.1**；分位到 10 进 1：`1.0.9 → 1.1.0`，`1.9.9 → 2.0.0`。
 - 发布时必须同时改三处，保持一致：`data/holdings.json` 的 `meta.version`、`scripts/build.py` 的 `PAGE_VERSION`、`index.html`/`admin.html` 的 `data-page-version` 与 `css/js?v=`。
 - `PAGE_VERSION` 同时充当缓存键：页面加载时若发现 HTML 里的版本与 `dashboard.json` 的 `meta.page_version` 不一致，会自动带 `?pv=<版本>` 重新拉取，避免 Safari 缓存旧页面。
+
+## 当日浮动收益的算法与份额滞后
+
+- 当日浮动收益 = **上一份快照里的份额 × 当日价差 × 汇率**，快照会记录每个标的的 `shares` 与 `price`。
+- 好处：如果某几天没更新份额、之后才补录，**历史日期上的数字不会被改写**；补录当天新增的份额按收盘价买入处理，不计入当日盈亏。
+- 只有在找不到更早快照时，才退化为「今日份额 × 当日涨跌幅」（`day_basis = pct`）。
+- 份额新鲜度：`dashboard.json` 的 `meta.shares_age_days` 取自 `holdings.json` 的 `meta.updated_at`；超过 7 天首页会出现提醒，提示核对是否有买卖/定投未录入。

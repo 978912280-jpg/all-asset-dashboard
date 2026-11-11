@@ -9,6 +9,58 @@
     "day_change_cny": 1334.49,
     "day_change_pct": 1.05,
     "fx_usdcny": 6.6878,
-    "crypto_usdt": 15853.78
+    "crypto_usdt": 15853.78,
+    "items": [
+      {
+        "id": "QQQM",
+        "shares": 2.5382,
+        "price": 285.12
+      },
+      {
+        "id": "VOO",
+        "shares": 1.0697,
+        "price": 699.0
+      },
+      {
+        "id": "QQQI",
+        "shares": 8.0522,
+        "price": 51.9
+      },
+      {
+        "id": "008163",
+        "shares": 9456.78,
+        "price": 1.0791
+      },
+      {
+        "id": "BTC",
+        "shares": 0.08292561,
+        "price": 74677.66
+      },
+      {
+        "id": "USDC",
+        "shares": 5699.25103613,
+        "price": 1.0
+      },
+      {
+        "id": "SOL",
+        "shares": 44.0186414,
+        "price": 84.94
+      },
+      {
+        "id": "USDT",
+        "shares": 193.76566545,
+        "price": 1.0
+      },
+      {
+        "id": "BGB",
+        "shares": 12.53902934,
+        "price": 1.712
+      },
+      {
+        "id": "RNVDA",
+        "shares": 0.044,
+        "price": 174.24
+      }
+    ]
   }
 ]
