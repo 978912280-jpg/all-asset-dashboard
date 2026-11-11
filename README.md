@@ -30,7 +30,7 @@ data/holdings.json ─┐
 
 1. `https://978912280-jpg.github.io/index-fund-dashboard/data/dashboard.json`（按标的代码命中即用）
 2. 腾讯实时行情 `qt.gtimg.cn`（A 股 / ETF / 美股）
-3. 天天基金净值 `fundgz.1234567.com.cn`（场外基金，如 007466）
+3. 东方财富基金接口（场外基金净值，如 007466；失败回退天天基金 fundgz）
 4. Yahoo chart（海外兜底）
 
 汇率 USD/USDT → CNY 取 `open.er-api.com`，失败时用 `holdings.json` 的 `usdcny_fallback`。
@@ -100,7 +100,7 @@ GitHub Pages 是纯静态托管，`admin.html` 无法直接写仓库。因此在
 - 占比 = 标的市值 / 总资产；分组占比 = 传统合计 / 总资产、加密合计 / 总资产。
 - 日变动 = Σ(标的市值 × 当日涨跌幅)；加密货币按相邻快照币价差计算，不含当日充提。
 - 趋势图来自 `data/snapshots.json`：每天一条，脚本按日期覆盖同一天记录，不会重复累积。
-- 场外基金（如 007466）用天天基金净值估值，非实时成交价。
+- 场外基金（如 007466）用东方财富最新净值估值，非实时成交价。
 
 免费行情源（腾讯 / 新浪 / 天天基金 / Yahoo / er-api）仅供个人研究，不得商用或再分发；数据准确性以官方披露为准。
 

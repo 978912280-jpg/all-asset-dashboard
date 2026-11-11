@@ -147,8 +147,40 @@ def tencent_quote(symbol):
 # 3) 场外基金净值（天天基金）
 # --------------------------------------------------------------------------
 
+def eastmoney_nav(code):
+    """场外基金最新净值（东方财富基金接口），返回 {price, change_pct, ts, name, source} 或 None。"""
+    raw = _fetch("https://fundmobapi.eastmoney.com/FundMNewApi/FundMNFInfo",
+                 params={"pageIndex": 1, "pageSize": 1, "plat": "Android",
+                         "appType": "ttjj", "product": "EFund", "Version": 1,
+                         "deviceid": 1, "Fcodes": code},
+                 headers={"User-Agent": "Mozilla/5.0",
+                          "Referer": "https://fund.eastmoney.com/"},
+                 retries=1)
+    if not raw:
+        return None
+    try:
+        body = json.loads(raw)
+        row = (body.get("Datas") or [None])[0]
+    except (ValueError, IndexError, KeyError, TypeError):
+        return None
+    if not row:
+        return None
+    price = _f(row.get("NAV")) or _f(row.get("GSZ"))
+    if price is None:
+        return None
+    return {
+        "price": price,
+        "prev_close": None,
+        "change_pct": _f(row.get("NAVCHGRT")) if row.get("NAVCHGRT") is not None else _f(row.get("GSZZL")),
+        "ts": row.get("PDATE") or row.get("GZTIME"),
+        "name": row.get("SHORTNAME"),
+        "source": "东方财富基金净值",
+        "kind": "nav",
+    }
+
+
 def fundgz_nav(code):
-    """场外基金最新净值，返回 {price, change_pct, ts, name, source} 或 None。"""
+    """场外基金最新净值（天天基金，历史接口，可能已失效），返回 {price, change_pct, ts, name, source} 或 None。"""
     raw = _fetch("http://fundgz.1234567.com.cn/js/%s.js" % code, retries=1)
     if not raw:
         return None

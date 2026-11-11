@@ -28,7 +28,7 @@
       </div>
     </div>
     <div class="disclaimer" id="disclaimer" hidden>
-      <p><strong>计算口径</strong>：市值 = 持有份额 × 最新价格 × 汇率（USD/USDT → CNY）。传统标的价格优先取「全球资产仪表台」已抓取的行情，缺失时回退腾讯实时 / 天天基金 / Yahoo；加密货币直接读取「加密货币资产仪表台」的最新快照（现货 + 理财合并），币价取该快照价格。</p>
+      <p><strong>计算口径</strong>：市值 = 持有份额 × 最新价格 × 汇率（USD/USDT → CNY）。传统标的价格优先取「全球资产仪表台」已抓取的行情，缺失时回退腾讯实时 / 东方财富基金 / Yahoo；加密货币直接读取「加密货币资产仪表台」的最新快照（现货 + 理财合并），币价取该快照价格。</p>
       <p><strong>份额来源</strong>：仅 <code>data/holdings.json</code> 中的 shares 为人工维护，价格、市值、占比、日变动全部由后台脚本自动计算。修改份额后需重新运行 <code>python3 scripts/build.py</code> 或等待 GitHub Actions 每日构建。</p>
       <p>本页面仅用于个人资产记录与研究，<strong>不构成任何投资建议</strong>。</p>
     </div>

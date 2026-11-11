@@ -85,8 +85,11 @@ def resolve_price(item, fund_items):
     if q and q.get("price"):
         return q, q["source"]
 
-    # 3) 场外基金净值
+    # 3) 场外基金净值（东方财富 → 天天基金）
     if code.isdigit() and len(code) == 6:
+        q = sources.eastmoney_nav(code)
+        if q and q.get("price"):
+            return q, q["source"]
         q = sources.fundgz_nav(code)
         if q and q.get("price"):
             return q, q["source"]
