@@ -3,7 +3,7 @@
     "title": "全维度资产统计",
     "subtitle": "传统股票/基金 + 加密货币 合并统计 · 份额 × 价格 = 市值",
     "version": "1.0.0",
-    "generated_at": "2026-11-12T03:55:06+08:00",
+    "generated_at": "2026-11-12T03:56:50+08:00",
     "page_version": "20261112f",
     "base_currency": "CNY",
     "fx": {
@@ -26,13 +26,12 @@
     "day_change_cny": -2194.9,
     "day_change_pct": -2.03,
     "crypto_usdt": 15821.02,
-    "count": 10,
-    "pending_count": 4,
+    "count": 9,
+    "pending_count": 3,
     "pending_ids": [
       "QQQM",
       "VOO",
-      "QQQI",
-      "515450"
+      "QQQI"
     ],
     "traditional_cost_cny": 0.0,
     "traditional_pnl_cny": 0.0,
@@ -50,12 +49,11 @@
       "name": "传统股票 & 基金",
       "cny": 0.0,
       "weight": 0.0,
-      "count": 4,
+      "count": 3,
       "items": [
         "QQQM",
         "VOO",
-        "QQQI",
-        "515450"
+        "QQQI"
       ]
     },
     {
@@ -145,30 +143,6 @@
       "price_ts": "2026-11-11 14:11:12",
       "pending": true,
       "note": "",
-      "weight": 0.0
-    },
-    {
-      "id": "515450",
-      "name": "南方红利低波50ETF（515450）",
-      "asset_class": "国内基金",
-      "group": "traditional",
-      "shares": 0.0,
-      "cost_price": 0.0,
-      "price": 1.442,
-      "currency": "CNY",
-      "change_pct": -0.89,
-      "value_native": 0.0,
-      "value_cny": 0.0,
-      "cost_native": null,
-      "cost_cny": null,
-      "pnl_cny": null,
-      "pnl_pct": null,
-      "cost_pending": true,
-      "day_change_cny": -0.0,
-      "price_source": "全球资产仪表台",
-      "price_ts": "20261111161455",
-      "pending": true,
-      "note": "定投红利低波，每月约 8500 元",
       "weight": 0.0
     },
     {
