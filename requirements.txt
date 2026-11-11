@@ -1,0 +1,2 @@
+# 本项目仅使用 Python 标准库（urllib / json / http.server），无需第三方依赖。
+# 若需在本地用 requests 调试，可自行安装；GitHub Actions 不安装任何包。

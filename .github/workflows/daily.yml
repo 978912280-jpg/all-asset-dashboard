@@ -1,0 +1,62 @@
+name: 每日资产统计与 Pages 部署
+
+on:
+  schedule:
+    # 每天 08:10（北京时间）= 00:10 UTC
+    - cron: "10 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 准备 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 抓取价格并计算资产
+        run: python3 scripts/build.py
+
+      - name: 提交每日快照与仪表盘数据
+        run: |
+          if [ -n "$(git status --porcelain data/)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/dashboard.json data/snapshots.json
+            git commit -m "chore(data): 更新资产快照 $(TZ=Asia/Shanghai date +%F)"
+            git push
+          else
+            echo "数据无变化，跳过提交"
+          fi
+
+      - name: 配置 Pages
+        uses: actions/configure-pages@v5
+
+      - name: 打包站点
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 部署到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

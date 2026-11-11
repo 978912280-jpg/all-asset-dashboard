@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "base_currency": "CNY",
+    "updated_at": "2026-11-12T02:37:11+08:00",
+    "_comment": "本文件是全维度资产统计的唯一份额来源：你只需要维护每个标的的 shares（持有份额），价格与市值全部由后台 build.py 抓取并计算。"
+  },
+  "fx": {
+    "usdcny_fallback": 7.12,
+    "_comment": "USD/USDT → CNY 汇率：优先联网抓取，失败时使用此兜底值。"
+  },
+  "crypto": {
+    "enabled": true,
+    "asset_class": "加密货币",
+    "source_url": "https://978912280-jpg.github.io/bitget-pnl-dashboard/data/history.json",
+    "include_coins": [],
+    "exclude_coins": [],
+    "_comment": "加密货币资产直接抓取『加密货币资产仪表台』(bitget-pnl-dashboard) 的最新快照，现货+理财合并，无需在本文件维护币的份额；include_coins 为空表示统计全部币种。"
+  },
+  "traditional": [
+    {
+      "id": "QQQM",
+      "name": "纳指100 ETF（QQQM）",
+      "symbol": "QQQM",
+      "currency": "USD",
+      "asset_class": "美股基金",
+      "shares": 0,
+      "note": "定投纳指，每月约 1350 USD"
+    },
+    {
+      "id": "VOO",
+      "name": "标普500 ETF（VOO）",
+      "symbol": "VOO",
+      "currency": "USD",
+      "asset_class": "美股基金",
+      "shares": 0.0,
+      "note": ""
+    },
+    {
+      "id": "QQQI",
+      "name": "纳指100高收益 ETF（QQQI）",
+      "symbol": "QQQI",
+      "currency": "USD",
+      "asset_class": "美股基金",
+      "shares": 0.0,
+      "note": ""
+    },
+    {
+      "id": "515450",
+      "name": "南方红利低波50ETF（515450）",
+      "symbol": "515450",
+      "currency": "CNY",
+      "asset_class": "国内基金",
+      "shares": 0,
+      "note": "定投红利低波，每月约 8500 元"
+    }
+  ]
+}

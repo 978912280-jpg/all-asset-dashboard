@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>份额维护后台 · 全维度资产统计</title>
+  <link rel="stylesheet" href="css/style.css?v=20261112a">
+  <link rel="stylesheet" href="css/admin.css?v=20261112a">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+  <script src="js/admin.js?v=20261112a" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <h1 class="title">份额维护后台</h1>
+        <p class="subtitle">只维护份额，价格、市值、占比与趋势由后台自动计算</p>
+      </div>
+      <div class="topbar-meta">
+        <span class="meta-line">
+          <a class="link-btn" href="index.html">← 返回资产仪表台</a>
+          <button class="link-btn" id="btn-rebuild" type="button">立即重建数据</button>
+        </span>
+        <span class="meta-item" id="mode-badge">—</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div class="card-head">
+        <h2>上传持仓表 / 批量更新份额</h2>
+        <p class="card-desc">支持 .xlsx / .xls / .csv，自动识别「项目名称 / 代码」与「持有数量 / 持有份额」列</p>
+      </div>
+      <div class="upload-zone" id="drop-zone">
+        <input type="file" id="file-input" accept=".xlsx,.xls,.csv" hidden>
+        <p class="upload-title">把持仓表格拖到这里，或<button class="link-btn" id="pick-file" type="button">选择文件</button></p>
+        <p class="upload-hint">表头需包含「项目名称」或「代码」+「持有数量」；加密货币无需上传，自动从加密货币仪表台合并</p>
+      </p>
+      <div class="import-result" id="import-result" hidden></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>传统标的份额</h2>
+        <div class="head-actions">
+          <span class="pill" id="pending-pill">—</span>
+          <button class="btn primary" id="btn-save" type="button">保存并计算</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="main-table admin-table" id="holdings-table">
+          <thead>
+            <tr>
+              <th class="col-name">标的</th>
+              <th>代码</th>
+              <th>类别</th>
+              <th>币种</th>
+              <th class="num">持有份额</th>
+              <th class="num">当前价格</th>
+              <th class="num">市值 (CNY)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="holdings-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>新增投资标的</h2></div>
+      <form class="add-form" id="add-form">
+        <label>名称<input name="name" placeholder="如 标普500 ETF" required></label>
+        <label>代码<input name="symbol" placeholder="如 VOO / 515450 / 007466" required></label>
+        <label>币种
+          <select name="currency">
+            <option value="USD">USD</option>
+            <option value="CNY">CNY</option>
+          </select>
+        </label>
+        <label>类别<input name="asset_class" placeholder="美股基金 / 国内基金 / 个股" value="美股基金"></label>
+        <label>份额<input name="shares" type="number" step="0.000001" min="0" value="0"></label>
+        <button class="btn primary" type="submit">添加</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>保存方式</h2></div>
+      <div class="save-note" id="save-note"></div>
+      <div class="save-actions">
+        <button class="btn" id="btn-download" type="button">下载 holdings.json</button>
+        <button class="btn" id="btn-copy" type="button">复制 JSON</button>
+      </div>
+      <p class="foot-note">
+        部署在 GitHub Pages 时页面无法直接写入仓库：保存后下载 holdings.json，到仓库
+        <code>data/holdings.json</code> 覆盖上传，Actions 会在下一次构建时生效（也可手动 Run workflow）。
+        本地运行 <code>python3 scripts/server.py</code> 打开本页时可直接保存并自动重建。
+      </p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>全维度资产统计 · 份额维护后台</p>
+  </footer>
+</body>
+</html>

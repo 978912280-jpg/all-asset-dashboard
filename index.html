@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>全维度资产统计</title>
+  <link rel="stylesheet" href="css/style.css?v=20261112a">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231f2329'/%3E%3Cpath d='M5 17 L10 11 L13 14 L18 7' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <script src="https://fastly.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" defer></script>
+  <script src="js/app.js?v=20261112a" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <h1 class="title">全维度资产统计</h1>
+        <p class="subtitle" id="subtitle">传统股票 &amp; 基金 + 加密货币 · 份额 × 价格 = 市值</p>
+      </div>
+      <div class="topbar-meta">
+        <span class="meta-line">
+          <span class="meta-item meta-version" id="meta-version">v—</span>
+          <span class="meta-item" id="update-time">数据更新时间：—</span>
+        </span>
+        <span class="meta-line">
+          <a class="link-btn" href="admin.html">份额维护后台</a>
+          <button class="link-btn" id="toggle-disclaimer" type="button">口径与说明</button>
+        </span>
+      </div>
+    </div>
+    <div class="disclaimer" id="disclaimer" hidden>
+      <p><strong>计算口径</strong>：市值 = 持有份额 × 最新价格 × 汇率（USD/USDT → CNY）。传统标的价格优先取「全球资产仪表台」已抓取的行情，缺失时回退腾讯实时 / 天天基金 / Yahoo；加密货币直接读取「加密货币资产仪表台」的最新快照（现货 + 理财合并），币价取该快照价格。</p>
+      <p><strong>份额来源</strong>：仅 <code>data/holdings.json</code> 中的 shares 为人工维护，价格、市值、占比、日变动全部由后台脚本自动计算。修改份额后需重新运行 <code>python3 scripts/build.py</code> 或等待 GitHub Actions 每日构建。</p>
+      <p>本页面仅用于个人资产记录与研究，<strong>不构成任何投资建议</strong>。</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="kpi-grid" id="kpi-grid" aria-label="总览"></section>
+
+    <section class="alert-card" id="pending-alert" hidden>
+      <div class="alert-text" id="pending-text"></div>
+      <a class="alert-action" href="admin.html">去填写份额 →</a>
+    </section>
+
+    <section class="card split-card">
+      <div class="card-head">
+        <h2>资产占比</h2>
+        <p class="card-desc">传统股票 &amp; 基金 vs 加密货币</p>
+      </div>
+      <div class="split-body">
+        <div class="donut-box">
+          <div id="donut-chart" class="chart"></div>
+        </div>
+        <div class="split-legend" id="split-legend"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>持仓明细</h2>
+        <div class="seg" id="group-tabs" role="tablist">
+          <button class="seg-btn active" data-group="all" type="button">全部</button>
+          <button class="seg-btn" data-group="traditional" type="button">传统股票&amp;基金</button>
+          <button class="seg-btn" data-group="crypto" type="button">加密货币</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="main-table" id="main-table">
+          <thead>
+            <tr>
+              <th class="col-name">标的</th>
+              <th>类别</th>
+              <th class="num">份额</th>
+              <th class="num">现价</th>
+              <th class="num">市值 (CNY)</th>
+              <th class="num">占比</th>
+              <th class="num">日涨跌</th>
+              <th class="col-src">价格来源</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <p class="empty-tip" id="empty-tip" hidden>当前分组暂无数据。</p>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>总资产趋势</h2>
+        <p class="card-desc" id="trend-desc">每日快照 · 传统与加密分列</p>
+      </div>
+      <div id="trend-chart" class="chart chart-tall"></div>
+      <p class="chart-tip" id="trend-tip"></p>
+    </section>
+
+    <section class="card source-card">
+      <div class="card-head"><h2>数据来源</h2></div>
+      <ul class="source-list" id="source-list"></ul>
+      <p class="foot-note">免费行情源仅供个人研究使用，不构成投资建议；数据准确性以各官方披露为准。</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>全维度资产统计 · 静态仪表台 · <span id="footer-version">v—</span></p>
+    <p>份额维护：<a href="admin.html">admin.html</a> · 数据文件：<code>data/dashboard.json</code></p>
+  </footer>
+</body>
+</html>
