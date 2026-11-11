@@ -255,20 +255,15 @@
         : (!i.cost_price ? '<span class="muted">待填</span>'
           : (i.currency === "USD" ? "$" : "¥") + num(i.cost_price, i.cost_price < 10 ? 4 : 2));
       var pnlTxt;
+      // 浮动盈亏列统一按「当日浮动收益」口径：份额 × 当日涨跌（按标的币种折算成 CNY）
+      var dc = i.day_change_cny;
       if (i.group === "cash") {
         pnlTxt = '<span class="muted">—</span>';
-      } else if (i.group === "crypto") {
-        // 加密资产没有持仓成本口径，按当日涨跌计算日内浮动盈亏
-        var dc = i.day_change_cny;
-        pnlTxt = (dc === null || dc === undefined)
-          ? '<span class="muted">—</span>'
-          : '<span class="' + cls(dc) + '">' + (dc >= 0 ? "+" : "") + num(dc) +
-            '<div class="sub ' + cls(i.change_pct) + '">' + pct(i.change_pct) + "</div></span>";
-      } else if (i.pnl_cny === null || i.pnl_cny === undefined) {
+      } else if (dc === null || dc === undefined) {
         pnlTxt = '<span class="muted">—</span>';
       } else {
-        pnlTxt = '<span class="' + cls(i.pnl_cny) + '">' + (i.pnl_cny >= 0 ? "+" : "") + num(i.pnl_cny) +
-          '<div class="sub ' + cls(i.pnl_pct) + '">' + pct(i.pnl_pct) + "</div></span>";
+        pnlTxt = '<span class="' + cls(dc) + '">' + (dc >= 0 ? "+" : "") + num(dc) +
+          '<div class="sub ' + cls(i.change_pct) + '">' + pct(i.change_pct) + "</div></span>";
       }
       return "<tr>" +
         '<td class="name-cell"><div class="nm">' + escapeHtml(i.name) +
