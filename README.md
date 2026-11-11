@@ -142,3 +142,10 @@ GitHub 自带的 `schedule` 经常延迟甚至漏跑（实测有延迟数小时�
 Token 建议单独建一个 **fine-grained PAT**，只授权本仓库、只勾 **Actions: Read and write**，不要复用其他项目的全权限 token。Token 会存在 cron-job.org 服务器上，属于必要风险，可随时吊销重建。
 
 调用成功后，构建约 1 分钟完成并自动部署 Pages；数据是否真的更新，看仓库最新提交是否为 `chore(data): 更新资产快照 <日期>`。
+
+## 版本号规则
+
+- 首页顶部与页脚显示的 `v1.0.x` 取自 `data/holdings.json` 的 `meta.version`。
+- 每次发布新的页面改动，版本号 **+0.0.1**；分位到 10 进 1：`1.0.9 → 1.1.0`，`1.9.9 → 2.0.0`。
+- 发布时必须同时改三处，保持一致：`data/holdings.json` 的 `meta.version`、`scripts/build.py` 的 `PAGE_VERSION`、`index.html`/`admin.html` 的 `data-page-version` 与 `css/js?v=`。
+- `PAGE_VERSION` 同时充当缓存键：页面加载时若发现 HTML 里的版本与 `dashboard.json` 的 `meta.page_version` 不一致，会自动带 `?pv=<版本>` 重新拉取，避免 Safari 缓存旧页面。
