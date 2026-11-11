@@ -1,3 +1,13 @@
+
+/* ---------- 移动端防误缩放 ---------- */
+html { -webkit-text-size-adjust: 100%; }
+body, a, button, input, select, textarea, .seg-btn, .cal-cell {
+  touch-action: manipulation;
+}
+/* iOS 在输入框字号小于 16px 时会自动放大页面，这里在移动端统一提到 16px */
+@media (max-width: 860px) {
+  .admin-table input, .add-form input, .add-form select, .gh-form input { font-size: 16px; }
+}
 /* 份额维护后台样式 */
 .head-actions { display: flex; align-items: center; gap: 10px; }
 .pill {

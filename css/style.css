@@ -1,3 +1,10 @@
+
+/* ---------- 移动端防误缩放 ---------- */
+/* 连点/双击按钮会被 Safari 当成双击缩放，这里禁掉双击缩放，保留双指捏合 */
+html { -webkit-text-size-adjust: 100%; }
+body, a, button, input, select, textarea, .seg-btn, .cal-cell, .kpi, .alert-action {
+  touch-action: manipulation;
+}
 :root {
   --bg: #f4f5f7;
   --card: #ffffff;
@@ -332,3 +339,19 @@ code {
 .snap-note { margin-top: 10px; color: #9ca3af; font-size: 11.5px; }
 
 .table-hint { color: var(--muted, #9ca3af); font-size: 11.5px; margin: 10px 0 0; }
+
+/* 周/月/年 方块网格 */
+.pnl-blocks { display: grid; gap: 8px; }
+.pnl-block { background: #f8fafc; border-radius: 8px; padding: 10px 12px; border: 1px solid transparent; }
+.pnl-block .pb-label { font-size: 11.5px; color: #6b7280; }
+.pnl-block .pb-val { font-size: 14px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.pnl-block.pos { background: #ecfdf5; }
+.pnl-block.pos .pb-val { color: #047857; }
+.pnl-block.neg { background: #fef2f2; }
+.pnl-block.neg .pb-val { color: #b91c1c; }
+.pnl-block.zero .pb-val { color: #9ca3af; }
+.pnl-block.sel { outline: 2px solid #1d4ed8; outline-offset: 1px; }
+
+/* 防止连点/双击把页面放大 */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body, a, button, .seg-btn, .cal-cell, .pnl-block, .kpi, .tag, input, select { touch-action: manipulation; }

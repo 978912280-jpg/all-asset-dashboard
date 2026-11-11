@@ -311,6 +311,8 @@
   }
   function renderCalendar() {
     calState();
+    if (!state.calPeriod) state.calPeriod = "day";
+    if (state.calPeriod !== "day") { renderPeriodGrid(); return; }
     var y = state.calY, m = state.calM;
     var hist = state.data.history || [];
     var today = cstToday();
@@ -358,6 +360,157 @@
       renderCalendar();
       if (state.calSel) openSnapshot(state.calSel);
     };
+  }
+
+  // ISO 周号
+  function isoWeek(d) {
+    var t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    var dayNum = t.getUTCDay() || 7;
+    t.setUTCDate(t.getUTCDate() + 4 - dayNum);
+    var ys = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+    return { year: t.getUTCFullYear(), week: Math.ceil((((t - ys) / 86400000) + 1) / 7) };
+  }
+  function weekLabel(y, w) {
+    var jan4 = new Date(Date.UTC(y, 0, 4));
+    var mon = new Date(jan4);
+    mon.setUTCDate(jan4.getUTCDate() - ((jan4.getUTCDay() || 7) - 1) + (w - 1) * 7);
+    var sun = new Date(mon);
+    sun.setUTCDate(mon.getUTCDate() + 6);
+    var f = function (d) { return (d.getUTCMonth() + 1) + "." + d.getUTCDate(); };
+    return f(mon) + "-" + f(sun);
+  }
+  // 按周期聚合当日浮动收益
+  function aggPnl(period) {
+    var hist = state.data.history || [];
+    var g = {};
+    var cnt = {};
+    var first = {}, last = {};
+    hist.forEach(function (h) {
+      if (h.day_change_cny === null || h.day_change_cny === undefined) return;
+      var d = new Date(h.date + "T00:00:00");
+      var key;
+      if (period === "week") { var w = isoWeek(d); key = w.year + "-W" + String(w.week).padStart(2, "0"); }
+      else if (period === "month") { key = h.date.slice(0, 7); }
+      else { key = String(d.getFullYear()); }
+      g[key] = (g[key] || 0) + h.day_change_cny;
+      cnt[key] = (cnt[key] || 0) + 1;
+      if (!first[key] || h.date < first[key]) first[key] = h.date;
+      if (!last[key] || h.date > last[key]) last[key] = h.date;
+    });
+    var out = {};
+    Object.keys(g).forEach(function (k) {
+      out[k] = { value: g[k], count: cnt[k], from: first[k], to: last[k] };
+    });
+    return out;
+  }
+  function renderPeriodGrid() {
+    var period = state.calPeriod;
+    var data = aggPnl(period);
+    var y = state.calY, m = state.calM;
+    var items = [], navLabel = "", cols = 2, showNav = false;
+    if (period === "week") {
+      navLabel = y + "-" + String(m + 1).padStart(2, "0");
+      cols = 2; showNav = true;
+      var monthStart = new Date(y, m, 1), monthEnd = new Date(y, m + 1, 0);
+      var startDow = (monthStart.getDay() + 6) % 7;
+      var cur = new Date(monthStart);
+      cur.setDate(cur.getDate() - startDow);
+      while (cur <= monthEnd) {
+        var w2 = isoWeek(cur);
+        var key2 = w2.year + "-W" + String(w2.week).padStart(2, "0");
+        items.push([key2, weekLabel(w2.year, w2.week), data[key2] || null]);
+        cur = new Date(cur); cur.setDate(cur.getDate() + 7);
+      }
+    } else if (period === "month") {
+      navLabel = y + " 年"; cols = 4; showNav = true;
+      for (var mm = 1; mm <= 12; mm++) {
+        var k = y + "-" + String(mm).padStart(2, "0");
+        items.push([k, mm + " 月", data[k] || null]);
+      }
+    } else {
+      cols = 3;
+      var years = Object.keys(data).map(function (x) { return +x; });
+      var minY = years.length ? Math.min.apply(null, years) : y;
+      var maxY = Math.max(y, new Date().getFullYear());
+      for (var yy = minY; yy <= maxY; yy++) {
+        items.push([String(yy), yy + " 年", data[String(yy)] || null]);
+      }
+    }
+    var html = showNav ? '<div class="cal-nav"><button type="button" id="cal-prev">‹</button><span>' +
+      navLabel + '</span><button type="button" id="cal-next">›</button></div>' : "";
+    html += '<div class="pnl-blocks" style="grid-template-columns:repeat(' + cols + ',minmax(0,1fr))">';
+    items.forEach(function (it) {
+      var key = it[0], label = it[1], rec = it[2];
+      var cls = "pnl-block " + (rec === null ? "zero" : (rec.value > 0 ? "pos" : (rec.value < 0 ? "neg" : "zero")));
+      if (key === state.calKey) cls += " sel";
+      var vstr = rec === null ? "—" : (rec.value >= 0 ? "+" : "−") + num(Math.abs(rec.value), 0);
+      html += '<div class="' + cls + '" data-key="' + key + '"><div class="pb-label">' + label +
+        '</div><div class="pb-val">' + vstr + "</div></div>";
+    });
+    html += "</div>";
+    $("pnl-calendar").innerHTML = html;
+
+    if (showNav) {
+      $("cal-prev").onclick = function () {
+        if (period === "month") { state.calY--; } else {
+          state.calM--; if (state.calM < 0) { state.calM = 11; state.calY--; }
+        }
+        renderCalendar();
+      };
+      $("cal-next").onclick = function () {
+        if (period === "month") { state.calY++; } else {
+          state.calM++; if (state.calM > 11) { state.calM = 0; state.calY++; }
+        }
+        renderCalendar();
+      };
+    }
+    $("pnl-calendar").onclick = function (e) {
+      var cell = e.target.closest("[data-key]");
+      if (!cell) return;
+      var key = cell.getAttribute("data-key");
+      var rec = data[key];
+      if (!rec) return;
+      state.calKey = (state.calKey === key) ? null : key;
+      renderCalendar();
+      if (state.calKey) openAggSnapshot(period, key, rec);
+    };
+  }
+  function openAggSnapshot(period, key, rec) {
+    var label = period === "week" ? "周" : (period === "month" ? "月" : "年");
+    var cls2 = cls(rec.value);
+    var rows = [
+      ["周期", label + " " + key],
+      ["数据区间", rec.from + " ~ " + rec.to],
+      ["有数据天数", rec.count + " 天"],
+      ["累计浮动收益", '<span class="' + cls2 + '">' + (rec.value >= 0 ? "+" : "−") +
+        "¥" + num(Math.abs(rec.value)) + "</span>"],
+      ["日均浮动收益", (rec.value / rec.count >= 0 ? "+" : "−") + "¥" + num(Math.abs(rec.value / rec.count))],
+    ];
+    var html = '<div class="snap-box"><div class="snap-head"><h3>' + label + "度汇总 · " + key + "</h3>" +
+      '<button type="button" id="snap-close" aria-label="关闭">×</button></div>' +
+      '<div class="snap-rows">' + rows.map(function (r) {
+        return '<div class="snap-row"><span>' + r[0] + "</span><span>" + r[1] + "</span></div>";
+      }).join("") + "</div>" +
+      '<p class="snap-note">按每日快照的浮动收益求和；某天无快照则不计入。</p></div>';
+    showSnapMask(html);
+  }
+  function showSnapMask(html) {
+    var mask = document.createElement("div");
+    mask.className = "snap-mask";
+    mask.id = "snap-mask";
+    mask.innerHTML = html;
+    document.body.appendChild(mask);
+    function close() {
+      var el = $("snap-mask");
+      if (el) el.parentNode.removeChild(el);
+      state.calSel = null; state.calKey = null;
+      renderCalendar();
+    }
+    mask.onclick = function (e) { if (e.target === mask) close(); };
+    $("snap-close").onclick = close;
+    document.addEventListener("keydown", function esc(ev) {
+      if (ev.key === "Escape") { close(); document.removeEventListener("keydown", esc); }
+    });
   }
 
   function openSnapshot(ds) {
@@ -513,8 +666,22 @@
     });
   }
 
+  function bindCalTabs() {
+    var box = $("cal-tabs");
+    if (!box) return;
+    box.addEventListener("click", function (e) {
+      var btn = e.target.closest(".seg-btn");
+      if (!btn) return;
+      state.calPeriod = btn.getAttribute("data-period");
+      state.calKey = null;
+      Array.prototype.forEach.call(box.children, function (b) { b.classList.toggle("active", b === btn); });
+      renderCalendar();
+    });
+  }
+
   function init() {
     bindTabs();
+    bindCalTabs();
     bindDisclaimer();
     bindResize();
     load();
