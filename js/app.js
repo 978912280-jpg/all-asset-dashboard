@@ -494,6 +494,79 @@
       '<td class="num">' + sumWTxt + "</td></tr>";
   }
 
+  // ---------- 访问密码锁（拨号盘） ----------
+  var PIN_KEY = "asset_dash_unlock";
+  var PIN_HASH = "sg6ibi";   // 访问密码的散列值（adpin::<6位密码>）
+  var PIN_UNTIL = 7 * 24 * 3600 * 1000;
+
+  function pinHash(str) {
+    var x = 5381;
+    for (var i = 0; i < str.length; i++) { x = ((x << 5) + x) ^ str.charCodeAt(i); }
+    return (x >>> 0).toString(36);
+  }
+  function pinUnlockDone() {
+    try {
+      var v = JSON.parse(localStorage.getItem(PIN_KEY) || "0");
+      if (typeof v === "number" && v > Date.now()) return true;
+    } catch (e) { /* 忽略 */ }
+    return false;
+  }
+  function bindPinLock() {
+    var lock = $("pin-lock"), pad = $("pin-pad"), dots = $("pin-dots"), tip = $("pin-tip");
+    if (!lock || !pad) return;
+    if (pinUnlockDone()) {
+      lock.hidden = true;
+      document.body.classList.remove("locked");
+      return;
+    }
+    lock.hidden = false;
+    document.body.classList.add("locked");
+    var buf = "";
+    function paint() {
+      for (var i = 0; i < dots.children.length; i++) {
+        dots.children[i].classList.toggle("on", i < buf.length);
+      }
+    }
+    function reset(msg) {
+      buf = "";
+      paint();
+      dots.classList.remove("err", "ok");
+      if (msg) tip.textContent = msg;
+    }
+    pad.addEventListener("click", function (e) {
+      var btn = e.target.closest("button[data-k]");
+      if (!btn || btn === pad) return;
+      var k = btn.getAttribute("data-k");
+      if (dots.classList.contains("ok")) return;
+      if (k === "clear") { reset("请输入 6 位访问密码"); return; }
+      if (k === "del") { buf = buf.slice(0, -1); paint(); return; }
+      if (buf.length >= 6) return;
+      buf += k;
+      paint();
+      if (buf.length === 6) {
+        if (pinHash("adpin::" + buf) === PIN_HASH) {
+          dots.classList.add("ok");
+          tip.textContent = "验证通过";
+          try { localStorage.setItem(PIN_KEY, JSON.stringify(Date.now() + PIN_UNTIL)); } catch (e) {}
+          setTimeout(function () {
+            lock.hidden = true;
+            document.body.classList.remove("locked");
+            window.dispatchEvent(new Event("resize"));
+            if (state.trend) setTimeout(function () { state.trend.resize(); }, 100);
+          }, 420);
+        } else {
+          dots.classList.add("err");
+          lock.classList.add("pin-shake");
+          tip.textContent = "密码不正确，请重新输入";
+          setTimeout(function () {
+            lock.classList.remove("pin-shake");
+            reset("请输入 6 位访问密码");
+          }, 620);
+        }
+      }
+    });
+  }
+
   // ---------- 首页「立即抓取最新价格」 ----------
   function bindRefreshPrice() {
     var btn = $("btn-refresh-price");
@@ -1070,6 +1143,7 @@
     if ($("btn-back-today")) $("btn-back-today").addEventListener("click", exitReplay);
     bindTabs();
     bindRefreshPrice();
+    bindPinLock();
     bindCalTabs();
     bindDisclaimer();
     bindResize();

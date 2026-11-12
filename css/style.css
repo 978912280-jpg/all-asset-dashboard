@@ -437,3 +437,32 @@ body, a, button, .seg-btn, .cal-cell, .pnl-block, .kpi, .tag, input, select { to
   .pa-table th:nth-child(3), .pa-table td:nth-child(3) { display: none; }
   .pa-head { gap: 8px; }
 }
+
+/* ---------- 访问密码锁屏（拨号盘） ---------- */
+body.locked { overflow: hidden; }
+body.locked > header, body.locked > main { display: none; }
+.pin-lock { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 0%, #f1f5f9, #e7edf3 60%, #dfe6ee); padding: 20px; }
+.pin-lock[hidden] { display: none; }
+.pin-box { width: 100%; max-width: 320px; text-align: center; }
+.pin-brand { font-size: 15px; font-weight: 700; color: #14532d; letter-spacing: .5px; }
+.pin-tip { margin: 6px 0 18px; font-size: 12.5px; color: #6b7280; }
+.pin-dots { display: flex; gap: 14px; justify-content: center; margin-bottom: 22px; }
+.pin-dots i { width: 11px; height: 11px; border-radius: 50%; border: 1px solid #cbd5e1; background: #fff; }
+.pin-dots i.on { background: #14532d; border-color: #14532d; }
+.pin-dots.err i { background: #fca5a5; border-color: #ef4444; }
+.pin-dots.ok i { background: #86efac; border-color: #16a34a; }
+.pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.pin-pad button { height: 62px; border-radius: 50%; border: 1px solid #dbe3ec; background: #fff; font-size: 22px;
+  font-weight: 600; color: #1f2937; cursor: pointer; box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+  font-variant-numeric: tabular-nums; transition: transform .08s ease, background .15s ease; }
+.pin-pad button:active { transform: scale(.94); background: #ecfdf5; }
+.pin-pad .pin-fn { font-size: 14px; font-weight: 500; color: #6b7280; background: transparent; border-color: transparent; box-shadow: none; }
+.pin-shake { animation: pinShake .32s ease; }
+@keyframes pinShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(7px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
