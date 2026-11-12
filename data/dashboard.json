@@ -5,7 +5,7 @@
     "title": "全维度资产统计",
     "subtitle": "传统股票/基金 + 加密货币 合并统计 · 份额 × 价格 = 市值",
     "version": "1.1.2",
-    "generated_at": "2026-11-12T15:30:26+08:00",
+    "generated_at": "2026-11-12T15:35:07+08:00",
     "page_version": "1.1.2",
     "base_currency": "CNY",
     "fx": {
@@ -20,20 +20,20 @@
     }
   },
   "summary": {
-    "total_cny": 126465.17,
+    "total_cny": 129199.17,
     "traditional_cny": 23659.71,
     "crypto_cny": 65475.31,
-    "cash_cny": 37330.15,
+    "cash_cny": 40064.15,
     "stable_cash_cny": 37330.15,
-    "fiat_cash_cny": 0.0,
+    "fiat_cash_cny": 2734.0,
     "crypto_account_cny": 102805.46,
-    "traditional_weight": 18.71,
-    "crypto_weight": 51.77,
-    "cash_weight": 29.52,
+    "traditional_weight": 18.31,
+    "crypto_weight": 50.68,
+    "cash_weight": 31.01,
     "day_change_cny": 116.61,
     "day_change_pct": 0.09,
     "crypto_usdt": 15376.69,
-    "count": 12,
+    "count": 13,
     "pending_count": 0,
     "pending_ids": [],
     "traditional_cost_cny": 23745.14,
@@ -51,7 +51,7 @@
       "key": "traditional",
       "name": "传统股票 & 基金",
       "cny": 23659.71,
-      "weight": 18.71,
+      "weight": 18.31,
       "count": 6,
       "items": [
         "QQQM",
@@ -66,7 +66,7 @@
       "key": "crypto",
       "name": "加密货币",
       "cny": 65475.31,
-      "weight": 51.77,
+      "weight": 50.68,
       "count": 4,
       "items": [
         "BTC",
@@ -78,12 +78,13 @@
     {
       "key": "cash",
       "name": "现金",
-      "cny": 37330.15,
-      "weight": 29.52,
-      "count": 2,
+      "cny": 40064.15,
+      "weight": 31.01,
+      "count": 3,
       "items": [
         "USDC",
-        "USDT"
+        "USDT",
+        "alipay"
       ]
     }
   ],
@@ -111,7 +112,7 @@
       "price_ts": "2026-11-11 16:00:01",
       "pending": false,
       "note": "定投纳指，每月约 1350 USD",
-      "weight": 3.81
+      "weight": 3.73
     },
     {
       "id": "VOO",
@@ -136,7 +137,7 @@
       "price_ts": "2026-11-11 16:00:01",
       "pending": false,
       "note": "",
-      "weight": 3.95
+      "weight": 3.87
     },
     {
       "id": "QQQI",
@@ -161,7 +162,7 @@
       "price_ts": "2026-11-11 16:00:01",
       "pending": false,
       "note": "",
-      "weight": 2.2
+      "weight": 2.16
     },
     {
       "id": "008163",
@@ -186,7 +187,7 @@
       "price_ts": "2026-11-11",
       "pending": false,
       "note": "",
-      "weight": 8.07
+      "weight": 7.9
     },
     {
       "id": "VWO",
@@ -236,7 +237,7 @@
       "price_ts": "2026-11-11 16:00:01",
       "pending": false,
       "note": "",
-      "weight": 0.37
+      "weight": 0.36
     },
     {
       "id": "BTC",
@@ -255,7 +256,7 @@
       "price_ts": "2026-11-12",
       "pending": false,
       "note": "现货+理财（earn/spot）",
-      "weight": 32.32
+      "weight": 31.64
     },
     {
       "id": "USDC",
@@ -274,7 +275,7 @@
       "price_ts": "2026-11-12",
       "pending": false,
       "note": "现货+理财（earn/spot）",
-      "weight": 28.55
+      "weight": 27.94
     },
     {
       "id": "SOL",
@@ -293,7 +294,7 @@
       "price_ts": "2026-11-12",
       "pending": false,
       "note": "现货+理财（earn/spot）",
-      "weight": 19.3
+      "weight": 18.89
     },
     {
       "id": "USDT",
@@ -312,7 +313,7 @@
       "price_ts": "2026-11-12",
       "pending": false,
       "note": "现货+理财（earn/spot）",
-      "weight": 0.97
+      "weight": 0.95
     },
     {
       "id": "BGB",
@@ -351,6 +352,24 @@
       "pending": false,
       "note": "现货+理财（spot）",
       "weight": 0.04
+    },
+    {
+      "id": "alipay",
+      "name": "支付宝现金",
+      "asset_class": "现金（余额）",
+      "group": "cash",
+      "shares": null,
+      "price": null,
+      "currency": "CNY",
+      "change_pct": 0.0,
+      "value_native": 2734.0,
+      "value_cny": 2734.0,
+      "day_change_cny": 0.0,
+      "day_basis": "cash",
+      "price_source": "手工录入",
+      "pending": false,
+      "note": "",
+      "weight": 2.12
     }
   ],
   "crypto_meta": {
@@ -369,10 +388,10 @@
   "history": [
     {
       "date": "2026-11-12",
-      "total_cny": 126465.17,
+      "total_cny": 129199.17,
       "traditional_cny": 23659.71,
       "crypto_cny": 102805.46,
-      "cash_cny": 37330.15,
+      "cash_cny": 40064.15,
       "day_change_cny": 116.61,
       "day_change_pct": 0.09,
       "fx_usdcny": 6.6858,
