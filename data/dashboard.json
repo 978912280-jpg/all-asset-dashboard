@@ -4,9 +4,9 @@
     "shares_age_days": 1,
     "title": "全维度资产统计",
     "subtitle": "传统股票/基金 + 加密货币 合并统计 · 份额 × 价格 = 市值",
-    "version": "1.1.0",
-    "generated_at": "2026-11-12T14:59:45+08:00",
-    "page_version": "1.1.0",
+    "version": "1.1.1",
+    "generated_at": "2026-11-12T15:07:04+08:00",
+    "page_version": "1.1.1",
     "base_currency": "CNY",
     "fx": {
       "usdcny": 6.6858,
@@ -163,7 +163,7 @@
     },
     {
       "id": "008163",
-      "name": "南方红利低波50ETF联接A",
+      "name": "南方红利低波50ETF联接A（008163）",
       "asset_class": "国内基金",
       "group": "traditional",
       "shares": 9456.78,
@@ -188,7 +188,7 @@
     },
     {
       "id": "VWO",
-      "name": "富时新兴市场指数",
+      "name": "富时新兴市场指数（VWO）",
       "asset_class": "美股基金",
       "group": "traditional",
       "shares": 1.0,
@@ -213,7 +213,7 @@
     },
     {
       "id": "VEA",
-      "name": "富时发达市场指数",
+      "name": "富时发达市场指数（VEA）",
       "asset_class": "美股基金",
       "group": "traditional",
       "shares": 1.0,

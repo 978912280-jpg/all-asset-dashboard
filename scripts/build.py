@@ -32,7 +32,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.1.0"
+PAGE_VERSION = "1.1.1"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
 CASH_GROUP = "cash"
@@ -146,9 +146,14 @@ def build_traditional(holdings, fund_items, rate, prev_items=None):
         cost_cny = cost_native * fx if cost_native is not None else None
         pnl_cny = (value_cny - cost_cny) if (value_cny is not None and cost_cny is not None) else None
         pnl_pct = (pnl_cny / cost_cny * 100.0) if (pnl_cny is not None and cost_cny) else None
+        base_name = it.get("name") or (q or {}).get("name") or str(it.get("symbol"))
+        sym = str(it.get("symbol") or "").upper()
+        # 中文名后统一带上代码：中文名（代码），名称里已含代码的跳过
+        if sym and sym not in base_name.upper():
+            base_name = "%s（%s）" % (base_name, sym)
         rows.append({
             "id": str(it.get("id") or it.get("symbol")),
-            "name": it.get("name") or (q or {}).get("name") or str(it.get("symbol")),
+            "name": base_name,
             "asset_class": it.get("asset_class") or "其他",
             "group": TRADITIONAL_GROUP,
             "shares": r2(shares, 6),
