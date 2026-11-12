@@ -57,6 +57,26 @@
       "shares": 9456.78,
       "cost_price": 1.0564,
       "note": ""
+    },
+    {
+      "id": "VWO",
+      "name": "富时新兴市场指数",
+      "symbol": "VWO",
+      "currency": "USD",
+      "asset_class": "美股基金",
+      "shares": 1,
+      "cost_price": 57.22,
+      "note": ""
+    },
+    {
+      "id": "VEA",
+      "name": "富时发达市场指数",
+      "symbol": "VEA",
+      "currency": "USD",
+      "asset_class": "美股基金",
+      "shares": 1,
+      "cost_price": 69.9,
+      "note": ""
     }
   ]
 }
