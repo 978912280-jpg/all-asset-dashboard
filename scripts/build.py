@@ -32,7 +32,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.0.9"
+PAGE_VERSION = "1.1.0"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
 CASH_GROUP = "cash"
@@ -111,6 +111,7 @@ def resolve_price(item, fund_items):
 
 def build_traditional(holdings, fund_items, rate, prev_items=None):
     prev_items = prev_items or {}
+    today = now_cst().strftime("%Y-%m-%d")
     rows = []
     for it in holdings.get("traditional", []):
         shares = float(it.get("shares") or 0)
@@ -128,7 +129,13 @@ def build_traditional(holdings, fund_items, rate, prev_items=None):
         prev = prev_items.get(sid) or {}
         prev_price = prev.get("price")
         base_shares = prev.get("shares") if prev.get("shares") else shares
-        if prev_price is not None and price is not None:
+        added_at = str(it.get("added_at") or "")[:10]
+        if added_at and added_at >= today and price is not None:
+            # 当日新买入：只算「成本价 → 现价」这段，不把买入前的日内涨跌算进来
+            entry_px = cost_price if cost_price > 0 else price
+            day_cny = shares * (price - entry_px) * fx
+            day_basis = "new"
+        elif prev_price is not None and price is not None:
             day_cny = base_shares * (price - prev_price) * fx
             day_basis = "prev_snapshot" if prev.get("shares") else "prev_price"
         else:

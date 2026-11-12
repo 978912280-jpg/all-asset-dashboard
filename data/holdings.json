@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": "1.0.9",
+    "version": "1.1.0",
     "base_currency": "CNY",
     "updated_at": "2026-11-12T02:37:11+08:00",
     "_comment": "本文件是全维度资产统计的唯一份额来源：只需要维护每个传统标的的 shares（持有份额）与 cost_price（每份持仓成本价，按该标的币种计价），价格与市值、盈亏全部由后台 build.py 抓取并计算。"
@@ -66,7 +66,8 @@
       "asset_class": "美股基金",
       "shares": 1,
       "cost_price": 57.22,
-      "note": ""
+      "note": "",
+      "added_at": "2026-11-12"
     },
     {
       "id": "VEA",
@@ -76,7 +77,8 @@
       "asset_class": "美股基金",
       "shares": 1,
       "cost_price": 69.9,
-      "note": ""
+      "note": "",
+      "added_at": "2026-11-12"
     }
   ]
 }

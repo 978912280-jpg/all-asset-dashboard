@@ -227,6 +227,7 @@
         asset_class: f.asset_class.value.trim() || "其他",
         shares: Number(f.shares.value) || 0,
         cost_price: Number(f.cost_price.value) || 0,
+        added_at: new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10),
         note: "",
       });
       markDirty();

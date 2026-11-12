@@ -262,8 +262,10 @@
       } else if (dc === null || dc === undefined) {
         pnlTxt = '<span class="muted">—</span>';
       } else {
-        pnlTxt = '<span class="' + cls(dc) + '">' + (dc >= 0 ? "+" : "") + num(dc) +
-          '<div class="sub ' + cls(i.change_pct) + '">' + pct(i.change_pct) + "</div></span>";
+        var sub = i.day_basis === "new"
+          ? '<div class="sub muted">当日买入</div>'
+          : '<div class="sub ' + cls(i.change_pct) + '">' + pct(i.change_pct) + "</div>";
+        pnlTxt = '<span class="' + cls(dc) + '">' + (dc >= 0 ? "+" : "") + num(dc) + sub + "</span>";
       }
       return "<tr>" +
         '<td class="name-cell"><div class="nm">' + escapeHtml(i.name) +
