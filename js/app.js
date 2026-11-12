@@ -195,37 +195,74 @@
       $("donut-chart").innerHTML = '<p class="empty-tip">图表库未加载，占比数据见左侧图例</p>';
       return;
     }
-    var total = (state.data.summary || {}).total_cny || 0;
+    var s = state.data.summary || {};
+    var total = s.total_cny || 0;
     if (!state.donut) state.donut = echarts.init($("donut-chart"));
 
+    // 扇区：三组拆分，现金再分稳定币 / 支付宝余额，便于用引线标注各自占比
+    var slices = [
+      { name: "传统", full: "传统股票 & 基金", value: s.traditional_cny || 0, color: colors.traditional },
+      { name: "加密", full: "加密货币", value: s.crypto_cny || 0, color: colors.crypto },
+      { name: "稳定币", full: "现金（稳定币）", value: s.stable_cash_cny || 0, color: colors.cash },
+    ];
+    if ((s.fiat_cash_cny || 0) > 0) {
+      slices.push({ name: "支付宝", full: "支付宝现金", value: s.fiat_cash_cny, color: "#2dd4bf" });
+    }
+    slices = slices.filter(function (x) { return x.value > 0; });
+    var compact = window.matchMedia("(max-width: 860px)").matches;
+
     state.donut.setOption({
+      title: {
+        text: "总资产",
+        subtext: "¥" + num(total),
+        left: "center",
+        top: "center",
+        textAlign: "center",
+        itemGap: 2,
+        textStyle: { fontSize: compact ? 9 : 10, color: "#6b7280", fontWeight: "normal" },
+        subtextStyle: { fontSize: compact ? 12 : 13, color: "#1f2329", fontWeight: "bold" },
+      },
       tooltip: {
         trigger: "item",
         formatter: function (p) {
-          return p.name + "<br/>¥" + num(p.value) + "（" + p.percent.toFixed(2) + "%）";
+          return p.data.full + "<br/>¥" + num(p.value) + "（" + p.percent.toFixed(2) + "%）";
         },
       },
       legend: { show: false },
       series: [{
         name: "资产占比",
         type: "pie",
-        radius: ["52%", "78%"],
+        radius: compact ? ["38%", "58%"] : ["42%", "60%"],
+        center: ["50%", "50%"],
         avoidLabelOverlap: true,
+        labelLayout: { moveOverlap: "shiftY", hideOverlap: false },
+        minAngle: 2,
         itemStyle: { borderColor: "#fff", borderWidth: 2 },
         label: {
           show: true,
-          position: "center",
-          formatter: function () { return "总资产\n¥" + num(total); },
-          fontSize: 11,
-          lineHeight: 18,
-          color: "#6b7280",
+          position: "outside",
+          formatter: function (p) { return p.name + "\n" + p.percent.toFixed(1) + "%"; },
+          fontSize: compact ? 9 : 10.5,
+          color: "#374151",
+          lineHeight: 13,
         },
-        emphasis: { label: { show: true, fontSize: 13, fontWeight: "bold", color: "#1f2329" } },
-        data: groups.map(function (g) {
+        labelLine: {
+          show: true,
+          length: compact ? 8 : 12,
+          length2: compact ? 10 : 14,
+          smooth: true,
+          lineStyle: { width: 1, color: "#9ca3af" },
+        },
+        emphasis: {
+          label: { fontWeight: "bold", color: "#1f2329" },
+          scaleSize: 4,
+        },
+        data: slices.map(function (x) {
           return {
-            name: g.name,
-            value: Math.round(g.cny || 0),
-            itemStyle: { color: colors[g.key] },
+            name: x.name,
+            full: x.full,
+            value: Math.round(x.value),
+            itemStyle: { color: x.color },
           };
         }),
       }],

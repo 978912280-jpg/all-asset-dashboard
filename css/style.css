@@ -176,11 +176,12 @@ code {
 /* ---------- 占比 ---------- */
 .split-body {
   display: grid;
-  grid-template-columns: minmax(220px, 320px) 1fr;
+  grid-template-columns: minmax(240px, 360px) 1fr;
   gap: 18px;
   align-items: center;
 }
 .donut-box { width: 100%; }
+.donut-box .chart { height: 320px; }
 .chart { width: 100%; height: 260px; }
 .chart-tall { height: 300px; }
 
@@ -270,6 +271,7 @@ code {
   .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .split-body { grid-template-columns: 1fr; }
   .chart { height: 220px; }
+  .donut-box .chart { height: 260px; }
   .topbar-inner { padding: 12px; }
   .topbar-meta { align-items: flex-start; }
   .title { font-size: 18px; }
