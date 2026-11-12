@@ -32,7 +32,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.2.4"
+PAGE_VERSION = "1.2.5"
 PAGE_DATE = "2026.11.12"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -73,6 +73,12 @@ def resolve_price(item, fund_items):
     """按优先级返回 (quote, source_desc)。quote 结构见 sources.py。"""
     code = str(item.get("symbol") or item.get("id") or "").strip()
     upper = code.upper()
+
+    # 0) 美股：优先腾讯实时价（仪表台里的美股价格往往是上一交易日收盘，会滞后）
+    if code.replace(".", "").replace("-", "").isalpha():
+        q = sources.tencent_quote(code)
+        if q and q.get("price"):
+            return q, q["source"]
 
     # 1) 全球资产仪表台
     hit = fund_items.get(upper)
@@ -199,11 +205,13 @@ def load_crypto(cfg, rate, prev_items=None):
     latest = history[-1]
     prev = history[-2] if len(history) > 1 else None
 
-    # 上一快照各币价格，用于算币价日变动
+    # 日变动基准价：若仪表台当天已有快照（最新日期=今天），基准取前一快照；
+    # 否则最新快照本身就是「上一个交易日收盘」，直接用它做基准，避免把两天涨跌算成一天。
+    today_str = now_cst().strftime("%Y-%m-%d")
+    base = prev if (latest.get("date") == today_str and prev) else latest
     prev_prices = {}
-    if prev:
-        for c in prev.get("byCoin", []):
-            prev_prices.setdefault(c.get("coin"), c.get("price"))
+    for c in (base or {}).get("byCoin", []):
+        prev_prices.setdefault(c.get("coin"), c.get("price"))
 
     include = set((cfg.get("crypto") or {}).get("include_coins") or [])
     exclude = set((cfg.get("crypto") or {}).get("exclude_coins") or [])
