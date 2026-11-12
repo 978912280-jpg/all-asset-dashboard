@@ -47,15 +47,9 @@
         return r.json();
       })
       .then(function (data) {
+        state.base = data;
         state.data = data;
-        renderMeta();
-        renderKpi();
-        renderPending();
-        renderSplit();
-        renderTable();
-        renderCalendar();
-        renderTrend();
-        renderSources();
+        renderAll();
       })
       .catch(function (e) {
         $("table-body").innerHTML =
@@ -63,6 +57,86 @@
           "数据加载失败：" + escapeHtml(e.message) +
           "（请确认 data/dashboard.json 已生成）</td></tr>";
       });
+  }
+
+  function renderAll() {
+    renderMeta();
+    renderKpi();
+    renderPending();
+    renderSplit();
+    renderTable();
+    renderCalendar();
+    renderTrend();
+    renderSources();
+  }
+
+  // ---------- 历史快照整页复现 ----------
+  function toastTip(text) {
+    var el = document.createElement("div");
+    el.className = "toast-tip";
+    el.textContent = text;
+    document.body.appendChild(el);
+    setTimeout(function () { el.classList.add("show"); }, 30);
+    setTimeout(function () {
+      el.classList.remove("show");
+      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 250);
+    }, 2600);
+  }
+
+  function loadSnapshots() {
+    if (state.snapCache) return Promise.resolve(state.snapCache);
+    return fetch("data/snapshots.json?t=" + Date.now())
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (list) { state.snapCache = list || []; return state.snapCache; });
+  }
+
+  function applyReplay(detail) {
+    var base = state.base;
+    var ds = detail.date;
+    var view = JSON.parse(JSON.stringify(base));
+    view.summary = detail.summary;
+    view.items = detail.items;
+    view.groups = detail.groups || view.groups || [];
+    view.history = (base.history || []).filter(function (h) { return h.date <= ds; });
+    view.meta = JSON.parse(JSON.stringify(base.meta || {}));
+    view.meta.snapshot_replay = ds;
+    state.replay = ds;
+    state.data = view;
+    state.calSel = ds;
+    var d = new Date(ds + "T00:00:00+08:00");
+    state.calY = d.getFullYear();
+    state.calM = d.getMonth();
+    renderAll();
+    var banner = $("snap-banner");
+    if (banner) { $("sb-date").textContent = ds; banner.hidden = false; }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function enterReplay(ds) {
+    if (!state.base) return;
+    loadSnapshots().then(function (list) {
+      var detail = null;
+      for (var k = 0; k < list.length; k++) { if (list[k].date === ds) detail = list[k]; }
+      if (!detail || !detail.items || !detail.summary) {
+        toastTip(ds + " 只记录了总资产，明细未落库，暂不能整页复现");
+        return;
+      }
+      applyReplay(detail);
+    }).catch(function () { toastTip("快照数据读取失败，请稍后重试"); });
+  }
+
+  function exitReplay() {
+    if (!state.base) return;
+    state.replay = null;
+    state.data = state.base;
+    state.calSel = null;
+    var t = cstToday().split("-");
+    state.calY = +t[0];
+    state.calM = +t[1] - 1;
+    renderAll();
+    var banner = $("snap-banner");
+    if (banner) banner.hidden = true;
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function renderMeta() {
@@ -96,7 +170,9 @@
         value: "¥" + num(s.total_cny),
         small: false,
         delta: (day === null || day === undefined ? "" :
-          '<span class="' + cls(day) + '">今日浮动收益 ' + (day >= 0 ? "+" : "") + num(day) +
+          '<span class="' + cls(day) + '">' +
+          (state.replay ? "当日浮动收益 " : "今日浮动收益 ") +
+          (day >= 0 ? "+" : "") + num(day) +
           "（" + pct(s.day_change_pct) + "）</span>"),
       },
       {
@@ -192,78 +268,108 @@
     }).join("");
 
     if (!window.echarts) {
-      $("donut-chart").innerHTML = '<p class="empty-tip">图表库未加载，占比数据见左侧图例</p>';
+      $("donut-chart").innerHTML = '<p class="empty-tip">图表库未加载，占比数据见右侧图例</p>';
       return;
     }
     var s = state.data.summary || {};
+    var items = state.data.items || [];
     var total = s.total_cny || 0;
     if (!state.donut) state.donut = echarts.init($("donut-chart"));
 
-    // 扇区：三组拆分，现金再分稳定币 / 支付宝余额，便于用引线标注各自占比
-    var slices = [
-      { name: "传统", full: "传统股票 & 基金", value: s.traditional_cny || 0, color: colors.traditional },
-      { name: "加密", full: "加密货币", value: s.crypto_cny || 0, color: colors.crypto },
-      { name: "稳定币", full: "现金（稳定币）", value: s.stable_cash_cny || 0, color: colors.cash },
-    ];
-    if ((s.fiat_cash_cny || 0) > 0) {
-      slices.push({ name: "支付宝", full: "支付宝现金", value: s.fiat_cash_cny, color: "#2dd4bf" });
+    function shade(hex, t) {
+      var r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+      function mix(c) { return Math.round(c + (255 - c) * t).toString(16).padStart(2, "0"); }
+      return "#" + mix(r) + mix(g) + mix(b);
+    }
+    function sumBy(list) { return list.reduce(function (a, i) { return a + (i.value_cny || 0); }, 0); }
+
+    // 环保持不变，只在环内用相近色切分：加密固定三块 BTC / SOL / 其他
+    var slices = [];
+    var tradItems = items.filter(function (i) { return i.group === "traditional" && (i.value_cny || 0) > 0; });
+    tradItems.sort(function (a, b) { return b.value_cny - a.value_cny; });
+    var tradT = [0, 0.15, 0.28, 0.4, 0.52, 0.62];
+    tradItems.forEach(function (i, idx) {
+      slices.push({
+        label: i.id, full: i.name || i.id, value: i.value_cny,
+        color: shade(colors.traditional, tradT[idx] || 0.7),
+      });
+    });
+
+    var cryptoItems = items.filter(function (i) { return i.group === "crypto"; });
+    var btcItems = cryptoItems.filter(function (i) { return i.id === "BTC"; });
+    var solItems = cryptoItems.filter(function (i) { return i.id === "SOL"; });
+    var restItems = cryptoItems.filter(function (i) { return i.id !== "BTC" && i.id !== "SOL"; });
+    if (btcItems.length) slices.push({ label: "BTC", full: "BTC", value: sumBy(btcItems), color: colors.crypto });
+    if (solItems.length) slices.push({ label: "SOL", full: "SOL", value: sumBy(solItems), color: shade(colors.crypto, 0.22) });
+    if (restItems.length) {
+      slices.push({
+        label: "其他", full: "其他加密货币：" + restItems.map(function (i) { return i.id; }).join("、"),
+        value: sumBy(restItems), color: shade(colors.crypto, 0.45),
+      });
+    }
+
+    var cashItems = items.filter(function (i) { return i.group === "cash" && (i.value_cny || 0) > 0; });
+    var stableItems = cashItems.filter(function (i) { return (i.asset_class || "").indexOf("稳定币") >= 0; });
+    var fiatItems = cashItems.filter(function (i) { return (i.asset_class || "").indexOf("余额") >= 0; });
+    if (stableItems.length) slices.push({ label: "稳定币", full: "现金（稳定币）", value: sumBy(stableItems), color: colors.cash });
+    if (fiatItems.length) {
+      slices.push({
+        label: "支付宝", full: fiatItems.map(function (i) { return i.name; }).join(" / "),
+        value: sumBy(fiatItems), color: shade(colors.cash, 0.5),
+      });
     }
     slices = slices.filter(function (x) { return x.value > 0; });
     var compact = window.matchMedia("(max-width: 860px)").matches;
 
     state.donut.setOption({
-      title: {
-        text: "总资产",
-        subtext: "¥" + num(total),
+      graphic: [{
+        type: "text",
         left: "center",
-        top: "center",
-        textAlign: "center",
-        itemGap: 2,
-        textStyle: { fontSize: compact ? 9 : 10, color: "#6b7280", fontWeight: "normal" },
-        subtextStyle: { fontSize: compact ? 12 : 13, color: "#1f2329", fontWeight: "bold" },
-      },
+        top: "middle",
+        z: 10,
+        silent: true,
+        style: {
+          text: "{a|总资产}\n{b|¥" + num(total) + "}",
+          textAlign: "center",
+          rich: {
+            a: { fontSize: compact ? 9 : 10, fill: "#6b7280", lineHeight: compact ? 15 : 16 },
+            b: { fontSize: compact ? 12 : 14, fontWeight: "bold", fill: "#1f2329", lineHeight: compact ? 17 : 19 },
+          },
+        },
+      }],
       tooltip: {
         trigger: "item",
         formatter: function (p) {
-          return p.data.full + "<br/>¥" + num(p.value) + "（" + p.percent.toFixed(2) + "%）";
+          return (p.data.full || p.data.name) + "<br/>¥" + num(p.value) + "（" + p.percent.toFixed(2) + "%）";
         },
       },
       legend: { show: false },
       series: [{
         name: "资产占比",
         type: "pie",
-        radius: compact ? ["38%", "58%"] : ["42%", "60%"],
+        radius: compact ? ["33%", "54%"] : ["36%", "56%"],
         center: ["50%", "50%"],
         avoidLabelOverlap: true,
-        labelLayout: { moveOverlap: "shiftY", hideOverlap: false },
-        minAngle: 2,
-        itemStyle: { borderColor: "#fff", borderWidth: 2 },
+        minAngle: 1.5,
+        itemStyle: { borderColor: "#fff", borderWidth: 1 },
         label: {
           show: true,
           position: "outside",
-          formatter: function (p) { return p.name + "\n" + p.percent.toFixed(1) + "%"; },
-          fontSize: compact ? 9 : 10.5,
+          formatter: function (p) { return p.data.label + "\n" + p.percent.toFixed(1) + "%"; },
+          fontSize: compact ? 8.5 : 9.5,
           color: "#374151",
-          lineHeight: 13,
+          lineHeight: 11.5,
         },
         labelLine: {
           show: true,
-          length: compact ? 8 : 12,
-          length2: compact ? 10 : 14,
+          length: compact ? 6 : 8,
+          length2: compact ? 8 : 12,
           smooth: true,
           lineStyle: { width: 1, color: "#9ca3af" },
         },
-        emphasis: {
-          label: { fontWeight: "bold", color: "#1f2329" },
-          scaleSize: 4,
-        },
+        emphasis: { label: { fontWeight: "bold", color: "#1f2329" }, scaleSize: 3 },
         data: slices.map(function (x) {
-          return {
-            name: x.name,
-            full: x.full,
-            value: Math.round(x.value),
-            itemStyle: { color: x.color },
-          };
+          return { name: x.label, full: x.full, label: x.label, value: Math.round(x.value), itemStyle: { color: x.color } };
         }),
       }],
     }, true);
@@ -417,9 +523,8 @@
       var cell = e.target.closest("[data-date]");
       if (!cell) return;
       var ds = cell.getAttribute("data-date");
-      state.calSel = (state.calSel === ds) ? null : ds;
-      renderCalendar();
-      if (state.calSel) openSnapshot(state.calSel);
+      if (state.replay === ds) { exitReplay(); return; }
+      enterReplay(ds);
     };
   }
 
@@ -791,6 +896,7 @@
   }
 
   function init() {
+    if ($("btn-back-today")) $("btn-back-today").addEventListener("click", exitReplay);
     bindTabs();
     bindCalTabs();
     bindDisclaimer();

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-version="1.1.4">
+<html lang="zh-CN" data-page-version="1.1.5">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -18,10 +18,10 @@
       .catch(function () {});
   })();
   </script>
-  <link rel="stylesheet" href="css/style.css?v=1.1.4">
+  <link rel="stylesheet" href="css/style.css?v=1.1.5">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231f2329'/%3E%3Cpath d='M5 17 L10 11 L13 14 L18 7' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <script src="https://fastly.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" defer></script>
-  <script src="js/app.js?v=1.1.4" defer></script>
+  <script src="js/app.js?v=1.1.5" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -48,6 +48,12 @@
       <p>本页面仅用于个人资产记录与研究，<strong>不构成任何投资建议</strong>。</p>
     </div>
   </header>
+
+    <div class="snap-banner" id="snap-banner" hidden>
+      <div class="sb-text"><strong id="sb-date"></strong> 的历史快照
+        <span class="sb-note">· 总资产、明细、占比、日历均为当日数据</span></div>
+      <button type="button" class="sb-btn" id="btn-back-today">回到今天</button>
+    </div>
 
   <main class="container">
     <section class="kpi-grid" id="kpi-grid" aria-label="总览"></section>

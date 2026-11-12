@@ -32,7 +32,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.1.4"
+PAGE_VERSION = "1.1.5"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
 CASH_GROUP = "cash"
@@ -384,17 +384,6 @@ def main():
         "items": [{"id": r["id"], "shares": r.get("shares"), "price": r.get("price")}
                   for r in trad_rows + crypto_rows + cash_rows],
     }
-    snapshots = [s for s in snapshots if s.get("date") != today] + [entry]
-    snapshots.sort(key=lambda s: s.get("date") or "")
-    prev_total = None
-    for sn in snapshots:
-        if sn.get("day_change_cny") is None and prev_total is not None:
-            d = (sn.get("total_cny") or 0) - prev_total
-            sn["day_change_cny"] = r2(d, 2)
-            base = prev_total
-            sn["day_change_pct"] = round(d / base * 100, 2) if base else 0.0
-        prev_total = sn.get("total_cny")
-    save_json(snapshots_path, snapshots)
 
     print("[5/5] 写出 dashboard.json …")
     generated_at = now_cst().strftime("%Y-%m-%dT%H:%M:%S+08:00")
@@ -492,6 +481,21 @@ def main():
                      "crypto_usdt": s.get("crypto_usdt")} for s in snapshots][-400:],
     }
     save_json(dashboard_path, dashboard)
+
+    # 快照落库：带上当日完整明细，供首页「历史快照」整页复现
+    entry["summary"] = dashboard["summary"]
+    entry["groups"] = dashboard["groups"]
+    entry["items"] = dashboard["items"]
+    snapshots = [x for x in snapshots if x.get("date") != today] + [entry]
+    snapshots.sort(key=lambda x: x.get("date") or "")
+    prev_total = None
+    for sn in snapshots:
+        if sn.get("day_change_cny") is None and prev_total is not None:
+            d = (sn.get("total_cny") or 0) - prev_total
+            sn["day_change_cny"] = r2(d, 2)
+            sn["day_change_pct"] = round(d / prev_total * 100, 2) if prev_total else 0.0
+        prev_total = sn.get("total_cny")
+    save_json(snapshots_path, snapshots)
 
     print("\n合计：传统 %.2f + 加密 %.2f = %.2f CNY" % (trad_cny, crypto_cny, total_cny))
     if pending:

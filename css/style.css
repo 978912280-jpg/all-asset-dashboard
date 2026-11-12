@@ -176,12 +176,12 @@ code {
 /* ---------- 占比 ---------- */
 .split-body {
   display: grid;
-  grid-template-columns: minmax(240px, 360px) 1fr;
+  grid-template-columns: minmax(260px, 420px) 1fr;
   gap: 18px;
   align-items: center;
 }
 .donut-box { width: 100%; }
-.donut-box .chart { height: 320px; }
+.donut-box .chart { height: 440px; }
 .chart { width: 100%; height: 260px; }
 .chart-tall { height: 300px; }
 
@@ -385,3 +385,32 @@ body, a, button, .seg-btn, .cal-cell, .pnl-block, .kpi, .tag, input, select { to
 .cal-tip .tip-row span:last-child { font-variant-numeric: tabular-nums; }
 .cal-tip .pos { color: #047857; }
 .cal-tip .neg { color: #b91c1c; }
+
+/* ---------- 历史快照提示条 ---------- */
+.snap-banner {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  flex-wrap: wrap;
+  margin: 0 auto 12px; padding: 10px 14px;
+  max-width: 1180px; width: calc(100% - 32px);
+  background: #fff7ed; border: 1px solid #fdba74; border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(180, 83, 9, .12);
+}
+.snap-banner .sb-text { font-size: 13.5px; color: #92400e; }
+.snap-banner strong { font-size: 15px; color: #b45309; font-variant-numeric: tabular-nums; }
+.snap-banner .sb-note { color: #a16207; font-size: 12.5px; }
+.snap-banner[hidden] { display: none; }
+.sb-btn {
+  border: 1px solid #b45309; background: #b45309; color: #fff;
+  border-radius: 8px; padding: 7px 12px; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.sb-btn:hover { background: #92400e; }
+
+/* ---------- 轻提示 ---------- */
+.toast-tip {
+  position: fixed; left: 50%; bottom: 40px; transform: translate(-50%, 12px);
+  background: rgba(31, 35, 41, .92); color: #fff; font-size: 13px;
+  padding: 9px 14px; border-radius: 8px; z-index: 60;
+  opacity: 0; transition: opacity .2s, transform .2s; max-width: 82vw;
+}
+.toast-tip.show { opacity: 1; transform: translate(-50%, 0); }
