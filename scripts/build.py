@@ -32,7 +32,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.1.8"
+PAGE_VERSION = "1.1.9"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
 CASH_GROUP = "cash"
@@ -251,6 +251,33 @@ def load_crypto(cfg, rate, prev_items=None):
             "pending": False,
             "note": "现货+理财（%s）" % "/".join(sorted(a["kinds"])) if a["kinds"] else "现货+理财",
         })
+    # ---- 用 Bitget 实时价重估币类持仓（稳定币按 1:1 不动）----
+    live_prices = {}
+    repriced = 0
+    pnl_delta_usdt = 0.0
+    if os.environ.get("LIVE_CRYPTO", "1") != "0":
+        coins = [r["id"] for r in rows if r["id"].upper() not in STABLE_COINS]
+        print("      抓取加密货币实时价格 …")
+        live_prices = sources.bitget_prices(coins)
+        for row in rows:
+            px = live_prices.get(row["id"])
+            if not px or not row.get("shares"):
+                continue
+            snap_px = row.get("price") or 0
+            amt = float(row["shares"])
+            row["price"] = r2(px, 4)
+            row["value_native"] = r2(amt * px, 2)
+            row["value_cny"] = r2(amt * px * rate, 2)
+            row["price_source"] = "Bitget 实时价"
+            pp = prev_prices.get(row["id"])
+            if pp:
+                row["change_pct"] = r2((px - pp) / pp * 100, 2)
+                prev_amt = (prev_items.get(row["id"]) or {}).get("shares") or amt
+                row["day_change_cny"] = r2(prev_amt * (px - pp) * rate, 2)
+            if snap_px:
+                pnl_delta_usdt += amt * (px - snap_px)
+            repriced += 1
+
     rows.sort(key=lambda x: x["value_cny"] or 0, reverse=True)
 
     meta = {
@@ -265,7 +292,19 @@ def load_crypto(cfg, rate, prev_items=None):
         "real_pnl_usdt": r2(latest.get("realPnlUsdt"), 2),
         "real_pnl_pct": r2(latest.get("realPnlPct"), 2),
         "net_deposit_usdt": r2(latest.get("netDepositUsdt"), 2),
+        "price_mode": "live" if repriced else "snapshot",
+        "live_price_count": repriced,
+        "price_updated_at": now_cst().strftime("%Y-%m-%dT%H:%M:%S+08:00"),
+        "snapshot_total_usdt": r2(latest.get("totalUsdt"), 2),
     }
+    # 实时价重估后：账户合计与真实盈亏跟随币价变化
+    if repriced:
+        meta["total_usdt"] = r2(sum(r["value_native"] or 0 for r in rows), 2)
+        if meta.get("real_pnl_usdt") is not None:
+            meta["real_pnl_usdt"] = r2(meta["real_pnl_usdt"] + pnl_delta_usdt, 2)
+            nd = meta.get("net_deposit_usdt") or 0
+            if nd:
+                meta["real_pnl_pct"] = r2(meta["real_pnl_usdt"] / nd * 100, 2)
     return rows, meta
 
 
@@ -369,8 +408,12 @@ def main():
         r["weight"] = weight(r["value_cny"] or 0)
 
     # ---- 历史快照累积 ----
+    build_source = (os.environ.get("BUILD_SOURCE") or "auto").lower()
     entry = {
         "date": today,
+        "updated_at": now_cst().strftime("%Y-%m-%dT%H:%M:%S+08:00"),
+        "source": build_source,
+        "price_mode": crypto_meta.get("price_mode"),
         "total_cny": r2(total_cny, 2),
         "traditional_cny": r2(trad_cny, 2),
         "crypto_cny": r2(crypto_account_cny, 2),
@@ -384,6 +427,20 @@ def main():
         "items": [{"id": r["id"], "shares": r.get("shares"), "price": r.get("price")}
                   for r in trad_rows + crypto_rows + cash_rows],
     }
+
+    # 当日数据以「自动 / 手动」两次构建中较晚的一次为准
+    prev_today = None
+    for x in snapshots:
+        if x.get("date") == today:
+            prev_today = x
+            break
+    keep_prev = False
+    if prev_today and prev_today.get("updated_at"):
+        try:
+            if datetime.fromisoformat(prev_today["updated_at"]) > datetime.fromisoformat(entry["updated_at"]):
+                keep_prev = True
+        except ValueError:
+            keep_prev = False
 
     print("[5/5] 写出 dashboard.json …")
     generated_at = now_cst().strftime("%Y-%m-%dT%H:%M:%S+08:00")
@@ -403,6 +460,8 @@ def main():
             "subtitle": "传统股票/基金 + 加密货币 合并统计 · 份额 × 价格 = 市值",
             "version": (holdings.get("meta") or {}).get("version") or "1.0.0",
             "generated_at": generated_at,
+            "build_source": build_source,
+            "crypto_price_mode": crypto_meta.get("price_mode"),
             "page_version": PAGE_VERSION,
             "base_currency": "CNY",
             "fx": {"usdcny": r2(rate, 4), "source": fx_src},
@@ -483,9 +542,13 @@ def main():
     save_json(dashboard_path, dashboard)
 
     # 快照落库：带上当日完整明细，供首页「历史快照」整页复现
-    entry["summary"] = dashboard["summary"]
-    entry["groups"] = dashboard["groups"]
-    entry["items"] = dashboard["items"]
+    if not keep_prev:
+        entry["summary"] = dashboard["summary"]
+        entry["groups"] = dashboard["groups"]
+        entry["items"] = dashboard["items"]
+    if keep_prev:
+        print("      今日快照已由更晚的一次构建写入（%s），保留原记录" % prev_today.get("updated_at"))
+        entry = prev_today
     snapshots = [x for x in snapshots if x.get("date") != today] + [entry]
     snapshots.sort(key=lambda x: x.get("date") or "")
     prev_total = None

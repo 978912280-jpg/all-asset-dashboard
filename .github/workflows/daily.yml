@@ -6,6 +6,11 @@ on:
   repository_dispatch:
     types: [daily]
   workflow_dispatch:
+    inputs:
+      source:
+        description: "触发来源：auto（定时）/ manual（后台手动抓价）"
+        required: false
+        default: "auto"
 
 permissions:
   contents: write
@@ -29,6 +34,8 @@ jobs:
           python-version: "3.12"
 
       - name: 抓取价格并计算资产
+        env:
+          BUILD_SOURCE: ${{ github.event.inputs.source || 'auto' }}
         run: python3 scripts/build.py
 
       - name: 提交每日快照与仪表盘数据

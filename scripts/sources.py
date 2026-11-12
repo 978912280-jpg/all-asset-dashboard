@@ -249,3 +249,38 @@ def usdcny():
         except (ValueError, KeyError, TypeError):
             pass
     return None, None
+
+BITGET_TICKER_URL = "https://api.bitget.com/api/v2/spot/market/ticker"
+
+
+def bitget_prices(coins, log=print):
+    """抓 Bitget 现货最新成交价（USDT 计价），返回 {coin: price}。
+
+    只返回成功拿到价格的币；接口不可用或该币无 USDT 交易对时，该币不出现在结果里，
+    调用方应回退到仪表台快照价。
+    """
+    out = {}
+    if not coins:
+        return out
+    for coin in coins:
+        symbol = "%sUSDT" % str(coin).upper()
+        raw = _fetch(BITGET_TICKER_URL, {"symbol": symbol}, retries=1)
+        if not raw:
+            continue
+        try:
+            payload = json.loads(raw)
+            data = payload.get("data")
+            if isinstance(data, list):
+                data = data[0] if data else None
+            if not data:
+                continue
+            price = float(data.get("lastPr") or 0)
+            if price > 0:
+                out[coin] = price
+        except (ValueError, TypeError, KeyError, IndexError):
+            continue
+    if out:
+        log("      Bitget 实时价命中 %d/%d 个币种" % (len(out), len(coins)))
+    else:
+        log("      Bitget 实时价不可用，回退仪表台快照价")
+    return out

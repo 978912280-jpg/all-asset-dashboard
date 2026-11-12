@@ -48,7 +48,8 @@ def write_json(path, data):
 
 def run_build():
     with BUILD_LOCK:
-        proc = subprocess.run([sys.executable, BUILD], cwd=ROOT,
+        env = dict(os.environ, BUILD_SOURCE="manual")
+        proc = subprocess.run([sys.executable, BUILD], cwd=ROOT, env=env,
                               capture_output=True, text=True, timeout=180)
     if proc.returncode != 0:
         return False, (proc.stderr or proc.stdout or "构建失败").strip()[-800:]

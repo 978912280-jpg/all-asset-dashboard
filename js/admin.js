@@ -75,6 +75,13 @@
           $("fresh-badge").textContent = "加密快照 " + cm.snapshot_date +
             (stale ? "（每日约 07:00 汇总，点上方「立即抓取最新价格」可更新）" : "（已是最新）");
         }
+        var bm = (state.dashboard && state.dashboard.meta) || {};
+        if (bm.generated_at && $("fresh-badge")) {
+          $("fresh-badge").textContent += " · 最近构建：" +
+            (bm.build_source === "manual" ? "手动" : "自动") + " " +
+            String(bm.generated_at).slice(5, 16).replace("T", " ") +
+            (bm.crypto_price_mode === "live" ? "（币价实时）" : "（币价快照）");
+        }
         $("save-note").innerHTML = state.serverMode
           ? "当前运行在本地后台（<code>scripts/server.py</code>）：保存后自动写入 <code>data/holdings.json</code> 并立即重建 <code>data/dashboard.json</code>。"
           : "当前为 GitHub Pages 静态页面：填入下方 GitHub Token 后点「保存并计算」，直接提交 <code>data/holdings.json</code> 并触发 Actions 重建。";
@@ -522,7 +529,7 @@
     return ghFetch("/repos/" + gh.repo + "/actions/workflows/daily.yml/dispatches", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ref: gh.branch }),
+      body: JSON.stringify({ ref: gh.branch, inputs: { source: "manual" } }),
     });
   }
 
