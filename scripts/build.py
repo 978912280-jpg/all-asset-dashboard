@@ -32,7 +32,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.2.5"
+PAGE_VERSION = "1.2.6"
 PAGE_DATE = "2026.11.12"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -278,7 +278,9 @@ def load_crypto(cfg, rate, prev_items=None):
             row["value_native"] = r2(amt * px, 2)
             row["value_cny"] = r2(amt * px * rate, 2)
             row["price_source"] = "Bitget 实时价"
-            pp = prev_prices.get(row["id"])
+            # 日变动基准：优先用昨日快照里「当时展示的价格」，保证与昨天页面上的数字连续；
+            # 仅当昨日快照无该币价时才退回交易所快照价。
+            pp = (prev_items.get(row["id"]) or {}).get("price") or prev_prices.get(row["id"])
             if pp:
                 row["change_pct"] = r2((px - pp) / pp * 100, 2)
                 prev_amt = (prev_items.get(row["id"]) or {}).get("shares") or amt
