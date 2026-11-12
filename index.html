@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-version="1.3.1">
+<html lang="zh-CN" data-page-version="1.3.2">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -18,16 +18,21 @@
       .catch(function () {});
   })();
   </script>
-  <link rel="stylesheet" href="css/style.css?v=1.3.1">
+  <link rel="stylesheet" href="css/style.css?v=1.3.2">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231f2329'/%3E%3Cpath d='M5 17 L10 11 L13 14 L18 7' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <script src="https://fastly.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" defer></script>
-  <script src="js/app.js?v=1.3.1" defer></script>
+  <script src="js/app.js?v=1.3.2" defer></script>
 </head>
 <body class="locked">
   <div class="pin-lock" id="pin-lock" hidden>
-    <div class="pin-box">
-      <div class="pin-brand">全维度资产统计</div>
-      <div class="pin-tip" id="pin-tip">请输入 6 位访问密码</div>
+    <div class="pin-glow"></div>
+    <div class="pin-card">
+      <div class="pin-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2.6 4.5 6v5.7c0 4.6 3.1 8.3 7.5 9.7 4.4-1.4 7.5-5.1 7.5-9.7V6L12 2.6Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.8 12.1l2.2 2.2 4.2-4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </div>
+      <h1 class="pin-brand">全维度资产统计</h1>
+      <p class="pin-sub">私有资产仪表台 · 传统股票基金与加密资产合并统计</p>
+      <p class="pin-tip" id="pin-tip">请输入 6 位访问密码</p>
       <div class="pin-dots" id="pin-dots"><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <div class="pin-pad" id="pin-pad">
         <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
@@ -35,6 +40,7 @@
         <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
         <button type="button" data-k="clear" class="pin-fn">清空</button><button type="button" data-k="0">0</button><button type="button" data-k="del" class="pin-fn">⌫</button>
       </div>
+      <p class="pin-foot">仅本人可见 · 每次进入需验证</p>
     </div>
   </div>
   <header class="topbar">

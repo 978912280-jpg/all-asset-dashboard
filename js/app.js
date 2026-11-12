@@ -495,30 +495,17 @@
   }
 
   // ---------- 访问密码锁（拨号盘） ----------
-  var PIN_KEY = "asset_dash_unlock";
   var PIN_HASH = "sg6ibi";   // 访问密码的散列值（adpin::<6位密码>）
-  var PIN_UNTIL = 7 * 24 * 3600 * 1000;
 
   function pinHash(str) {
     var x = 5381;
     for (var i = 0; i < str.length; i++) { x = ((x << 5) + x) ^ str.charCodeAt(i); }
     return (x >>> 0).toString(36);
   }
-  function pinUnlockDone() {
-    try {
-      var v = JSON.parse(localStorage.getItem(PIN_KEY) || "0");
-      if (typeof v === "number" && v > Date.now()) return true;
-    } catch (e) { /* 忽略 */ }
-    return false;
-  }
   function bindPinLock() {
     var lock = $("pin-lock"), pad = $("pin-pad"), dots = $("pin-dots"), tip = $("pin-tip");
     if (!lock || !pad) return;
-    if (pinUnlockDone()) {
-      lock.hidden = true;
-      document.body.classList.remove("locked");
-      return;
-    }
+    // 每次进入网站都需重新验证，不做任何本地记忆
     lock.hidden = false;
     document.body.classList.add("locked");
     var buf = "";
@@ -547,7 +534,6 @@
         if (pinHash("adpin::" + buf) === PIN_HASH) {
           dots.classList.add("ok");
           tip.textContent = "验证通过";
-          try { localStorage.setItem(PIN_KEY, JSON.stringify(Date.now() + PIN_UNTIL)); } catch (e) {}
           setTimeout(function () {
             lock.hidden = true;
             document.body.classList.remove("locked");
