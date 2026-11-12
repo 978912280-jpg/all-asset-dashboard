@@ -32,7 +32,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.2.2"
+PAGE_VERSION = "1.2.3"
 PAGE_DATE = "2026.11.12"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
