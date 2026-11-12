@@ -378,7 +378,7 @@
         minAngle: 1.5,
         labelLayout: function (params) {
           if (mergedIdx !== null && params.dataIndex === mergedIdx) {
-            return { x: compact ? 6 : 12, y: compact ? 4 : 44, align: "left", verticalAlign: "top", moveOverlap: "none" };
+            return { x: compact ? 84 : 112, y: compact ? 4 : 8, align: "left", verticalAlign: "top", moveOverlap: "none" };
           }
           return { moveOverlap: "shiftY" };
         },
