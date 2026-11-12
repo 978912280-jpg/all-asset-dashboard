@@ -250,35 +250,38 @@ def usdcny():
             pass
     return None, None
 
-BITGET_TICKER_URL = "https://api.bitget.com/api/v2/spot/market/ticker"
+BITGET_TICKERS_URL = "https://api.bitget.com/api/v2/spot/market/tickers"
 
 
 def bitget_prices(coins, log=print):
     """抓 Bitget 现货最新成交价（USDT 计价），返回 {coin: price}。
 
-    只返回成功拿到价格的币；接口不可用或该币无 USDT 交易对时，该币不出现在结果里，
-    调用方应回退到仪表台快照价。
+    一次拉全量 tickers 再按 <COIN>USDT 匹配；接口不可用或该币无 USDT 交易对时，
+    该币不出现在结果里，调用方回退到仪表台快照价。
     """
     out = {}
     if not coins:
         return out
-    for coin in coins:
-        symbol = "%sUSDT" % str(coin).upper()
-        raw = _fetch(BITGET_TICKER_URL, {"symbol": symbol}, retries=1)
-        if not raw:
-            continue
+    wanted = {str(c).upper(): c for c in coins}
+    raw = _fetch(BITGET_TICKERS_URL, retries=2)
+    if raw:
         try:
             payload = json.loads(raw)
-            data = payload.get("data")
-            if isinstance(data, list):
-                data = data[0] if data else None
-            if not data:
-                continue
-            price = float(data.get("lastPr") or 0)
-            if price > 0:
-                out[coin] = price
-        except (ValueError, TypeError, KeyError, IndexError):
-            continue
+            for t in (payload.get("data") or []):
+                sym = str(t.get("symbol") or "").upper()
+                if not sym.endswith("USDT"):
+                    continue
+                coin = sym[:-4]
+                if coin not in wanted:
+                    continue
+                try:
+                    price = float(t.get("lastPr") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if price > 0:
+                    out[wanted[coin]] = price
+        except (ValueError, TypeError):
+            out = {}
     if out:
         log("      Bitget 实时价命中 %d/%d 个币种" % (len(out), len(coins)))
     else:
