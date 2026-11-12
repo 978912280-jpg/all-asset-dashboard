@@ -32,7 +32,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.2.3"
+PAGE_VERSION = "1.2.4"
 PAGE_DATE = "2026.11.12"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -448,6 +448,19 @@ def main():
         except ValueError:
             keep_prev = False
 
+    # 趋势/日历用的 history：必须包含「今天」这一条（快照是在 dashboard 写出之后才落库的）
+    hist = [{kk: sn.get(kk) for kk in ("date", "total_cny", "traditional_cny", "crypto_cny",
+                                       "cash_cny", "day_change_cny", "day_change_pct",
+                                       "fx_usdcny", "crypto_usdt")}
+            for sn in snapshots if sn.get("date") != today]
+    hist.append({"date": today, "total_cny": entry["total_cny"],
+                 "traditional_cny": entry["traditional_cny"],
+                 "crypto_cny": entry["crypto_cny"], "cash_cny": entry["cash_cny"],
+                 "day_change_cny": entry["day_change_cny"],
+                 "day_change_pct": entry["day_change_pct"],
+                 "fx_usdcny": entry["fx_usdcny"], "crypto_usdt": entry["crypto_usdt"]})
+    hist.sort(key=lambda x: x.get("date") or "")
+
     print("[5/5] 写出 dashboard.json …")
     generated_at = now_cst().strftime("%Y-%m-%dT%H:%M:%S+08:00")
     # 份额新鲜度：holdings.json 的 updated_at 距今多少天，用于前端提醒核对
@@ -543,15 +556,7 @@ def main():
         ],
         "items": trad_rows + crypto_rows + cash_rows,
         "crypto_meta": crypto_meta,
-        "history": [{"date": s.get("date"),
-                     "total_cny": s.get("total_cny"),
-                     "traditional_cny": s.get("traditional_cny"),
-                     "crypto_cny": s.get("crypto_cny"),
-                     "cash_cny": s.get("cash_cny"),
-                     "day_change_cny": s.get("day_change_cny"),
-                     "day_change_pct": s.get("day_change_pct"),
-                     "fx_usdcny": s.get("fx_usdcny"),
-                     "crypto_usdt": s.get("crypto_usdt")} for s in snapshots][-400:],
+        "history": hist[-400:],
     }
     save_json(dashboard_path, dashboard)
 
