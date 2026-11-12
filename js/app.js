@@ -494,6 +494,62 @@
       '<td class="num">' + sumWTxt + "</td></tr>";
   }
 
+  // ---------- 首页「立即抓取最新价格」 ----------
+  function bindRefreshPrice() {
+    var btn = $("btn-refresh-price");
+    if (!btn) return;
+    btn.onclick = function () {
+      if (btn.disabled) return;
+      var token = "";
+      try {
+        token = (JSON.parse(localStorage.getItem("asset_dash_gh") || "{}").token || "");
+      } catch (e) { token = ""; }
+      if (!token) {
+        toastTip("先在「份额维护后台」填入 GitHub Token，再回来点这个按钮");
+        return;
+      }
+      var old = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "抓取中…";
+      var t0 = Date.now();
+      var base = ((state.data.meta || {}).generated_at || "");
+      fetch("https://api.github.com/repos/978912280-jpg/all-asset-dashboard/actions/workflows/daily.yml/dispatches", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+          Accept: "application/vnd.github+json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ref: "main", inputs: { source: "manual" } }),
+      }).then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        toastTip("已触发抓取最新价格，约 1 分钟完成，页面会自动刷新");
+        poll();
+      }).catch(function (e) {
+        btn.disabled = false;
+        btn.textContent = old;
+        toastTip("触发失败：" + e.message);
+      });
+      function poll() {
+        if (Date.now() - t0 > 240000) {
+          btn.disabled = false;
+          btn.textContent = old;
+          toastTip("抓取超时，请稍后手动刷新页面");
+          return;
+        }
+        setTimeout(function () {
+          fetch("data/dashboard.json?t=" + Date.now())
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              var g = ((d.meta || {}).generated_at || "");
+              if (g && g !== base) { location.reload(); } else { poll(); }
+            })
+            .catch(poll);
+        }, 8000);
+      }
+    };
+  }
+
   function bindTabs() {
     $("group-tabs").addEventListener("click", function (e) {
       var btn = e.target.closest(".seg-btn");
@@ -1013,6 +1069,7 @@
   function init() {
     if ($("btn-back-today")) $("btn-back-today").addEventListener("click", exitReplay);
     bindTabs();
+    bindRefreshPrice();
     bindCalTabs();
     bindDisclaimer();
     bindResize();
