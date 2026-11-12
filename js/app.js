@@ -145,8 +145,9 @@
       $("update-time").textContent = "数据更新时间：" + m.generated_at.replace("T", " ");
     }
     if (m.version) {
-      $("meta-version").textContent = "v" + m.version;
-      $("footer-version").textContent = "v" + m.version;
+      var vtxt = "v" + m.version + (m.version_date ? "（" + m.version_date + "）" : "");
+      $("meta-version").textContent = vtxt;
+      $("footer-version").textContent = vtxt;
     }
     if (m.subtitle) $("subtitle").textContent = m.subtitle;
     var fx = (m.fx || {}).usdcny;

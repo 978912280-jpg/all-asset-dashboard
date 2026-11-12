@@ -32,7 +32,8 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.1.9"
+PAGE_VERSION = "1.2.0"
+PAGE_DATE = "2026.11.12"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
 CASH_GROUP = "cash"
@@ -459,6 +460,7 @@ def main():
             "title": "全维度资产统计",
             "subtitle": "传统股票/基金 + 加密货币 合并统计 · 份额 × 价格 = 市值",
             "version": (holdings.get("meta") or {}).get("version") or "1.0.0",
+            "version_date": (holdings.get("meta") or {}).get("version_date") or PAGE_DATE,
             "generated_at": generated_at,
             "build_source": build_source,
             "crypto_price_mode": crypto_meta.get("price_mode"),
