@@ -86,7 +86,7 @@
       "id": "alipay",
       "name": "支付宝现金",
       "currency": "CNY",
-      "amount_cny": 0
+      "amount_cny": 2734
     }
   ]
 }
