@@ -163,6 +163,7 @@
     var day = s.day_change_cny;
     var tradPnl = s.traditional_pnl_cny;
     var cryptoPnl = s.crypto_pnl_cny;
+    var totalPnl = s.total_pnl_cny;
     var hasTradCost = !!(s.traditional_cost_cny && s.traditional_cost_cny > 0);
     var fxRate = (((state.data || {}).meta || {}).fx || {}).usdcny || 0;
     var cards = [
@@ -173,8 +174,13 @@
         delta: (day === null || day === undefined ? "" :
           '<span class="' + cls(day) + '">' +
           (state.replay ? "当日浮动收益 " : "今日浮动收益 ") +
-          (day >= 0 ? "+" : "") + num(day) +
-          "（" + pct(s.day_change_pct) + "）</span>"),
+          (day >= 0 ? "+" : "−") + "¥" + num(Math.abs(day)) +
+          "（" + pct(s.day_change_pct) + "）</span>") +
+          (totalPnl === null || totalPnl === undefined ? "" :
+            '<br><span class="' + cls(totalPnl) + '">总盈亏 ' +
+            (totalPnl >= 0 ? "+" : "−") + "¥" + num(Math.abs(totalPnl)) +
+            (s.total_pnl_pct === null || s.total_pnl_pct === undefined ? "" :
+              "（" + pct(s.total_pnl_pct) + "）") + "</span>"),
       },
       {
         label: '<i class="dot trad"></i>传统股票 & 基金',
@@ -192,8 +198,8 @@
         value: "¥" + num(s.crypto_cny),
         small: true,
         delta: (cryptoPnl === null || cryptoPnl === undefined ? '<span class="muted">盈亏—</span>' :
-          '<span class="' + cls(cryptoPnl) + '">总盈亏 ' + (cryptoPnl >= 0 ? "+" : "") +
-          num(cryptoPnl) + "（" + pct(s.crypto_pnl_pct) + "）</span>"),
+          '<span class="' + cls(cryptoPnl) + '">总盈亏 ' + (cryptoPnl >= 0 ? "+" : "−") +
+          "¥" + num(Math.abs(cryptoPnl)) + "（" + pct(s.crypto_pnl_pct) + "）</span>"),
       },
       {
         label: '<i class="dot cash"></i>现金',

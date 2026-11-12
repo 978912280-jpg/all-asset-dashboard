@@ -32,7 +32,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.2.0"
+PAGE_VERSION = "1.2.1"
 PAGE_DATE = "2026.11.12"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -400,6 +400,9 @@ def main():
     crypto_pnl_usdt = crypto_meta.get("real_pnl_usdt")
     crypto_pnl_cny = crypto_pnl_usdt * rate if crypto_pnl_usdt is not None else None
     total_pnl = trad_pnl + (crypto_pnl_cny or 0) if (trad_cost or crypto_pnl_cny is not None) else None
+    # 总盈亏的基准成本：传统成本 + 加密账户净入金（折算人民币）
+    total_cost_base = trad_cost + (crypto_meta.get("net_deposit_usdt") or 0) * rate
+    total_pnl_pct = round(total_pnl / total_cost_base * 100, 2) if (total_pnl is not None and total_cost_base) else None
     pending = [r["id"] for r in trad_rows if r["pending"]]
 
     def weight(v):
@@ -501,6 +504,7 @@ def main():
             "crypto_pnl_usdt": crypto_pnl_usdt,
             "crypto_pnl_pct": crypto_meta.get("real_pnl_pct"),
             "total_pnl_cny": r2(total_pnl, 2),
+            "total_pnl_pct": total_pnl_pct,
         },
         "groups": [
             {
