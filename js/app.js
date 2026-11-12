@@ -521,7 +521,7 @@
     if (!state.calPeriod) state.calPeriod = "day";
     if (state.calPeriod !== "day") { renderPeriodGrid(); return; }
     var y = state.calY, m = state.calM;
-    var hist = state.data.history || [];
+    var hist = (state.replay ? ((state.base || {}).history || []) : (state.data.history || []));
     var today = cstToday();
     var first = new Date(y, m, 1);
     var lastDay = new Date(y, m + 1, 0).getDate();
@@ -538,9 +538,11 @@
       for (var k = 0; k < hist.length; k++) { if (hist[k].date === ds) { rec = hist[k]; break; } }
       var v = rec && rec.day_change_cny !== null && rec.day_change_cny !== undefined ? rec.day_change_cny : null;
       var cls = "cal-cell";
+      // 复现态下，晚于快照日期的格子属于「尚未发生」，按未来态灰显，不加今天高亮
+      var cutoff = state.replay || today;
       if (v !== null) cls += v >= 0 ? " pos" : " neg";
-      if (ds === today) cls += " today";
-      if (ds > today && v === null) cls += " future";
+      if (ds === today && !state.replay) cls += " today";
+      if (ds > cutoff && v === null) cls += " future";
       if (rec) cls += " has";
       if (ds === state.calSel) cls += " sel";
       var vStr = v !== null ? (v >= 0 ? "+" : "−") + num(Math.abs(v), 0) : "—";
