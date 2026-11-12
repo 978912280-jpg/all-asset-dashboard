@@ -363,3 +363,23 @@ body, a, button, .seg-btn, .cal-cell, .pnl-block, .kpi, .tag, input, select { to
   color: #111827;
   font-variant-numeric: tabular-nums;
 }
+
+/* 周期方块悬浮提示 */
+.cal-tip {
+  position: fixed;
+  z-index: 50;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, .12);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #111827;
+  pointer-events: none;
+  min-width: 150px;
+}
+.cal-tip .tip-label { font-weight: 700; margin-bottom: 4px; color: #374151; }
+.cal-tip .tip-row { display: flex; justify-content: space-between; gap: 12px; line-height: 1.7; }
+.cal-tip .tip-row span:last-child { font-variant-numeric: tabular-nums; }
+.cal-tip .pos { color: #047857; }
+.cal-tip .neg { color: #b91c1c; }

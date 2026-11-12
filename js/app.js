@@ -360,6 +360,7 @@
     $("cal-next").onclick = function () {
       state.calM++; if (state.calM > 11) { state.calM = 0; state.calY++; } renderCalendar();
     };
+    bindCalTip();
     $("pnl-calendar").onclick = function (e) {
       var cell = e.target.closest("[data-date]");
       if (!cell) return;
@@ -393,6 +394,7 @@
     var g = {};
     var cnt = {};
     var first = {}, last = {};
+    var firstSnap = {}, lastSnap = {};
     hist.forEach(function (h) {
       if (h.day_change_cny === null || h.day_change_cny === undefined) return;
       var d = new Date(h.date + "T00:00:00");
@@ -402,12 +404,17 @@
       else { key = String(d.getFullYear()); }
       g[key] = (g[key] || 0) + h.day_change_cny;
       cnt[key] = (cnt[key] || 0) + 1;
-      if (!first[key] || h.date < first[key]) first[key] = h.date;
-      if (!last[key] || h.date > last[key]) last[key] = h.date;
+      if (!first[key] || h.date < first[key]) { first[key] = h.date; firstSnap[key] = h; }
+      if (!last[key] || h.date > last[key]) { last[key] = h.date; lastSnap[key] = h; }
     });
     var out = {};
     Object.keys(g).forEach(function (k) {
-      out[k] = { value: g[k], count: cnt[k], from: first[k], to: last[k] };
+      var fs = firstSnap[k] || {}, ls = lastSnap[k] || {};
+      out[k] = {
+        value: g[k], count: cnt[k], from: first[k], to: last[k],
+        start_total: (fs.total_cny || 0) - (fs.day_change_cny || 0),
+        end_total: ls.total_cny || 0,
+      };
     });
     return out;
   }
@@ -452,7 +459,11 @@
       var cls = "pnl-block " + (rec === null ? "zero" : (rec.value > 0 ? "pos" : (rec.value < 0 ? "neg" : "zero")));
       if (key === state.calKey) cls += " sel";
       var vstr = rec === null ? "—" : (rec.value >= 0 ? "+" : "−") + num(Math.abs(rec.value), 0);
-      html += '<div class="' + cls + '" data-key="' + key + '"><div class="pb-label">' + label +
+      var blocked = rec === null ? "" :
+        ' data-open="' + num(rec.start_total) + '" data-end="' + num(rec.end_total) +
+        '" data-pnl="' + rec.value + '"';
+      html += '<div class="' + cls + '" data-key="' + key + '" data-label="' + label + '"' + blocked +
+        '><div class="pb-label">' + label +
         '</div><div class="pb-val">' + vstr + "</div></div>";
     });
     html += "</div>";
@@ -489,6 +500,8 @@
     var rows = [
       ["周期", label + " " + key],
       ["数据区间", rec.from + " ~ " + rec.to],
+      ["期初资产", "¥" + num(rec.start_total)],
+      ["期末资产", "¥" + num(rec.end_total)],
       ["有数据天数", rec.count + " 天"],
       ["累计浮动收益", '<span class="' + cls2 + '">' + (rec.value >= 0 ? "+" : "−") +
         "¥" + num(Math.abs(rec.value)) + "</span>"],
@@ -502,6 +515,44 @@
       '<p class="snap-note">按每日快照的浮动收益求和；某天无快照则不计入。</p></div>';
     showSnapMask(html);
   }
+  function bindCalTip() {
+    var box = $("pnl-calendar");
+    var tip = document.getElementById("cal-tip");
+    if (!tip) {
+      tip = document.createElement("div");
+      tip.id = "cal-tip";
+      tip.className = "cal-tip";
+      tip.hidden = true;
+      document.body.appendChild(tip);
+    }
+    function show(e) {
+      var cell = e.target.closest(".pnl-block");
+      if (!cell || !cell.getAttribute("data-open")) { tip.hidden = true; return; }
+      var label = cell.getAttribute("data-label") || "";
+      var pv = parseFloat(cell.getAttribute("data-pnl")) || 0;
+      tip.innerHTML = '<div class="tip-label">' + label + "</div>" +
+        '<div class="tip-row"><span>累计浮动收益</span><span class="' + (pv >= 0 ? "pos" : "neg") +
+        '">' + (pv >= 0 ? "+" : "−") + "¥" + num(Math.abs(pv)) + "</span></div>" +
+        '<div class="tip-row"><span>期初资产</span><span>¥' + cell.getAttribute("data-open") + "</span></div>" +
+        '<div class="tip-row"><span>期末资产</span><span>¥' + cell.getAttribute("data-end") + "</span></div>";
+      tip.hidden = false;
+      var x = e.clientX + 12, y = e.clientY - 10;
+      tip.style.left = Math.min(x, document.documentElement.clientWidth - tip.offsetWidth - 8) + "px";
+      tip.style.top = Math.max(8, y - tip.offsetHeight) + "px";
+    }
+    function hide() { tip.hidden = true; }
+    box.addEventListener("mousemove", show);
+    box.addEventListener("mouseleave", hide);
+    box.addEventListener("touchstart", function (e) {
+      var cell = e.target.closest(".pnl-block");
+      if (!cell) return;
+      var r = cell.getBoundingClientRect();
+      var fake = { target: cell, clientX: r.left + r.width / 2, clientY: r.top };
+      show(fake);
+      setTimeout(hide, 2200);
+    }, { passive: true });
+  }
+
   function showSnapMask(html) {
     var mask = document.createElement("div");
     mask.className = "snap-mask";
