@@ -378,7 +378,7 @@
         minAngle: 1.5,
         labelLayout: function (params) {
           if (mergedIdx !== null && params.dataIndex === mergedIdx) {
-            return { x: compact ? 6 : 12, y: compact ? 0 : 44, align: "left", verticalAlign: "top", moveOverlap: "none" };
+            return { x: compact ? 6 : 12, y: compact ? 4 : 44, align: "left", verticalAlign: "top", moveOverlap: "none" };
           }
           return { moveOverlap: "shiftY" };
         },
@@ -387,27 +387,12 @@
           show: true,
           position: "outside",
           formatter: function (p) {
-            if (p.data.detail) {
-              return "{box|" + p.data.label + "\n" + p.data.detail.join("\n") + "}";
-            }
+            if (p.data.detail) return p.data.label + "\n" + p.data.detail.join("\n");
             return p.data.label + "\n" + p.percent.toFixed(1) + "%";
           },
           fontSize: compact ? 8.5 : 9,
           color: "#374151",
           lineHeight: compact ? 11 : 12,
-          rich: {
-            box: {
-              backgroundColor: "#f8fafc",
-              borderColor: "#cbd5e1",
-              borderWidth: 1,
-              borderRadius: 5,
-              padding: [5, 7],
-              fontSize: compact ? 8.5 : 9,
-              lineHeight: compact ? 12 : 13,
-              color: "#374151",
-              align: "left",
-            },
-          },
         },
         labelLine: {
           show: true,
