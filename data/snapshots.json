@@ -1,15 +1,15 @@
 [
   {
     "date": "2026-11-12",
-    "total_cny": 128866.34,
+    "total_cny": 127980.95,
     "traditional_cny": 22840.12,
-    "crypto_cny": 106026.22,
-    "crypto_account_cny": 106026.22,
-    "cash_cny": 39411.05,
-    "day_change_cny": 1334.49,
-    "day_change_pct": 1.05,
+    "crypto_cny": 105140.83,
+    "crypto_account_cny": 105140.83,
+    "cash_cny": 39344.88,
+    "day_change_cny": 449.25,
+    "day_change_pct": 0.35,
     "fx_usdcny": 6.6878,
-    "crypto_usdt": 15853.78,
+    "crypto_usdt": 15721.39,
     "items": [
       {
         "id": "QQQM",
@@ -33,33 +33,33 @@
       },
       {
         "id": "BTC",
-        "shares": 0.08292561,
-        "price": 74677.66
+        "shares": 0.0830597,
+        "price": 73918.26
       },
       {
         "id": "USDC",
-        "shares": 5699.25103613,
+        "shares": 5699.32259488,
         "price": 1.0
       },
       {
         "id": "SOL",
         "shares": 44.0186414,
-        "price": 84.94
+        "price": 83.38
       },
       {
         "id": "USDT",
-        "shares": 193.76566545,
+        "shares": 183.79974554,
         "price": 1.0
       },
       {
         "id": "BGB",
-        "shares": 12.53902934,
-        "price": 1.712
+        "shares": 12.5343652,
+        "price": 1.7035
       },
       {
         "id": "RNVDA",
         "shares": 0.044,
-        "price": 174.24
+        "price": 159.44
       }
     ]
   }
