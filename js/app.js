@@ -535,7 +535,7 @@
         " · 汇率 " + num(pb.fx_usdcny, 4) +
         " · 当日浮动收益 = 上一快照份额 ×（现价 − 上一快照价）× 汇率；净盈亏 = 现价市值 − 成本";
     }
-    var html = pb.groups.map(function (g) {
+    var html = pb.groups.filter(function (g) { return g.key !== "cash"; }).map(function (g) {
       var rows = (g.items || []).map(function (i) {
         var diff = (i.price !== null && i.price !== undefined && i.prev_price !== null && i.prev_price !== undefined)
           ? i.price - i.prev_price : null;
@@ -578,10 +578,12 @@
   }
 
   function totalPnlOf(pb) {
-    return (pb.groups || []).reduce(function (a, g) { return a + (g.pnl_cny || 0); }, 0);
+    return (pb.groups || []).filter(function (g) { return g.key !== "cash"; })
+      .reduce(function (a, g) { return a + (g.pnl_cny || 0); }, 0);
   }
   function totalDayOf(pb) {
-    return (pb.groups || []).reduce(function (a, g) { return a + (g.day_cny || 0); }, 0);
+    return (pb.groups || []).filter(function (g) { return g.key !== "cash"; })
+      .reduce(function (a, g) { return a + (g.day_cny || 0); }, 0);
   }
 
   function renderCalendar() {

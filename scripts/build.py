@@ -518,13 +518,6 @@ def main():
              "day_cny": r2(crypto_day, 2),
              "day_pct": round(crypto_day / (crypto_cny - crypto_day) * 100, 2) if (crypto_cny - crypto_day) else 0.0,
              "items": pnl_rows([r for r in crypto_rows if r["group"] == CRYPTO_GROUP], "crypto")},
-            {"key": "cash", "name": "现金",
-             "pnl_cny": 0.0,
-             "pnl_pct": None,
-             "cost_cny": r2(cash_cny, 2),
-             "day_cny": 0.0,
-             "day_pct": 0.0,
-             "items": pnl_rows(cash_all, "cash")},
         ],
     }
 
