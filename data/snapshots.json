@@ -1,30 +1,30 @@
 [
   {
     "date": "2026-11-12",
-    "total_cny": 127946.48,
-    "traditional_cny": 22836.44,
-    "crypto_cny": 105110.04,
-    "crypto_account_cny": 105110.04,
-    "cash_cny": 39333.36,
-    "day_change_cny": 449.09,
-    "day_change_pct": 0.35,
+    "total_cny": 126465.17,
+    "traditional_cny": 23659.71,
+    "crypto_cny": 102805.46,
+    "crypto_account_cny": 102805.46,
+    "cash_cny": 37330.15,
+    "day_change_cny": 125.21,
+    "day_change_pct": 0.1,
     "fx_usdcny": 6.6858,
-    "crypto_usdt": 15721.39,
+    "crypto_usdt": 15376.69,
     "items": [
       {
         "id": "QQQM",
         "shares": 2.5382,
-        "price": 285.12
+        "price": 284.23
       },
       {
         "id": "VOO",
         "shares": 1.0697,
-        "price": 699.0
+        "price": 698.35
       },
       {
         "id": "QQQI",
         "shares": 8.0522,
-        "price": 51.9
+        "price": 51.77
       },
       {
         "id": "008163",
@@ -32,34 +32,44 @@
         "price": 1.0791
       },
       {
+        "id": "VWO",
+        "shares": 1.0,
+        "price": 57.22
+      },
+      {
+        "id": "VEA",
+        "shares": 1.0,
+        "price": 69.92
+      },
+      {
         "id": "BTC",
-        "shares": 0.0830597,
-        "price": 73918.26
+        "shares": 0.08306037,
+        "price": 73608.15
       },
       {
         "id": "USDC",
-        "shares": 5699.32259488,
+        "shares": 5399.68350613,
         "price": 1.0
       },
       {
         "id": "SOL",
-        "shares": 44.0186414,
-        "price": 83.38
+        "shares": 44.02387949,
+        "price": 82.93
       },
       {
         "id": "USDT",
-        "shares": 183.79974554,
+        "shares": 183.8163872,
         "price": 1.0
       },
       {
         "id": "BGB",
         "shares": 12.5343652,
-        "price": 1.7035
+        "price": 1.7026
       },
       {
         "id": "RNVDA",
         "shares": 0.044,
-        "price": 159.44
+        "price": 159.84
       }
     ]
   }
