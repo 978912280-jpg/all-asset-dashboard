@@ -4,9 +4,11 @@
     "shares_age_days": 1,
     "title": "全维度资产统计",
     "subtitle": "传统股票/基金 + 加密货币 合并统计 · 份额 × 价格 = 市值",
-    "version": "1.1.8",
-    "generated_at": "2026-11-12T23:05:57+08:00",
-    "page_version": "1.1.8",
+    "version": "1.1.9",
+    "generated_at": "2026-11-12T23:20:16+08:00",
+    "build_source": "manual",
+    "crypto_price_mode": "snapshot",
+    "page_version": "1.1.9",
     "base_currency": "CNY",
     "fx": {
       "usdcny": 6.6858,
@@ -383,17 +385,21 @@
     "daily_change_usdt": 1.76,
     "real_pnl_usdt": 311.69,
     "real_pnl_pct": 2.07,
-    "net_deposit_usdt": 15065.0
+    "net_deposit_usdt": 15065.0,
+    "price_mode": "snapshot",
+    "live_price_count": 0,
+    "price_updated_at": "2026-11-12T23:20:16+08:00",
+    "snapshot_total_usdt": 15376.69
   },
   "history": [
     {
       "date": "2026-11-12",
-      "total_cny": 129211.47,
-      "traditional_cny": 23672.01,
+      "total_cny": 130375.46,
+      "traditional_cny": 24836.0,
       "crypto_cny": 102805.46,
       "cash_cny": 40064.15,
-      "day_change_cny": 231.94,
-      "day_change_pct": 0.18,
+      "day_change_cny": 246.84,
+      "day_change_pct": 0.19,
       "fx_usdcny": 6.6858,
       "crypto_usdt": 15376.69
     }
