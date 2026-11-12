@@ -417,3 +417,23 @@ body, a, button, .seg-btn, .cal-cell, .pnl-block, .kpi, .tag, input, select { to
 .toast-tip.show { opacity: 1; transform: translate(-50%, 0); }
 
 .nowrap { white-space: nowrap; }
+
+/* ---------- 盈亏分析 ---------- */
+.pnl-analysis { margin-top: 4px; }
+.pa-group { border: 1px solid var(--line, #e5e7eb); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+.pa-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.pa-name { font-weight: 700; font-size: 13.5px; }
+.pa-metric { font-size: 12.5px; color: var(--muted); }
+.pa-metric b { font-variant-numeric: tabular-nums; }
+.pa-dim { color: #9ca3af; }
+.pa-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.pa-table th { text-align: left; color: var(--muted); font-weight: 500; padding: 6px 6px; border-bottom: 1px solid var(--line, #e5e7eb); white-space: nowrap; }
+.pa-table td { padding: 6px; border-bottom: 1px dashed #f1f5f9; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pa-table td:nth-child(1) { white-space: normal; min-width: 120px; }
+.pa-empty { color: var(--muted); font-size: 12.5px; }
+.pa-total { text-align: right; font-size: 13px; color: #374151; padding-top: 2px; }
+@media (max-width: 860px) {
+  .pa-table { font-size: 11.5px; }
+  .pa-table th:nth-child(3), .pa-table td:nth-child(3) { display: none; }
+  .pa-head { gap: 8px; }
+}

@@ -66,6 +66,7 @@
     renderSplit();
     renderTable();
     renderCalendar();
+    renderPnlAnalysis();
     renderTrend();
     renderSources();
   }
@@ -100,6 +101,7 @@
     view.history = (base.history || []).filter(function (h) { return h.date <= ds; });
     view.meta = JSON.parse(JSON.stringify(base.meta || {}));
     view.meta.snapshot_replay = ds;
+    view.pnl_breakdown = detail.pnl_breakdown || null;
     state.replay = ds;
     state.data = view;
     state.calSel = ds;
@@ -516,6 +518,71 @@
       state.calM = +ds.slice(5, 7) - 1;
     }
   }
+  // ---------- 盈亏分析 ----------
+  function renderPnlAnalysis() {
+    var box = $("pnl-analysis");
+    if (!box) return;
+    var pb = state.data.pnl_breakdown;
+    if (!pb || !pb.groups) {
+      box.innerHTML = '<p class="pa-empty">该日快照未记录盈亏分析明细</p>';
+      if ($("pa-desc")) $("pa-desc").hidden = true;
+      return;
+    }
+    if ($("pa-desc")) {
+      $("pa-desc").hidden = false;
+      $("pa-desc").textContent = "上一快照：" + (pb.prev_date || "—") +
+        " · 汇率 " + num(pb.fx_usdcny, 4) +
+        " · 当日浮动收益 = 上一快照份额 ×（现价 − 上一快照价）× 汇率；净盈亏 = 现价市值 − 成本";
+    }
+    var html = pb.groups.map(function (g) {
+      var rows = (g.items || []).map(function (i) {
+        var diff = (i.price !== null && i.price !== undefined && i.prev_price !== null && i.prev_price !== undefined)
+          ? i.price - i.prev_price : null;
+        var prevTxt = (i.prev_price === null || i.prev_price === undefined ? "—" :
+          num(i.prev_price, 4) + (i.prev_date ? ' <span class="pa-dim">(' + i.prev_date + ")</span>" : ""));
+        return "<tr>" +
+          "<td>" + escapeHtml(i.name || i.id) + "</td>" +
+          "<td>" + (i.shares === null || i.shares === undefined ? "—" : num(i.shares, 6)) + "</td>" +
+          "<td>" + prevTxt + "</td>" +
+          "<td>" + (i.price === null || i.price === undefined ? "—" : num(i.price, 4)) + "</td>" +
+          "<td>" + (diff === null ? "—" : '<span class="' + cls(diff) + '">' + (diff >= 0 ? "+" : "−") + num(Math.abs(diff), 4) + "</span>") + "</td>" +
+          "<td>" + (i.day_change_cny === null || i.day_change_cny === undefined ? "—" :
+            '<span class="' + cls(i.day_change_cny) + '">' + (i.day_change_cny >= 0 ? "+" : "−") + "¥" + num(Math.abs(i.day_change_cny), 2) + "</span>") + "</td>" +
+          "<td>" + (i.cost_cny === null || i.cost_cny === undefined ? "—" : "¥" + num(i.cost_cny, 2)) + "</td>" +
+          "<td>" + (i.pnl_cny === null || i.pnl_cny === undefined ? "—" :
+            '<span class="' + cls(i.pnl_cny) + '">' + (i.pnl_cny >= 0 ? "+" : "−") + "¥" + num(Math.abs(i.pnl_cny), 2) + "</span>") + "</td>" +
+          "</tr>";
+      }).join("");
+      return '<div class="pa-group">' +
+        '<div class="pa-head"><span class="pa-name">' + escapeHtml(g.name) + "</span>" +
+        '<span class="pa-metric">净盈亏 ' +
+        (g.pnl_cny === null || g.pnl_cny === undefined ? "—" :
+          '<b class="' + cls(g.pnl_cny) + '">' + (g.pnl_cny >= 0 ? "+" : "−") + "¥" + num(Math.abs(g.pnl_cny), 2) + "</b>" +
+          (g.pnl_pct === null || g.pnl_pct === undefined ? "" : "（" + pct(g.pnl_pct) + "）")) +
+        '</span><span class="pa-metric">当日浮动收益 ' +
+        (g.day_cny === null || g.day_cny === undefined ? "—" :
+          '<b class="' + cls(g.day_cny) + '">' + (g.day_cny >= 0 ? "+" : "−") + "¥" + num(Math.abs(g.day_cny), 2) + "</b>" +
+          (g.day_pct === null || g.day_pct === undefined ? "" : "（" + pct(g.day_pct) + "）")) +
+        '</span><span class="pa-metric pa-dim">成本 ¥' + num(g.cost_cny || 0, 2) + "</span></div>" +
+        '<table class="pa-table"><thead><tr>' +
+        "<th>标的</th><th>份额</th><th>上一快照价</th><th>现价</th><th>价差</th>" +
+        "<th>当日浮动收益</th><th>成本</th><th>净盈亏</th></tr></thead><tbody>" +
+        (rows || '<tr><td colspan="8" class="pa-empty">无持仓</td></tr>') +
+        "</tbody></table></div>";
+    }).join("") + '<div class="pa-total">合计：净盈亏 <b class="' + cls(totalPnlOf(pb)) + '">' +
+      (totalPnlOf(pb) >= 0 ? "+" : "−") + "¥" + num(Math.abs(totalPnlOf(pb)), 2) +
+      "</b> · 当日浮动收益 <b class=\"" + cls(totalDayOf(pb)) + "\">" +
+      (totalDayOf(pb) >= 0 ? "+" : "−") + "¥" + num(Math.abs(totalDayOf(pb)), 2) + "</b></div>";
+    box.innerHTML = html;
+  }
+
+  function totalPnlOf(pb) {
+    return (pb.groups || []).reduce(function (a, g) { return a + (g.pnl_cny || 0); }, 0);
+  }
+  function totalDayOf(pb) {
+    return (pb.groups || []).reduce(function (a, g) { return a + (g.day_cny || 0); }, 0);
+  }
+
   function renderCalendar() {
     calState();
     if (!state.calPeriod) state.calPeriod = "day";

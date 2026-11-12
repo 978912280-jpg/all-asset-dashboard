@@ -32,7 +32,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.2.7"
+PAGE_VERSION = "1.2.8"
 PAGE_DATE = "2026.11.12"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -338,9 +338,11 @@ def main():
         snapshots = []
     today = now_cst().strftime("%Y-%m-%d")
     prev_items = {}
+    prev_snapshot_date = None
     for sn in reversed(snapshots):
         if sn.get("date") and sn.get("date") < today and sn.get("items"):
             prev_items = {str(x.get("id")): x for x in sn["items"]}
+            prev_snapshot_date = sn.get("date")
             break
 
     print("[1/5] 抓取全球资产仪表台价格 …")
@@ -471,6 +473,61 @@ def main():
                  "fx_usdcny": entry["fx_usdcny"], "crypto_usdt": entry["crypto_usdt"]})
     hist.sort(key=lambda x: x.get("date") or "")
 
+    # 盈亏分析：各板块净盈亏 + 当日浮动收益，以及计算过程用到的数据
+    def pnl_rows(rows, group_key):
+        out = []
+        for r in rows:
+            prev = prev_items.get(r["id"]) or {}
+            out.append({
+                "id": r["id"],
+                "name": r["name"],
+                "shares": r.get("shares"),
+                "prev_shares": prev.get("shares"),
+                "prev_price": prev.get("price"),
+                "prev_date": prev_snapshot_date,
+                "price": r.get("price"),
+                "currency": r.get("currency"),
+                "fx": r2(rate if r.get("currency") == "USD" else (rate if r.get("currency") == "USDT" else 1.0), 4),
+                "cost_price": r.get("cost_price"),
+                "cost_cny": r.get("cost_cny"),
+                "value_cny": r.get("value_cny"),
+                "day_change_cny": r.get("day_change_cny"),
+                "day_basis": r.get("day_basis"),
+                "pnl_cny": r.get("pnl_cny"),
+                "price_source": r.get("price_source"),
+            })
+        return out
+
+    cash_all = [r for r in crypto_rows if r["group"] == CASH_GROUP] + cash_rows
+    pnl_breakdown = {
+        "prev_date": prev_snapshot_date,
+        "fx_usdcny": r2(rate, 4),
+        "generated_at": now_cst().strftime("%Y-%m-%dT%H:%M:%S+08:00"),
+        "groups": [
+            {"key": "traditional", "name": "传统股票 & 基金",
+             "pnl_cny": r2(trad_pnl, 2),
+             "pnl_pct": r2(trad_pnl / trad_cost * 100, 2) if trad_cost else None,
+             "cost_cny": r2(trad_cost, 2),
+             "day_cny": r2(trad_day, 2),
+             "day_pct": round(trad_day / (trad_cny - trad_day) * 100, 2) if (trad_cny - trad_day) else 0.0,
+             "items": pnl_rows(trad_rows, "traditional")},
+            {"key": "crypto", "name": "加密货币",
+             "pnl_cny": r2(crypto_pnl_cny, 2) if crypto_pnl_cny is not None else None,
+             "pnl_pct": crypto_meta.get("real_pnl_pct"),
+             "cost_cny": r2((crypto_meta.get("net_deposit_usdt") or 0) * rate, 2),
+             "day_cny": r2(crypto_day, 2),
+             "day_pct": round(crypto_day / (crypto_cny - crypto_day) * 100, 2) if (crypto_cny - crypto_day) else 0.0,
+             "items": pnl_rows([r for r in crypto_rows if r["group"] == CRYPTO_GROUP], "crypto")},
+            {"key": "cash", "name": "现金",
+             "pnl_cny": 0.0,
+             "pnl_pct": None,
+             "cost_cny": r2(cash_cny, 2),
+             "day_cny": 0.0,
+             "day_pct": 0.0,
+             "items": pnl_rows(cash_all, "cash")},
+        ],
+    }
+
     print("[5/5] 写出 dashboard.json …")
     generated_at = now_cst().strftime("%Y-%m-%dT%H:%M:%S+08:00")
     # 份额新鲜度：holdings.json 的 updated_at 距今多少天，用于前端提醒核对
@@ -566,12 +623,14 @@ def main():
         ],
         "items": trad_rows + crypto_rows + cash_rows,
         "crypto_meta": crypto_meta,
+        "pnl_breakdown": pnl_breakdown,
         "history": hist[-400:],
     }
     save_json(dashboard_path, dashboard)
 
     # 快照落库：带上当日完整明细，供首页「历史快照」整页复现
     if not keep_prev:
+        entry["pnl_breakdown"] = pnl_breakdown
         entry["summary"] = dashboard["summary"]
         entry["groups"] = dashboard["groups"]
         entry["items"] = dashboard["items"]
