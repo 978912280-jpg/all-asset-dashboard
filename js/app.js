@@ -239,6 +239,13 @@
       return state.group === "all" || i.group === state.group;
     });
     items.sort(function (a, b) { return (b.value_cny || 0) - (a.value_cny || 0); });
+    // 分组筛选时，占比按当前分组内合计换算成 100%
+    var scopeSum = items.reduce(function (a, i) { return a + (i.value_cny || 0); }, 0);
+    var scopeLocal = state.group !== "all" && scopeSum > 0;
+    function scopeWeight(i) {
+      if (!scopeLocal) return i.weight || 0;
+      return (i.value_cny || 0) / scopeSum * 100;
+    }
 
     if (!items.length) {
       $("table-body").innerHTML = "";
@@ -246,6 +253,10 @@
       return;
     }
     $("empty-tip").hidden = true;
+    if ($("group-hint")) {
+      $("group-hint").textContent = scopeLocal
+        ? "当前为分组内占比，本组合计 100%。" : "";
+    }
 
     $("table-body").innerHTML = items.map(function (i) {
       var color = state.groupColors[i.group] || "#374151";
@@ -280,14 +291,14 @@
         '<td class="num">' + priceTxt + "</td>" +
         '<td class="num">' + (i.value_cny === null ? "—" : num(i.value_cny)) + "</td>" +
         '<td class="num">' + pnlTxt + "</td>" +
-        '<td class="num">' + num(i.weight) + "%</td>" +
+        '<td class="num">' + num(scopeWeight(i)) + "%</td>" +
         "</tr>";
     }).join("");
 
     // 合计行：市值与当日浮动收益按当前筛选求和
     var sumVal = items.reduce(function (a, i) { return a + (i.value_cny || 0); }, 0);
     var sumPnl = items.reduce(function (a, i) { return a + (i.day_change_cny || 0); }, 0);
-    var sumW = items.reduce(function (a, i) { return a + (i.weight || 0); }, 0);
+    var sumW = items.reduce(function (a, i) { return a + scopeWeight(i); }, 0);
     var sumWTxt = Math.abs(sumW - 100) < 0.05 ? "100.00%" : num(sumW, 2) + "%";
     $("table-foot").innerHTML = "<tr>" +
       '<td class="name-cell">合计</td><td></td><td></td><td></td><td></td>' +

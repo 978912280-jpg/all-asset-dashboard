@@ -1,13 +1,13 @@
 [
   {
     "date": "2026-11-12",
-    "total_cny": 129199.17,
-    "traditional_cny": 23659.71,
+    "total_cny": 129211.47,
+    "traditional_cny": 23672.01,
     "crypto_cny": 102805.46,
     "crypto_account_cny": 102805.46,
     "cash_cny": 40064.15,
-    "day_change_cny": 116.61,
-    "day_change_pct": 0.09,
+    "day_change_cny": 231.94,
+    "day_change_pct": 0.18,
     "fx_usdcny": 6.6858,
     "crypto_usdt": 15376.69,
     "items": [
@@ -29,7 +29,7 @@
       {
         "id": "008163",
         "shares": 9456.78,
-        "price": 1.0791
+        "price": 1.0804
       },
       {
         "id": "VWO",
