@@ -144,7 +144,8 @@
   function renderMeta() {
     var m = state.data.meta || {};
     if (m.generated_at) {
-      $("update-time").textContent = "数据更新时间：" + m.generated_at.replace("T", " ");
+      $("update-time").textContent = "数据更新时间：" +
+        m.generated_at.replace("T", " ").replace("+08:00", "（GMT+8）");
     }
     if (m.version) {
       var vtxt = "v" + m.version + (m.version_date ? "（" + m.version_date + "）" : "");
@@ -464,7 +465,7 @@
         var sub = i.day_basis === "new"
           ? '<div class="sub muted">当日买入</div>'
           : '<div class="sub ' + cls(i.change_pct) + '">' + pct(i.change_pct) + "</div>";
-        pnlTxt = '<span class="' + cls(dc) + '">' + (dc >= 0 ? "+" : "") + num(dc) + sub + "</span>";
+        pnlTxt = '<span class="' + cls(dc) + '">' + (dc >= 0 ? "+" : "−") + "¥" + num(Math.abs(dc)) + sub + "</span>";
       }
       return "<tr>" +
         '<td class="name-cell"><div class="nm">' + escapeHtml(i.name) +
@@ -475,7 +476,7 @@
         '<td class="num">' + sharesTxt + "</td>" +
         '<td class="num">' + costTxt + "</td>" +
         '<td class="num">' + priceTxt + "</td>" +
-        '<td class="num">' + (i.value_cny === null ? "—" : num(i.value_cny)) + "</td>" +
+        '<td class="num">' + (i.value_cny === null ? "—" : "¥" + num(i.value_cny)) + "</td>" +
         '<td class="num">' + pnlTxt + "</td>" +
         '<td class="num">' + num(scopeWeight(i)) + "%</td>" +
         "</tr>";
@@ -488,8 +489,8 @@
     var sumWTxt = Math.abs(sumW - 100) < 0.05 ? "100.00%" : num(sumW, 2) + "%";
     $("table-foot").innerHTML = "<tr>" +
       '<td class="name-cell">合计</td><td></td><td></td><td></td><td></td>' +
-      '<td class="num">' + num(sumVal) + "</td>" +
-      '<td class="num ' + cls(sumPnl) + '">' + (sumPnl >= 0 ? "+" : "") + num(sumPnl) + "</td>" +
+      '<td class="num">¥' + num(sumVal) + "</td>" +
+      '<td class="num ' + cls(sumPnl) + '">' + (sumPnl >= 0 ? "+" : "−") + "¥" + num(Math.abs(sumPnl)) + "</td>" +
       '<td class="num">' + sumWTxt + "</td></tr>";
   }
 
@@ -612,7 +613,7 @@
       if (ds > cutoff && v === null) cls += " future";
       if (rec) cls += " has";
       if (ds === state.calSel) cls += " sel";
-      var vStr = v !== null ? (v >= 0 ? "+" : "−") + num(Math.abs(v), 0) : "—";
+      var vStr = v !== null ? (v >= 0 ? "+" : "−") + "¥" + num(Math.abs(v), 0) : "—";
       var colStyle = day === 1 ? ' style="grid-column-start:' + (startDow + 1) + '"' : "";
       var dataAttr = rec ? ' data-date="' + ds + '"' : "";
       var titleAttr = rec ? ' title="点击查看 ' + ds + " 的当日快照\"" : "";
@@ -725,7 +726,7 @@
       var key = it[0], label = it[1], rec = it[2];
       var cls = "pnl-block " + (rec === null ? "zero" : (rec.value > 0 ? "pos" : (rec.value < 0 ? "neg" : "zero")));
       if (key === state.calKey) cls += " sel";
-      var vstr = rec === null ? "—" : (rec.value >= 0 ? "+" : "−") + num(Math.abs(rec.value), 0);
+      var vstr = rec === null ? "—" : (rec.value >= 0 ? "+" : "−") + "¥" + num(Math.abs(rec.value), 0);
       var blocked = rec === null ? "" :
         ' data-open="' + num(rec.start_total) + '" data-end="' + num(rec.end_total) +
         '" data-pnl="' + rec.value + '"';
@@ -857,7 +858,7 @@
       ["其中 现金（稳定币）", cash === null || cash === undefined ? "—" : "¥" + num(cash)],
       ["当日浮动收益", '<span class="' + chgCls + '">' + chgTxt + "</span>"],
       ["USD→CNY 汇率", rec.fx_usdcny ? num(rec.fx_usdcny, 4) : "—"],
-      ["加密账户 USDT 总额", rec.crypto_usdt ? num(rec.crypto_usdt, 2) : "—"],
+      ["加密账户 USDT 总额", rec.crypto_usdt ? "$" + num(rec.crypto_usdt, 2) : "—"],
     ];
     var html = '<div class="snap-box"><div class="snap-head"><h3>' + ds + " 快照</h3>" +
       '<button type="button" id="snap-close" aria-label="关闭">×</button></div>' +
@@ -915,7 +916,9 @@
         scale: true,
         axisLabel: {
           color: "#6b7280", fontSize: 11,
-          formatter: function (v) { return v >= 10000 ? (v / 10000).toFixed(0) + "万" : v; },
+          formatter: function (v) {
+            return v >= 10000 ? "¥" + (v / 10000).toFixed(0) + "万" : "¥" + Math.round(v);
+          },
         },
         splitLine: { lineStyle: { color: "#f1f3f5" } },
       },
