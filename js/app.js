@@ -303,7 +303,7 @@
     if (solItems.length) slices.push({ label: "SOL", full: "SOL", value: sumBy(solItems), color: shade(colors.crypto, 0.22) });
     if (restItems.length) {
       slices.push({
-        label: "其他", full: "其他加密货币：" + restItems.map(function (i) { return i.id; }).join("、"),
+        label: "其他币种", full: "其他加密货币：" + restItems.map(function (i) { return i.id; }).join("、"),
         value: sumBy(restItems), color: shade(colors.crypto, 0.45),
       });
     }
@@ -320,6 +320,31 @@
     }
     slices = slices.filter(function (x) { return x.value > 0; });
     var compact = window.matchMedia("(max-width: 860px)").matches;
+
+    // 低于 3% 的小块合并成一块，标签分行列出各自占比，只用一根引线
+    var sumAll = slices.reduce(function (a, x) { return a + x.value; }, 0) || 1;
+    var bigSlices = [], smallSlices = [];
+    slices.forEach(function (x) {
+      if (x.value / sumAll * 100 < 3) smallSlices.push(x); else bigSlices.push(x);
+    });
+    if (smallSlices.length > 1) {
+      var smallVal = smallSlices.reduce(function (a, x) { return a + x.value; }, 0);
+      var lines = smallSlices.map(function (x) {
+        return x.label + " " + (x.value / sumAll * 100).toFixed(1) + "%";
+      });
+      bigSlices.push({
+        label: "小额合计 " + (smallVal / sumAll * 100).toFixed(1) + "%",
+        full: "低于 3% 的标的合计",
+        value: smallVal,
+        color: "#9aa5b1",
+        detail: lines,
+      });
+    } else {
+      bigSlices = bigSlices.concat(smallSlices);
+    }
+    slices = bigSlices;
+    var mergedIdx = null;
+    for (var mi = 0; mi < slices.length; mi++) { if (slices[mi].detail) mergedIdx = mi; }
 
     state.donut.setOption({
       graphic: [{
@@ -347,18 +372,42 @@
       series: [{
         name: "资产占比",
         type: "pie",
-        radius: compact ? ["33%", "54%"] : ["36%", "56%"],
+        radius: compact ? ["34%", "54%"] : ["38%", "56%"],
         center: ["50%", "50%"],
         avoidLabelOverlap: true,
         minAngle: 1.5,
+        labelLayout: function (params) {
+          if (mergedIdx !== null && params.dataIndex === mergedIdx) {
+            return { x: compact ? 6 : 12, y: compact ? 0 : 44, align: "left", verticalAlign: "top", moveOverlap: "none" };
+          }
+          return { moveOverlap: "shiftY" };
+        },
         itemStyle: { borderColor: "#fff", borderWidth: 1 },
         label: {
           show: true,
           position: "outside",
-          formatter: function (p) { return p.data.label + "\n" + p.percent.toFixed(1) + "%"; },
-          fontSize: compact ? 8.5 : 9.5,
+          formatter: function (p) {
+            if (p.data.detail) {
+              return "{box|" + p.data.label + "\n" + p.data.detail.join("\n") + "}";
+            }
+            return p.data.label + "\n" + p.percent.toFixed(1) + "%";
+          },
+          fontSize: compact ? 8.5 : 9,
           color: "#374151",
-          lineHeight: 11.5,
+          lineHeight: compact ? 11 : 12,
+          rich: {
+            box: {
+              backgroundColor: "#f8fafc",
+              borderColor: "#cbd5e1",
+              borderWidth: 1,
+              borderRadius: 5,
+              padding: [5, 7],
+              fontSize: compact ? 8.5 : 9,
+              lineHeight: compact ? 12 : 13,
+              color: "#374151",
+              align: "left",
+            },
+          },
         },
         labelLine: {
           show: true,
@@ -369,7 +418,10 @@
         },
         emphasis: { label: { fontWeight: "bold", color: "#1f2329" }, scaleSize: 3 },
         data: slices.map(function (x) {
-          return { name: x.label, full: x.full, label: x.label, value: Math.round(x.value), itemStyle: { color: x.color } };
+          return {
+            name: x.label, full: x.full, label: x.label, detail: x.detail,
+            value: Math.round(x.value), itemStyle: { color: x.color },
+          };
         }),
       }],
     }, true);
