@@ -32,7 +32,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.2.1"
+PAGE_VERSION = "1.2.2"
 PAGE_DATE = "2026.11.12"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -391,9 +391,11 @@ def main():
     cash_cny = stable_cash_cny + fiat_cash_cny
     crypto_account_cny = crypto_cny + stable_cash_cny
     total_cny = trad_cny + crypto_account_cny + fiat_cash_cny
-    day_change = sum(r["day_change_cny"] or 0 for r in trad_rows) + \
-                 sum(r["day_change_cny"] or 0 for r in crypto_rows) + \
-                 sum(r["day_change_cny"] or 0 for r in cash_rows)
+    trad_day = sum(r["day_change_cny"] or 0 for r in trad_rows)
+    crypto_day = sum(r["day_change_cny"] or 0 for r in crypto_rows if r["group"] == CRYPTO_GROUP)
+    day_change = trad_day + crypto_day + \
+        sum(r["day_change_cny"] or 0 for r in crypto_rows if r["group"] == CASH_GROUP) + \
+        sum(r["day_change_cny"] or 0 for r in cash_rows)
     trad_cost = sum(r["cost_cny"] or 0 for r in trad_rows)
     trad_pnl = sum(r["pnl_cny"] or 0 for r in trad_rows)
     cost_pending = [r["id"] for r in trad_rows if r.get("cost_pending") and r["shares"]]
@@ -497,10 +499,16 @@ def main():
             "pending_ids": pending,
             "traditional_cost_cny": r2(trad_cost, 2),
             "traditional_pnl_cny": r2(trad_pnl, 2),
+            "traditional_day_change_cny": r2(trad_day, 2),
+            "traditional_day_change_pct": round(trad_day / (trad_cny - trad_day) * 100, 2)
+            if (trad_cny - trad_day) else 0.0,
             "traditional_pnl_pct": r2(trad_pnl / trad_cost * 100, 2) if trad_cost else None,
             "cost_pending_count": len(cost_pending),
             "cost_pending_ids": cost_pending,
             "crypto_pnl_cny": r2(crypto_pnl_cny, 2),
+            "crypto_day_change_cny": r2(crypto_day, 2),
+            "crypto_day_change_pct": round(crypto_day / (crypto_cny - crypto_day) * 100, 2)
+            if (crypto_cny - crypto_day) else 0.0,
             "crypto_pnl_usdt": crypto_pnl_usdt,
             "crypto_pnl_pct": crypto_meta.get("real_pnl_pct"),
             "total_pnl_cny": r2(total_pnl, 2),

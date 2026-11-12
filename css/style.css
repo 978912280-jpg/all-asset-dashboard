@@ -414,3 +414,5 @@ body, a, button, .seg-btn, .cal-cell, .pnl-block, .kpi, .tag, input, select { to
   opacity: 0; transition: opacity .2s, transform .2s; max-width: 82vw;
 }
 .toast-tip.show { opacity: 1; transform: translate(-50%, 0); }
+
+.nowrap { white-space: nowrap; }

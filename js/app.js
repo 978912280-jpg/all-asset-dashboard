@@ -157,6 +157,13 @@
     }
   }
 
+  function moneyLine(prefix, val, pctVal) {
+    if (val === null || val === undefined) return '<span class="muted">' + prefix + '—</span>';
+    return '<span class="' + cls(val) + '">' + prefix + (val >= 0 ? "+" : "−") +
+      "¥" + num(Math.abs(val)) + (pctVal === null || pctVal === undefined ? "" :
+        ' <span class="nowrap">（' + pct(pctVal) + "）</span>") + "</span>";
+  }
+
   // ---------- KPI ----------
   function renderKpi() {
     var s = state.data.summary || {};
@@ -171,35 +178,25 @@
         label: "总资产 (CNY)",
         value: "¥" + num(s.total_cny),
         small: false,
-        delta: (day === null || day === undefined ? "" :
-          '<span class="' + cls(day) + '">' +
-          (state.replay ? "当日浮动收益 " : "今日浮动收益 ") +
-          (day >= 0 ? "+" : "−") + "¥" + num(Math.abs(day)) +
-          "（" + pct(s.day_change_pct) + "）</span>") +
+        delta: moneyLine(state.replay ? "当日浮动收益 " : "今日浮动收益 ", day, s.day_change_pct) +
           (totalPnl === null || totalPnl === undefined ? "" :
-            '<br><span class="' + cls(totalPnl) + '">总盈亏 ' +
-            (totalPnl >= 0 ? "+" : "−") + "¥" + num(Math.abs(totalPnl)) +
-            (s.total_pnl_pct === null || s.total_pnl_pct === undefined ? "" :
-              "（" + pct(s.total_pnl_pct) + "）") + "</span>"),
+            "<br>" + moneyLine("总盈亏 ", totalPnl, s.total_pnl_pct)),
       },
       {
         label: '<i class="dot trad"></i>传统股票 & 基金',
         value: "¥" + num(s.traditional_cny),
         small: true,
-        delta: (!hasTradCost
-          ? '<span class="muted">盈亏待填成本价</span>'
-          : (tradPnl === null || tradPnl === undefined
-            ? '<span class="muted">盈亏—</span>'
-            : '<span class="' + cls(tradPnl) + '">总盈亏 ' + (tradPnl >= 0 ? "+" : "−") +
-              "¥" + num(Math.abs(tradPnl)) + "（" + pct(s.traditional_pnl_pct) + "）</span>")),
+        delta: moneyLine("今日浮动收益 ", s.traditional_day_change_cny, s.traditional_day_change_pct) +
+          "<br>" + (!hasTradCost
+            ? '<span class="muted">总盈亏待填成本价</span>'
+            : moneyLine("总盈亏 ", tradPnl, s.traditional_pnl_pct)),
       },
       {
         label: '<i class="dot crypto"></i>加密货币',
         value: "¥" + num(s.crypto_cny),
         small: true,
-        delta: (cryptoPnl === null || cryptoPnl === undefined ? '<span class="muted">盈亏—</span>' :
-          '<span class="' + cls(cryptoPnl) + '">总盈亏 ' + (cryptoPnl >= 0 ? "+" : "−") +
-          "¥" + num(Math.abs(cryptoPnl)) + "（" + pct(s.crypto_pnl_pct) + "）</span>"),
+        delta: moneyLine(state.replay ? "当日浮动收益 " : "今日浮动收益 ", s.crypto_day_change_cny, s.crypto_day_change_pct) +
+          "<br>" + moneyLine("总盈亏 ", cryptoPnl, s.crypto_pnl_pct),
       },
       {
         label: '<i class="dot cash"></i>现金',
