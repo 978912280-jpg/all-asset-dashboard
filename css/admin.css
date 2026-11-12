@@ -155,3 +155,8 @@ body, a, button, input, select, textarea, .seg-btn, .cal-cell {
 .draft-banner b { font-weight: 600; }
 .draft-actions { display: flex; gap: 8px; }
 .btn.dirty { box-shadow: 0 0 0 3px rgba(230, 145, 20, 0.25); }
+
+.cash-form { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
+.cash-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.cash-form input { width: 180px; }
+.cash-note { font-size: 12px; color: var(--muted); padding-bottom: 10px; }

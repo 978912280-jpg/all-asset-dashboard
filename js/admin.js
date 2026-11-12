@@ -49,13 +49,14 @@
       })
       .then(function (h) {
         state.holdings = h;
+        ensureCash();
         state.serverMode = true;
       })
       .catch(function () {
         state.serverMode = false;
         return fetch("data/holdings.json?t=" + Date.now())
           .then(function (r) { return r.json(); })
-          .then(function (h) { state.holdings = h; });
+          .then(function (h) { state.holdings = h; ensureCash(); });
       })
       .then(function () {
         return fetch("data/dashboard.json?t=" + Date.now())
@@ -78,6 +79,7 @@
           ? "当前运行在本地后台（<code>scripts/server.py</code>）：保存后自动写入 <code>data/holdings.json</code> 并立即重建 <code>data/dashboard.json</code>。"
           : "当前为 GitHub Pages 静态页面：填入下方 GitHub Token 后点「保存并计算」，直接提交 <code>data/holdings.json</code> 并触发 Actions 重建。";
         renderTable();
+        renderCash();
         syncGhUi();
         restoreDraftIfAny();
       });
@@ -189,6 +191,36 @@
       markDirty();
       renderTable();
     };
+  }
+
+
+  function ensureCash() {
+    if (!state.holdings.cash_accounts || !state.holdings.cash_accounts.length) {
+      state.holdings.cash_accounts = [{
+        id: "alipay", name: "支付宝现金", currency: "CNY", amount_cny: 0,
+      }];
+    }
+  }
+
+  function renderCash() {
+    var ca = (state.holdings.cash_accounts || [])[0] || {};
+    var v = Number(ca.amount_cny) || 0;
+    var inp = $("alipay-amount");
+    if (inp && document.activeElement !== inp) inp.value = v ? String(v) : "";
+    var pill = $("alipay-pill");
+    if (pill) pill.textContent = v > 0 ? "当前 ¥" + num(v, 2) : "未填写则不计入现金";
+  }
+
+  function bindCash() {
+    var inp = $("alipay-amount");
+    if (!inp) return;
+    inp.addEventListener("input", function () {
+      ensureCash();
+      var v = Number(inp.value);
+      state.holdings.cash_accounts[0].amount_cny = isNaN(v) ? 0 : Math.max(0, v);
+      markDirty();
+      renderCash();
+    });
   }
 
   function updatePendingPill() {
@@ -800,6 +832,7 @@
   function init() {
     bindUpload();
     bindAdd();
+    bindCash();
     bindButtons();
     ghLoad();
     loadAll().catch(function (e) { toast("加载失败：" + e.message); });

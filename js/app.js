@@ -119,10 +119,11 @@
           num(cryptoPnl) + "（" + pct(s.crypto_pnl_pct) + "）</span>"),
       },
       {
-        label: '<i class="dot cash"></i>现金（稳定币）',
+        label: '<i class="dot cash"></i>现金',
         value: "¥" + num(s.cash_cny || 0),
         small: true,
-        delta: '<span class="muted">≈ $' + num((s.cash_cny || 0) / (fxRate || 1), 2) + " USDT</span>",
+        delta: '<span class="muted">稳定币 ≈ $' + num((s.stable_cash_cny || 0) / (fxRate || 1), 2) + " USDT</span>" +
+          ((s.fiat_cash_cny ? '<br><span class="muted">支付宝现金 ¥' + num(s.fiat_cash_cny, 2) + "</span>" : "")),
       },
     ];
     $("kpi-grid").innerHTML = cards.map(function (c) {
@@ -250,7 +251,8 @@
       var color = state.groupColors[i.group] || "#374151";
       var priceTxt = i.price === null || i.price === undefined ? "—" :
         (i.currency === "USD" || i.currency === "USDT" ? "$" : "¥") + num(i.price, i.price < 10 ? 4 : 2);
-      var sharesTxt = num(i.shares, i.shares < 1 ? 6 : 4);
+      var sharesTxt = (i.shares === null || i.shares === undefined)
+        ? '<span class="muted">—</span>' : num(i.shares, i.shares < 1 ? 6 : 4);
       var costTxt = (i.group === "crypto" || i.group === "cash") ? '<span class="muted">—</span>'
         : (!i.cost_price ? '<span class="muted">待填</span>'
           : (i.currency === "USD" ? "$" : "¥") + num(i.cost_price, i.cost_price < 10 ? 4 : 2));
