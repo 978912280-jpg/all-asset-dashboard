@@ -688,7 +688,12 @@
         (g.day_cny === null || g.day_cny === undefined ? "—" :
           '<b class="' + cls(g.day_cny) + '">' + (g.day_cny >= 0 ? "+" : "−") + "¥" + num(Math.abs(g.day_cny), 2) + "</b>" +
           (g.day_pct === null || g.day_pct === undefined ? "" : "（" + pct(g.day_pct) + "）")) +
-        '</span><span class="pa-metric pa-dim">成本 ¥' + num(g.cost_cny || 0, 2) + "</span></div>" +
+        '</span>' +
+        (g.realized_cny
+          ? '<span class="pa-metric">已实现 ' + (g.realized_cny >= 0 ? "+" : "−") + "¥" +
+            num(Math.abs(g.realized_cny), 2) + "</span>"
+          : "") +
+        '<span class="pa-metric pa-dim">成本 ¥' + num(g.cost_cny || 0, 2) + "</span></div>" +
         '<table class="pa-table"><thead><tr>' +
         "<th>标的</th><th>份额</th><th>上一快照价</th><th>现价</th><th>价差</th>" +
         "<th>当日浮动收益</th><th>成本</th><th>净盈亏</th></tr></thead><tbody>" +

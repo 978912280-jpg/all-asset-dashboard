@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.3.8"
+PAGE_VERSION = "1.3.9"
 PAGE_DATE = "2026.11.12"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -227,6 +227,18 @@ def load_cost_total():
         except (ValueError, OSError) as e:
             print("      [warn] crypto_cost.json 读取失败：%s" % e)
     return {}, {}, {}
+
+
+def load_realized_pnl():
+    """已实现盈亏（USDT，按币）：来自 Bitget 卖出成交，按当时平均成本结算。"""
+    f = Path(ROOT) / "data" / "bitget_ledger.json"
+    if not f.exists():
+        return {}
+    try:
+        p = json.loads(f.read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return {}
+    return {str(k).upper(): float(v) for k, v in (p.get("realized_pnl_usdt") or {}).items()}
 
 
 def load_crypto(cfg, rate, prev_items=None):
@@ -489,6 +501,12 @@ def main():
     cost_pending = [r["id"] for r in trad_rows if r.get("cost_pending") and r["shares"]]
     if cost_map:
         crypto_pnl_cny = r2(sum(r["pnl_cny"] or 0 for r in crypto_rows if r["group"] == CRYPTO_GROUP), 2)
+        realized_map = load_realized_pnl()
+        realized_cny = r2(sum(realized_map.values()) * rate, 2)
+        if realized_cny:
+            crypto_pnl_cny = r2(crypto_pnl_cny + realized_cny, 2)
+            print("      已实现盈亏：%.2f USDT（%.2f CNY）已计入加密总盈亏" % (
+                sum(realized_map.values()), realized_cny))
         crypto_pnl_usdt = r2(crypto_pnl_cny / rate, 2)
     else:
         crypto_pnl_usdt = crypto_meta.get("real_pnl_usdt")
@@ -599,6 +617,7 @@ def main():
              "pnl_cny": r2(crypto_pnl_cny, 2) if crypto_pnl_cny is not None else None,
              "pnl_pct": crypto_meta.get("real_pnl_pct"),
              "cost_cny": r2(crypto_cost_cny, 2),
+             "realized_cny": realized_cny,
              "day_cny": r2(crypto_day, 2),
              "day_pct": round(crypto_day / (crypto_cny - crypto_day) * 100, 2) if (crypto_cny - crypto_day) else 0.0,
              "items": pnl_rows([r for r in crypto_rows if r["group"] == CRYPTO_GROUP], "crypto")},
@@ -663,6 +682,7 @@ def main():
             "cost_pending_count": len(cost_pending),
             "cost_pending_ids": cost_pending,
             "crypto_pnl_cny": r2(crypto_pnl_cny, 2),
+            "crypto_realized_cny": realized_cny,
             "crypto_day_change_cny": r2(crypto_day, 2),
             "crypto_day_change_pct": round(crypto_day / (crypto_cny - crypto_day) * 100, 2)
             if (crypto_cny - crypto_day) else 0.0,

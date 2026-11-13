@@ -73,11 +73,12 @@ def fetch_fills(key, secret, passphrase, start_ms, log=print):
 STABLE = {"USDT", "USDC", "USD", "DAI", "FDUSD", "TUSD", "BUSD"}
 
 
-def replay(fills, base_cost, fx_price=None, log=print):
+def replay(fills, base_cost, calib_shares=None, fx_price=None, log=print):
     """把成交重放成每个币的成本总额（USDT）。买入增加成本，卖出减少成本。"""
     cost = dict(base_cost or {})
     realized = {}
-    qty = {}
+    qty = {str(k).upper(): float(v) for k, v in (calib_shares or {}).items()}
+    realized_pnl = {}
     for f in fills:
         coin = (f.get("coin") or "").upper() or (f.get("symbol") or "").split("USDT")[0]
         if not coin:
@@ -105,13 +106,19 @@ def replay(fills, base_cost, fx_price=None, log=print):
             cost[coin] = cost.get(coin, 0.0) + amount + fee_usdt
             qty[coin] = qty.get(coin, 0.0) + size
         elif side == "sell":
-            qty[coin] = qty.get(coin, 0.0) - size
-            # 卖出：收回的资金从投入里扣回（成本基数下降，已实现收益单独记录）
-            cost[coin] = max(0.0, cost.get(coin, 0.0) - (amount - fee_usdt))
-            realized[coin] = realized.get(coin, 0.0) + (amount - fee_usdt)
+            held = qty.get(coin, 0.0)
+            avg_cost = (cost.get(coin, 0.0) / held) if held > 0 else 0.0
+            basis = min(cost.get(coin, 0.0), avg_cost * size)
+            proceeds = amount - fee_usdt
+            # 卖出：只把对应成本基数移出，差额记已实现盈亏（不按卖出额直接减成本）
+            cost[coin] = max(0.0, cost.get(coin, 0.0) - basis)
+            qty[coin] = max(0.0, held - size)
+            realized[coin] = realized.get(coin, 0.0) + proceeds
+            realized_pnl[coin] = realized_pnl.get(coin, 0.0) + (proceeds - basis)
     return ({k: round(v, 4) for k, v in cost.items()},
             {k: round(v, 4) for k, v in realized.items()},
-            {k: round(v, 8) for k, v in qty.items()})
+            {k: round(v, 8) for k, v in qty.items()},
+            {k: round(v, 4) for k, v in realized_pnl.items()})
 
 
 def update(data_path=None, log=print):
@@ -128,7 +135,7 @@ def update(data_path=None, log=print):
     start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=CST).timestamp() * 1000)
     fills = fetch_fills(key, secret, passphrase, start_ms, log=log)
     base = cal.get("cost_total_usdt") or {}
-    cost, realized, qty = replay(fills, base, log=log)
+    cost, realized, qty, realized_pnl = replay(fills, base, calib_shares=cal.get("calib_shares"), log=log)
     payload = {
         "updated_at": datetime.now(CST).strftime("%Y-%m-%dT%H:%M:%S+08:00"),
         "since": start,
@@ -136,6 +143,7 @@ def update(data_path=None, log=print):
         "cost_total_usdt": cost,
         "realized_usdt": realized,
         "qty_net": qty,
+        "realized_pnl_usdt": realized_pnl,
         "source": "bitget_fills",
     }
     LEDGER.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
