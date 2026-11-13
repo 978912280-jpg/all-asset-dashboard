@@ -328,11 +328,11 @@
     slices = slices.filter(function (x) { return x.value > 0; });
     var compact = window.matchMedia("(max-width: 860px)").matches;
 
-    // 低于 3% 的小块合并成一块，标签分行列出各自占比，只用一根引线
+    // 低于 1% 的小块合并成一块，标签分行列出各自占比，只用一根引线
     var sumAll = slices.reduce(function (a, x) { return a + x.value; }, 0) || 1;
     var bigSlices = [], smallSlices = [];
     slices.forEach(function (x) {
-      if (x.value / sumAll * 100 < 3) smallSlices.push(x); else bigSlices.push(x);
+      if (x.value / sumAll * 100 < 1) smallSlices.push(x); else bigSlices.push(x);
     });
     if (smallSlices.length > 1) {
       var smallVal = smallSlices.reduce(function (a, x) { return a + x.value; }, 0);
@@ -341,7 +341,7 @@
       });
       bigSlices.push({
         label: "小额合计 " + (smallVal / sumAll * 100).toFixed(1) + "%",
-        full: "低于 3% 的标的合计",
+        full: "低于 1% 的标的合计",
         value: smallVal,
         color: "#9aa5b1",
         detail: lines,
@@ -665,15 +665,21 @@
           ? i.price - i.prev_price : null;
         var prevTxt = (i.prev_price === null || i.prev_price === undefined ? "—" :
           num(i.prev_price, 4) + (i.prev_date ? ' <span class="pa-dim">(' + i.prev_date + ")</span>" : ""));
+        var sym = (i.currency === "USD" || i.currency === "USDT") ? "$" : "¥";
+        var priceTxt = (i.price === null || i.price === undefined ? "—" : sym + num(i.price, 4));
+        var prevSymTxt = (i.prev_price === null || i.prev_price === undefined ? "—" :
+          sym + num(i.prev_price, 4) + (i.prev_date ? ' <span class="pa-dim">(' + i.prev_date + ")</span>" : ""));
         return "<tr>" +
           "<td>" + escapeHtml(i.name || i.id) + "</td>" +
           "<td>" + (i.shares === null || i.shares === undefined ? "—" : num(i.shares, 6)) + "</td>" +
-          "<td>" + prevTxt + "</td>" +
-          "<td>" + (i.price === null || i.price === undefined ? "—" : num(i.price, 4)) + "</td>" +
-          "<td>" + (diff === null ? "—" : '<span class="' + cls(diff) + '">' + (diff >= 0 ? "+" : "−") + num(Math.abs(diff), 4) + "</span>") + "</td>" +
+          "<td>" + priceTxt + "</td>" +
+          "<td>" + prevSymTxt + "</td>" +
+          "<td>" + (diff === null ? "—" :
+            '<span class="' + cls(diff) + '">' + (diff >= 0 ? "+" : "−") + sym + num(Math.abs(diff), 4) + "</span>") + "</td>" +
+          "<td>" + (i.value_cny === null || i.value_cny === undefined ? "—" : "¥" + num(i.value_cny, 2)) + "</td>" +
+          "<td>" + (i.cost_cny === null || i.cost_cny === undefined ? "—" : "¥" + num(i.cost_cny, 2)) + "</td>" +
           "<td>" + (i.day_change_cny === null || i.day_change_cny === undefined ? "—" :
             '<span class="' + cls(i.day_change_cny) + '">' + (i.day_change_cny >= 0 ? "+" : "−") + "¥" + num(Math.abs(i.day_change_cny), 2) + "</span>") + "</td>" +
-          "<td>" + (i.cost_cny === null || i.cost_cny === undefined ? "—" : "¥" + num(i.cost_cny, 2)) + "</td>" +
           "<td>" + (i.pnl_cny === null || i.pnl_cny === undefined ? "—" :
             '<span class="' + cls(i.pnl_cny) + '">' + (i.pnl_cny >= 0 ? "+" : "−") + "¥" + num(Math.abs(i.pnl_cny), 2) + "</span>") + "</td>" +
           "</tr>";
@@ -695,9 +701,9 @@
           : "") +
         '<span class="pa-metric pa-dim">成本 ¥' + num(g.cost_cny || 0, 2) + "</span></div>" +
         '<table class="pa-table"><thead><tr>' +
-        "<th>标的</th><th>份额</th><th>上一快照价</th><th>现价</th><th>价差</th>" +
-        "<th>当日浮动收益</th><th>成本</th><th>净盈亏</th></tr></thead><tbody>" +
-        (rows || '<tr><td colspan="8" class="pa-empty">无持仓</td></tr>') +
+        "<th>标的</th><th>份额</th><th>现价</th><th>上一快照价</th><th>价差</th>" +
+        "<th>市值</th><th>成本</th><th>当日浮动收益</th><th>净盈亏</th></tr></thead><tbody>" +
+        (rows || '<tr><td colspan="9" class="pa-empty">无持仓</td></tr>') +
         "</tbody></table></div>";
     }).join("") + '<div class="pa-total">合计：净盈亏 <b class="' + cls(totalPnlOf(pb)) + '">' +
       (totalPnlOf(pb) >= 0 ? "+" : "−") + "¥" + num(Math.abs(totalPnlOf(pb)), 2) +
