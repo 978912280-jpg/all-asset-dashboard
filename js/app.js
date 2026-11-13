@@ -1131,7 +1131,9 @@
           axisLabel: {
             color: "#6b7280", fontSize: 11,
             formatter: function (v) {
-              return v === 0 ? "0" : (v > 0 ? "+" : "−") + "¥" + Math.abs(Math.round(v / 1000)) + "k";
+              var a = Math.abs(v);
+              if (a < 1) return "0";
+              return (v > 0 ? "+" : "−") + "¥" + (a >= 1000 ? (a / 1000).toFixed(1) + "k" : Math.round(a));
             },
           },
           splitLine: { show: false },
