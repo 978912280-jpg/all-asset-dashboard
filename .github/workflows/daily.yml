@@ -54,6 +54,12 @@ jobs:
           BUILD_SOURCE: ${{ github.event.inputs.source || 'auto' }}
         run: python3 scripts/build.py
 
+      - name: 推送 Bark 通知
+        continue-on-error: true
+        env:
+          BARK_KEY: ${{ secrets.BARK_KEY }}
+        run: python3 scripts/notify_bark.py
+
       - name: 提交每日快照与仪表盘数据
         run: |
           set -e
