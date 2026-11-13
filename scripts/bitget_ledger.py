@@ -146,6 +146,7 @@ def update(data_path=None, log=print):
         "cost_total_usdt": cost,
         "realized_usdt": realized,
         "qty_net": qty,
+        "qty_mode": "delta",
         "realized_pnl_usdt": realized_pnl,
         "source": "bitget_fills",
     }

@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.4.0"
+PAGE_VERSION = "1.4.1"
 PAGE_DATE = "2026.11.12"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -212,7 +212,9 @@ def load_cost_total():
             if isinstance(c, dict) and c:
                 print("      成本账本：%s（%s 笔成交，更新于 %s）" % (
                     "、".join("%s %.2f" % (k, v) for k, v in c.items()), p.get("fills"), p.get("updated_at")))
-                qty_net = {str(k).upper(): float(v) for k, v in (p.get("qty_net") or {}).items()}
+                # 只有明确标记为「校准后净变化」的账本才用于暂缓成本，避免旧格式（绝对持仓）误判
+                if p.get("qty_mode") == "delta":
+                    qty_net = {str(k).upper(): float(v) for k, v in (p.get("qty_net") or {}).items()}
                 return {str(k).upper(): float(v) for k, v in c.items()}, qty_net, {str(k).upper(): float(v) for k, v in calib_shares.items()}
         except (ValueError, OSError) as e:
             print("      [warn] 成本账本读取失败：%s" % e)
@@ -508,6 +510,9 @@ def main():
             print("      已实现盈亏：%.2f USDT（%.2f CNY）已计入加密总盈亏" % (
                 sum(realized_map.values()), realized_cny))
         crypto_pnl_usdt = r2(crypto_pnl_cny / rate, 2)
+        # 加密盈亏百分比只以「币类成本」为分母，稳定币按面值不参与涨跌
+        crypto_coin_cost_cny = r2(sum(r["cost_cny"] or 0 for r in crypto_rows if r["group"] == CRYPTO_GROUP), 2)
+        crypto_pnl_pct_calc = r2(crypto_pnl_cny / crypto_coin_cost_cny * 100, 2) if crypto_coin_cost_cny else None
     else:
         crypto_pnl_usdt = crypto_meta.get("real_pnl_usdt")
         crypto_pnl_cny = crypto_pnl_usdt * rate if crypto_pnl_usdt is not None else None
@@ -615,8 +620,8 @@ def main():
              "items": pnl_rows(trad_rows, "traditional")},
             {"key": "crypto", "name": "加密货币",
              "pnl_cny": r2(crypto_pnl_cny, 2) if crypto_pnl_cny is not None else None,
-             "pnl_pct": crypto_meta.get("real_pnl_pct"),
-             "cost_cny": r2(crypto_cost_cny, 2),
+             "pnl_pct": crypto_pnl_pct_calc,
+             "cost_cny": r2(crypto_coin_cost_cny, 2),
              "realized_cny": realized_cny,
              "day_cny": r2(crypto_day, 2),
              "day_pct": round(crypto_day / (crypto_cny - crypto_day) * 100, 2) if (crypto_cny - crypto_day) else 0.0,
@@ -687,7 +692,7 @@ def main():
             "crypto_day_change_pct": round(crypto_day / (crypto_cny - crypto_day) * 100, 2)
             if (crypto_cny - crypto_day) else 0.0,
             "crypto_pnl_usdt": crypto_pnl_usdt,
-            "crypto_pnl_pct": crypto_meta.get("real_pnl_pct"),
+            "crypto_pnl_pct": crypto_pnl_pct_calc,
             "total_pnl_cny": r2(total_pnl, 2),
             "total_pnl_pct": total_pnl_pct,
         },
