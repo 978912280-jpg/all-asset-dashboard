@@ -1193,13 +1193,6 @@
             return { type: "group", children: out };
           },
         },
-        // 0 值参考虚线（不参与交互，避免遮挡悬浮）
-        {
-          name: "_zero", type: "line", yAxisIndex: 1, silent: true, z: 1,
-          data: dates.length ? [[dates[0], 0], [dates[dates.length - 1], 0]] : [],
-          symbol: "none", lineStyle: { color: "#9ca3af", type: "dashed", width: 1 },
-          tooltip: { show: false },
-        },
       ],
     }, true);
     state.trend.resize();

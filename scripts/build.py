@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.5.3"
+PAGE_VERSION = "1.5.4"
 PAGE_DATE = "2026.11.12"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -661,10 +661,23 @@ def main():
             keep_prev = False
 
     # 趋势/日历用的 history：必须包含「今天」这一条（快照是在 dashboard 写出之后才落库的）
-    hist = [{kk: sn.get(kk) for kk in ("date", "total_cny", "traditional_cny", "crypto_cny",
-                                       "cash_cny", "day_change_cny", "day_change_pct",
-                                       "fx_usdcny", "crypto_usdt", "total_pnl_cny",
-                                       "traditional_pnl_cny", "crypto_pnl_cny")}
+    def snap_field(sn, key):
+        v = sn.get(key)
+        if v is None:
+            v = (sn.get("summary") or {}).get(key)
+        if v is None and key.endswith("_pnl_cny"):
+            # 老快照兜底：按当日明细逐项求和（现金项盈亏恒为 0）
+            want = {"total_pnl_cny": None, "traditional_pnl_cny": "traditional",
+                    "crypto_pnl_cny": "crypto"}[key]
+            items = sn.get("items") or []
+            v = round(sum((i.get("pnl_cny") or 0) for i in items
+                          if (want is None or i.get("group") == want)), 2)
+        return v
+
+    hist = [{kk: snap_field(sn, kk) for kk in ("date", "total_cny", "traditional_cny", "crypto_cny",
+                                               "cash_cny", "day_change_cny", "day_change_pct",
+                                               "fx_usdcny", "crypto_usdt", "total_pnl_cny",
+                                               "traditional_pnl_cny", "crypto_pnl_cny")}
             for sn in snapshots if sn.get("date") != today]
     hist.append({"date": today, "total_cny": entry["total_cny"],
                  "traditional_cny": entry["traditional_cny"],
