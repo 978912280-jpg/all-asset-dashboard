@@ -509,3 +509,16 @@ body.locked > header, body.locked > main { display: none; }
   60% { transform: translateX(-5px); }
   80% { transform: translateX(5px); }
 }
+
+/* 持仓明细排序控件 */
+.sort-box { display: inline-flex; align-items: center; gap: 6px; margin-right: 2px; }
+.sort-label { font-size: 12px; color: var(--muted, #8a94a6); }
+.sort-btn, .sort-dir {
+  font: inherit; font-size: 12.5px; line-height: 1;
+  padding: 7px 10px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line, #e3e8ef); background: #fff; color: var(--ink, #1f2733);
+  transition: background .15s, border-color .15s, color .15s;
+}
+.sort-btn:hover, .sort-dir:hover { border-color: #b9c4d4; }
+.sort-btn.active { background: var(--ink, #1f2733); border-color: var(--ink, #1f2733); color: #fff; }
+.sort-dir { font-variant-numeric: tabular-nums; }

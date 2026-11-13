@@ -5,6 +5,8 @@
   var state = {
     data: null,
     group: "all",
+    sortKey: "value_cny",
+    sortDir: "desc",
     donut: null,
     trend: null,
     groupColors: { traditional: "#1d4ed8", crypto: "#b45309", cash: "#0f766e" },
@@ -425,7 +427,20 @@
     var items = (state.data.items || []).filter(function (i) {
       return state.group === "all" || i.group === state.group;
     });
-    items.sort(function (a, b) { return (b.value_cny || 0) - (a.value_cny || 0); });
+    var sortKey = state.sortKey || "value_cny";
+    var dir = state.sortDir === "asc" ? 1 : -1;
+    items.sort(function (a, b) {
+      // 现金没有「浮动收益」口径，按浮动收益排序时视为空值排到最后
+      var av = (sortKey === "day_change_cny" && a.group === "cash") ? null : a[sortKey];
+      var bv = (sortKey === "day_change_cny" && b.group === "cash") ? null : b[sortKey];
+      var an = (av === null || av === undefined || isNaN(av)) ? null : Number(av);
+      var bn = (bv === null || bv === undefined || isNaN(bv)) ? null : Number(bv);
+      if (an === null && bn === null) return 0;
+      if (an === null) return 1;      // 空值始终排最后
+      if (bn === null) return -1;
+      if (an === bn) return dir * ((b.value_cny || 0) - (a.value_cny || 0));
+      return (an - bn) * dir;
+    });
     // 分组筛选时，占比按当前分组内合计换算成 100%
     var scopeSum = items.reduce(function (a, i) { return a + (i.value_cny || 0); }, 0);
     var scopeLocal = state.group !== "all" && scopeSum > 0;
@@ -501,6 +516,27 @@
       '<td class="num">¥' + num(sumVal) + "</td>" +
       '<td class="num ' + cls(sumPnl) + '">' + (sumPnl >= 0 ? "+" : "−") + "¥" + num(Math.abs(sumPnl)) + "</td>" +
       '<td class="num">' + sumWTxt + "</td></tr>";
+  }
+
+  function bindSort() {
+    var box = $("sort-box"), dirBtn = $("sort-dir");
+    if (!box || !dirBtn) return;
+    box.addEventListener("click", function (e) {
+      var keyBtn = e.target.closest("[data-sort]");
+      if (keyBtn) {
+        state.sortKey = keyBtn.getAttribute("data-sort");
+        var btns = box.querySelectorAll(".sort-btn");
+        for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("active", btns[i] === keyBtn);
+        renderTable();
+        return;
+      }
+      if (e.target.closest("#sort-dir")) {
+        state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
+        dirBtn.setAttribute("data-dir", state.sortDir);
+        dirBtn.textContent = state.sortDir === "asc" ? "升序 ↑" : "降序 ↓";
+        renderTable();
+      }
+    });
   }
 
   // ---------- 访问密码锁（拨号盘） ----------
@@ -1149,6 +1185,7 @@
     if ($("btn-back-today")) $("btn-back-today").addEventListener("click", exitReplay);
     bindTabs();
     bindRefreshPrice();
+    bindSort();
     bindPinLock();
     bindCalTabs();
     bindDisclaimer();

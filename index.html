@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-version="1.4.8">
+<html lang="zh-CN" data-page-version="1.4.9">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -18,10 +18,10 @@
       .catch(function () {});
   })();
   </script>
-  <link rel="stylesheet" href="css/style.css?v=1.4.8">
+  <link rel="stylesheet" href="css/style.css?v=1.4.9">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231f2329'/%3E%3Cpath d='M5 17 L10 11 L13 14 L18 7' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <script src="https://fastly.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" defer></script>
-  <script src="js/app.js?v=1.4.8" defer></script>
+  <script src="js/app.js?v=1.4.9" defer></script>
 </head>
 <body class="locked">
   <div class="pin-lock" id="pin-lock" hidden>
@@ -99,6 +99,12 @@
     <section class="card">
       <div class="card-head">
         <h2>持仓明细</h2>
+        <div class="sort-box" id="sort-box" aria-label="持仓排序">
+          <span class="sort-label">排序</span>
+          <button class="sort-btn active" data-sort="value_cny" type="button">市值</button>
+          <button class="sort-btn" data-sort="day_change_cny" type="button">浮动收益</button>
+          <button class="sort-dir" id="sort-dir" data-dir="desc" type="button">降序 ↓</button>
+        </div>
         <div class="seg" id="group-tabs" role="tablist">
           <button class="seg-btn active" data-group="all" type="button">全部</button>
           <button class="seg-btn" data-group="traditional" type="button">传统股票&amp;基金</button>
