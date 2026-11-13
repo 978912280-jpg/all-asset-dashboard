@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.5.1"
+PAGE_VERSION = "1.5.2"
 PAGE_DATE = "2026.11.12"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -639,6 +639,9 @@ def main():
         if total_cny - day_change else 0.0,
         "fx_usdcny": r2(rate, 4),
         "crypto_usdt": crypto_meta.get("total_usdt"),
+        "total_pnl_cny": r2(total_pnl, 2) if total_pnl is not None else None,
+        "traditional_pnl_cny": r2(trad_pnl, 2),
+        "crypto_pnl_cny": r2(crypto_pnl_cny, 2) if crypto_pnl_cny is not None else None,
         "items": [{"id": r["id"], "shares": r.get("shares"), "price": r.get("price")}
                   for r in trad_rows + crypto_rows + cash_rows],
     }
@@ -660,14 +663,18 @@ def main():
     # 趋势/日历用的 history：必须包含「今天」这一条（快照是在 dashboard 写出之后才落库的）
     hist = [{kk: sn.get(kk) for kk in ("date", "total_cny", "traditional_cny", "crypto_cny",
                                        "cash_cny", "day_change_cny", "day_change_pct",
-                                       "fx_usdcny", "crypto_usdt")}
+                                       "fx_usdcny", "crypto_usdt", "total_pnl_cny",
+                                       "traditional_pnl_cny", "crypto_pnl_cny")}
             for sn in snapshots if sn.get("date") != today]
     hist.append({"date": today, "total_cny": entry["total_cny"],
                  "traditional_cny": entry["traditional_cny"],
                  "crypto_cny": entry["crypto_cny"], "cash_cny": entry["cash_cny"],
                  "day_change_cny": entry["day_change_cny"],
                  "day_change_pct": entry["day_change_pct"],
-                 "fx_usdcny": entry["fx_usdcny"], "crypto_usdt": entry["crypto_usdt"]})
+                 "fx_usdcny": entry["fx_usdcny"], "crypto_usdt": entry["crypto_usdt"],
+                 "total_pnl_cny": entry["total_pnl_cny"],
+                 "traditional_pnl_cny": entry["traditional_pnl_cny"],
+                 "crypto_pnl_cny": entry["crypto_pnl_cny"]})
     hist.sort(key=lambda x: x.get("date") or "")
 
     # 盈亏分析：各板块净盈亏 + 当日浮动收益，以及计算过程用到的数据

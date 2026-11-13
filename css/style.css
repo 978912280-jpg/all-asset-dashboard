@@ -521,3 +521,9 @@ body.locked > header, body.locked > main { display: none; }
 .sort-btn:hover, .sort-dir:hover { border-color: #b9c4d4; }
 .sort-btn.active { background: var(--ink, #1f2733); border-color: var(--ink, #1f2733); color: #fff; }
 .sort-dir { font-variant-numeric: tabular-nums; }
+
+/* 趋势图悬浮明细 */
+.tr-tip { font-size: 12px; line-height: 1.7; color: #1f2733; }
+.tr-tip-h { font-weight: 700; margin-bottom: 2px; }
+.tr-tip .pos { color: #16a34a; }
+.tr-tip .neg { color: #dc2626; }

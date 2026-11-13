@@ -1068,17 +1068,39 @@
     }
     if (!state.trend) state.trend = echarts.init($("trend-chart"));
     var dates = h.map(function (x) { return x.date; });
-    var total = h.map(function (x) { return Math.round(x.total_cny || 0); });
-    var trad = h.map(function (x) { return Math.round(x.traditional_cny || 0); });
-    var crypto = h.map(function (x) { return Math.round(x.crypto_cny || 0); });
+    var total = h.map(function (x) { return (x.date === undefined || x.total_cny === null) ? null : Math.round(x.total_cny || 0); });
+    var pnl = h.map(function (x) {
+      return (x.total_pnl_cny === null || x.total_pnl_cny === undefined) ? null : Math.round(x.total_pnl_cny);
+    });
+    var byDate = {};
+    h.forEach(function (x) { byDate[x.date] = x; });
 
     state.trend.setOption({
-      grid: { left: 12, right: 18, top: 34, bottom: 26, containLabel: true },
+      grid: { left: 12, right: 52, top: 34, bottom: 26, containLabel: true },
       tooltip: {
-        trigger: "axis",
-        valueFormatter: function (v) { return "¥" + num(v, 0); },
+        trigger: "item",   // 仅在悬浮到数据点上时显示明细
+        axisPointer: { type: "line" },
+        formatter: function (p) {
+          var rec = byDate[p.name] || {};
+          function cny(v) { return (v === null || v === undefined) ? "—" : "¥" + num(v); }
+          function signed(v) {
+            if (v === null || v === undefined) return '<span class="pa-dim">—</span>';
+            var cl = v >= 0 ? "pos" : "neg";
+            return '<span class="' + cl + '">' + (v >= 0 ? "+" : "−") + "¥" + num(Math.abs(v)) + "</span>";
+          }
+          return '<div class="tr-tip"><div class="tr-tip-h">' + p.name + '</div>' +
+            '<div>总资产&nbsp;&nbsp;' + cny(rec.total_cny) + "</div>" +
+            '<div>总盈亏&nbsp;&nbsp;' + signed(rec.total_pnl_cny) + "</div>" +
+            '<div>传统&nbsp;&nbsp;' + cny(rec.traditional_cny) + "（" + signed(rec.traditional_pnl_cny) + "）</div>" +
+            '<div>加密&nbsp;&nbsp;' + cny(rec.crypto_cny) + "（" + signed(rec.crypto_pnl_cny) + "）</div>" +
+            '<div>现金&nbsp;&nbsp;' + cny(rec.cash_cny) + "</div>" +
+            '<div>当日浮动&nbsp;&nbsp;' + signed(rec.day_change_cny) +
+            (rec.day_change_pct === null || rec.day_change_pct === undefined ? "" : "（" + pct(rec.day_change_pct) + "）") +
+            "</div></div>";
+        },
       },
-      legend: { top: 0, itemWidth: 14, itemHeight: 9, textStyle: { fontSize: 11 } },
+      legend: { top: 0, itemWidth: 14, itemHeight: 9, textStyle: { fontSize: 11 },
+        data: [{ name: "总资产", icon: "circle" }, { name: "总盈亏", icon: "circle" }] },
       xAxis: {
         type: "category",
         data: dates,
@@ -1086,42 +1108,67 @@
         axisLine: { lineStyle: { color: "#e5e7eb" } },
         axisLabel: { color: "#6b7280", fontSize: 11, formatter: function (v) { return v.slice(5); } },
       },
-      yAxis: {
-        type: "value",
-        scale: true,
-        axisLabel: {
-          color: "#6b7280", fontSize: 11,
-          formatter: function (v) {
-            return v >= 10000 ? "¥" + (v / 10000).toFixed(0) + "万" : "¥" + Math.round(v);
+      yAxis: [
+        {
+          type: "value", scale: true,
+          axisLabel: {
+            color: "#9a7b1f", fontSize: 11,
+            formatter: function (v) {
+              return v >= 10000 ? "¥" + (v / 10000).toFixed(0) + "万" : "¥" + Math.round(v);
+            },
           },
+          splitLine: { lineStyle: { color: "#f1f3f5" } },
         },
-        splitLine: { lineStyle: { color: "#f1f3f5" } },
+        {
+          type: "value", scale: true, position: "right",
+          axisLabel: {
+            color: "#6b7280", fontSize: 11,
+            formatter: function (v) {
+              return v === 0 ? "0" : (v > 0 ? "+" : "−") + "¥" + Math.abs(Math.round(v / 1000)) + "k";
+            },
+          },
+          splitLine: { show: false },
+          splitNumber: 4,
+        },
+      ],
+      visualMap: {
+        show: false,
+        seriesIndex: 1,
+        dimension: 1,
+        pieces: [
+          { gt: 0, color: "#16a34a" },   // 0 上方：绿（涨）
+          { lte: 0, color: "#dc2626" },  // 0 下方：红（跌）
+        ],
       },
       series: [
         {
-          name: "总资产", type: "line", data: total, smooth: true,
-          symbol: "circle", symbolSize: 5,
-          lineStyle: { width: 2.4, color: "#14532d" },
-          itemStyle: { color: "#14532d" },
+          name: "总资产", type: "line", yAxisIndex: 0, smooth: true,
+          data: dates.map(function (d, i) { return [d, total[i]]; }),
+          symbol: "circle", symbolSize: 7, showSymbol: true,
+          lineStyle: { width: 2.4, color: "#d4a017" },
+          itemStyle: { color: "#d4a017", borderColor: "#fff", borderWidth: 1.5 },
           areaStyle: {
             color: {
               type: "linear", x: 0, y: 0, x2: 0, y2: 1,
               colorStops: [
-                { offset: 0, color: "rgba(20,83,45,.16)" },
-                { offset: 1, color: "rgba(20,83,45,0)" },
+                { offset: 0, color: "rgba(212,160,23,.18)" },
+                { offset: 1, color: "rgba(212,160,23,0)" },
               ],
             },
           },
         },
         {
-          name: "传统股票&基金", type: "line", data: trad, smooth: true,
-          symbol: "none", lineStyle: { width: 1.6, color: "#1d4ed8" },
-          itemStyle: { color: "#1d4ed8" },
-        },
-        {
-          name: "加密货币", type: "line", data: crypto, smooth: true,
-          symbol: "none", lineStyle: { width: 1.6, color: "#b45309", type: "dashed" },
-          itemStyle: { color: "#b45309" },
+          name: "总盈亏", type: "line", yAxisIndex: 1, smooth: true, connectNulls: true,
+          data: dates.map(function (d, i) { return [d, pnl[i]]; }),
+          symbol: "circle", symbolSize: 6, showSymbol: true,
+          lineStyle: { width: 2, color: "#16a34a" },
+          itemStyle: { color: "#16a34a", borderColor: "#fff", borderWidth: 1.2 },
+          markLine: {
+            symbol: "none", silent: true,
+            lineStyle: { color: "#9ca3af", type: "dashed", width: 1 },
+            data: [{ yAxis: 0 }],
+            label: { show: true, formatter: "盈亏 0", color: "#9ca3af", fontSize: 10, position: "insideEndTop" },
+          },
         },
       ],
     }, true);
@@ -1129,7 +1176,7 @@
 
     $("trend-tip").textContent = h.length === 1
       ? "已有 1 个每日快照（" + h[0].date + "）。后台每日构建后会累积成趋势曲线。"
-      : "共 " + h.length + " 个每日快照（" + h[0].date + " ~ " + h[h.length - 1].date + "），每日构建自动累积。";
+      : "共 " + h.length + " 个每日快照（" + h[0].date + " ~ " + h[h.length - 1].date + "），金线=总资产（左轴），红绿线=总盈亏（右轴，0 上方绿、0 下方红）。";
   }
 
   // ---------- 数据来源 ----------
