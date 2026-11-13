@@ -32,19 +32,22 @@ def fmt_pct(v):
 def build_message(d):
     s = d.get("summary") or {}
     meta = d.get("meta") or {}
-    title = "资产 %s 今日 %s" % (fmt_cny(s.get("total_cny")), fmt_cny(s.get("day_change_cny"), True))
+    pnl = s.get("total_pnl_cny")
+    pct = s.get("total_pnl_pct")
+    title = "资产日报"
     lines = [
-        "总资产 %s（%s）" % (fmt_cny(s.get("total_cny")), fmt_pct(s.get("day_change_pct"))),
-        "总盈亏 %s（%s）" % (fmt_cny(s.get("total_pnl_cny"), True), fmt_pct(s.get("total_pnl_pct"))),
+        "总资产：%s" % fmt_cny(s.get("total_cny")),
+        "总盈亏：%s（%s）" % (fmt_cny(pnl, True), fmt_pct(pct)),
+        "今日浮动：%s（%s）" % (fmt_cny(s.get("day_change_cny"), True), fmt_pct(s.get("day_change_pct"))),
         "",
-        "传统 %s｜今日 %s｜盈亏 %s（%s）" % (
+        "传统：%s｜今日 %s｜盈亏 %s（%s）" % (
             fmt_cny(s.get("traditional_cny")),
             fmt_cny(s.get("traditional_day_change_cny"), True),
             fmt_cny(s.get("traditional_pnl_cny"), True),
             fmt_pct(s.get("traditional_pnl_pct")),
         ),
     ]
-    crypto_line = "加密 %s｜今日 %s｜盈亏 %s（%s）" % (
+    crypto_line = "加密：%s｜今日 %s｜盈亏 %s（%s）" % (
         fmt_cny(s.get("crypto_cny")),
         fmt_cny(s.get("crypto_day_change_cny"), True),
         fmt_cny(s.get("crypto_pnl_cny"), True),
@@ -53,7 +56,7 @@ def build_message(d):
     if s.get("crypto_pnl_usdt") is not None:
         crypto_line += "｜%s USDT" % fmt_cny(s.get("crypto_pnl_usdt"), True).replace("¥", "")
     lines.append(crypto_line)
-    lines.append("现金 %s（含稳定币 %s）" % (fmt_cny(s.get("cash_cny")), fmt_cny(s.get("stable_cash_cny"))))
+    lines.append("现金：%s（含稳定币 %s）" % (fmt_cny(s.get("cash_cny")), fmt_cny(s.get("stable_cash_cny"))))
     lines.append("")
     lines.append("v%s · %s" % (meta.get("version") or "—", str(meta.get("generated_at") or "")[:16].replace("T", " ")))
     return title, "\n".join(lines)
