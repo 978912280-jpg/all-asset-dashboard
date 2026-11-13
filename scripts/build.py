@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.3.7"
+PAGE_VERSION = "1.3.8"
 PAGE_DATE = "2026.11.12"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -453,10 +453,16 @@ def main():
             actual = float(row.get("shares") or 0)
             if expected > 0 and actual > 0 and usdt > 0:
                 gap = expected - actual
-                if gap > max(1e-9, expected * 1e-5):
+                bought = float(qty_net.get(coin) or 0)
+                # 只把「本次买入尚未体现到份额」的部分暂缓；缺口若超过成交净数量，
+                # 说明是质押/空投等非成交原因导致份额变动，不做成本调整。
+                if gap > max(1e-9, expected * 1e-5) and gap <= bought + max(1e-9, expected * 1e-5):
                     pending_usdt = gap * (usdt / expected)
                     usdt = max(0.0, usdt - pending_usdt)
                     print("      %s 有 %.8f 尚未进入份额，暂缓 %.2f USDT 成本" % (coin, gap, pending_usdt))
+                elif actual > expected + max(1e-9, expected * 1e-5):
+                    print("      %s 份额比成交多 %.8f（质押/空投等 0 成本增发），成本价自动摊薄" % (
+                        coin, actual - expected))
             row["cost_pending_usdt"] = r2(pending_usdt, 4) if pending_usdt else 0
             cost_cny = r2(usdt * rate, 2)
             row["cost_cny"] = cost_cny
