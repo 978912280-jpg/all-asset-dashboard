@@ -78,6 +78,7 @@ def replay(fills, base_cost, calib_shares=None, fx_price=None, log=print):
     cost = dict(base_cost or {})
     realized = {}
     qty = {str(k).upper(): float(v) for k, v in (calib_shares or {}).items()}
+    qty_delta = {}
     realized_pnl = {}
     for f in fills:
         coin = (f.get("coin") or "").upper() or (f.get("symbol") or "").split("USDT")[0]
@@ -105,6 +106,7 @@ def replay(fills, base_cost, calib_shares=None, fx_price=None, log=print):
         if side == "buy":
             cost[coin] = cost.get(coin, 0.0) + amount + fee_usdt
             qty[coin] = qty.get(coin, 0.0) + size
+            qty_delta[coin] = qty_delta.get(coin, 0.0) + size
         elif side == "sell":
             held = qty.get(coin, 0.0)
             avg_cost = (cost.get(coin, 0.0) / held) if held > 0 else 0.0
@@ -113,11 +115,12 @@ def replay(fills, base_cost, calib_shares=None, fx_price=None, log=print):
             # 卖出：只把对应成本基数移出，差额记已实现盈亏（不按卖出额直接减成本）
             cost[coin] = max(0.0, cost.get(coin, 0.0) - basis)
             qty[coin] = max(0.0, held - size)
+            qty_delta[coin] = qty_delta.get(coin, 0.0) - size
             realized[coin] = realized.get(coin, 0.0) + proceeds
             realized_pnl[coin] = realized_pnl.get(coin, 0.0) + (proceeds - basis)
     return ({k: round(v, 4) for k, v in cost.items()},
             {k: round(v, 4) for k, v in realized.items()},
-            {k: round(v, 8) for k, v in qty.items()},
+            {k: round(v, 8) for k, v in qty_delta.items()},
             {k: round(v, 4) for k, v in realized_pnl.items()})
 
 
