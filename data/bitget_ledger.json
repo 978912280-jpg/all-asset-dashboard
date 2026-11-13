@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-13T12:36:44+08:00",
+  "updated_at": "2026-11-13T12:46:16+08:00",
   "since": "2026-11-13",
   "fills": 1,
   "cost_total_usdt": {
@@ -11,6 +11,7 @@
   "qty_net": {
     "BTC": 0.000139
   },
+  "qty_mode": "delta",
   "realized_pnl_usdt": {},
   "source": "bitget_fills"
 }
