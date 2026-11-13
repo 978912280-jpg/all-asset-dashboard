@@ -62,12 +62,11 @@ def fetch_fills(key, secret, passphrase, start_ms, log=print):
         time.sleep(0.25)
     out.sort(key=lambda x: int(x.get("cTime") or 0))
     log("    Bitget 成交记录：%d 笔（%d 页）" % (len(out), pages))
-    for f in out[:2]:
-        log("      raw: " + json.dumps(f, ensure_ascii=False)[:400])
     for f in out[:20]:
-        log("      fill %s %s size=%s price=%s fee=%s(%s) cTime=%s" % (
-            f.get("symbol"), f.get("side"), f.get("size"), f.get("price"),
-            f.get("fee"), f.get("feeCoin"), f.get("cTime")))
+        fd = (f.get("feeDetail") or {})
+        log("      fill %s %s 金额=%s 均价=%s 手续费=%s %s" % (
+            f.get("symbol"), f.get("side"), f.get("amount"), f.get("priceAvg"),
+            fd.get("totalFee"), fd.get("feeCoin")))
     return out
 
 
@@ -82,17 +81,18 @@ def replay(fills, base_cost, fx_price=None, log=print):
         coin = (f.get("coin") or "").upper() or (f.get("symbol") or "").split("USDT")[0]
         if not coin:
             continue
+        fd = f.get("feeDetail") or {}
         try:
             size = float(f.get("size") or 0)
-            price = float(f.get("price") or 0)
+            price = float(f.get("priceAvg") or f.get("price") or 0)
+            amount = float(f.get("amount") or 0) or size * price
         except (TypeError, ValueError):
             continue
-        if size <= 0 or price <= 0:
+        if size <= 0 or amount <= 0:
             continue
         side = (f.get("side") or "").lower()
-        amount = size * price
-        fee = abs(float(f.get("fee") or 0))
-        fee_coin = (f.get("feeCoin") or "").upper()
+        fee = abs(float(fd.get("totalFee") or f.get("fee") or 0))
+        fee_coin = (fd.get("feeCoin") or f.get("feeCoin") or "").upper()
         fee_usdt = 0.0
         if fee_coin in STABLE:
             fee_usdt = fee
