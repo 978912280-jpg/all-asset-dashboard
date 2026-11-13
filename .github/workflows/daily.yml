@@ -53,7 +53,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           STAMP="$(TZ=Asia/Shanghai date +%F)"
           commit_if_any() {
-            git add data/dashboard.json data/snapshots.json data/bitget_ledger.json
+            git add data/dashboard.json data/snapshots.json
+            # 成本账本可能因 API 未配置而不存在，单独判断，避免 pathspec 失败导致整次 add 回滚
+            if [ -f data/bitget_ledger.json ]; then git add data/bitget_ledger.json; fi
             if git diff --cached --quiet; then
               echo "数据无变化，跳过提交"
               return 1
