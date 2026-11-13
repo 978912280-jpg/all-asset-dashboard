@@ -41,6 +41,14 @@ jobs:
           BITGET_PASSPHRASE: ${{ secrets.BITGET_PASSPHRASE }}
         run: python3 scripts/bitget_ledger.py
 
+      - name: 同步 Bitget 账户持仓（现货 + 理财）
+        continue-on-error: true
+        env:
+          BITGET_KEY: ${{ secrets.BITGET_KEY }}
+          BITGET_SECRET: ${{ secrets.BITGET_SECRET }}
+          BITGET_PASSPHRASE: ${{ secrets.BITGET_PASSPHRASE }}
+        run: python3 scripts/bitget_account.py
+
       - name: 抓取价格并计算资产
         env:
           BUILD_SOURCE: ${{ github.event.inputs.source || 'auto' }}
@@ -56,6 +64,7 @@ jobs:
             git add data/dashboard.json data/snapshots.json
             # 成本账本可能因 API 未配置而不存在，单独判断，避免 pathspec 失败导致整次 add 回滚
             if [ -f data/bitget_ledger.json ]; then git add data/bitget_ledger.json; fi
+            if [ -f data/bitget_account.json ]; then git add data/bitget_account.json; fi
             if git diff --cached --quiet; then
               echo "数据无变化，跳过提交"
               return 1
@@ -77,10 +86,12 @@ jobs:
             cp data/dashboard.json /tmp/_dash.json
             cp data/snapshots.json /tmp/_snap.json
             cp data/bitget_ledger.json /tmp/_ledger.json 2>/dev/null || true
+            cp data/bitget_account.json /tmp/_acct.json 2>/dev/null || true
             git reset --hard "origin/${GITHUB_REF_NAME:-main}"
             cp /tmp/_dash.json data/dashboard.json
             cp /tmp/_snap.json data/snapshots.json
             cp /tmp/_ledger.json data/bitget_ledger.json 2>/dev/null || true
+            cp /tmp/_acct.json data/bitget_account.json 2>/dev/null || true
             echo "第 $i 次推送失败，已重置到远端最新后重试"
             sleep 5
           done
