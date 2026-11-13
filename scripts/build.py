@@ -22,6 +22,7 @@ import os
 import sys
 import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -32,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.3.2"
+PAGE_VERSION = "1.3.3"
 PAGE_DATE = "2026.11.12"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -188,6 +189,33 @@ def build_traditional(holdings, fund_items, rate, prev_items=None):
 # --------------------------------------------------------------------------
 # 加密货币：读取加密货币资产仪表台
 # --------------------------------------------------------------------------
+
+def load_cost_total():
+    """读取加密币成本总额（USDT）：优先 data/bitget_ledger.json，其次 crypto_cost.json 的校准值。"""
+    root = Path(ROOT) / "data"
+    ledger = root / "bitget_ledger.json"
+    if ledger.exists():
+        try:
+            p = json.loads(ledger.read_text(encoding="utf-8"))
+            c = p.get("cost_total_usdt")
+            if isinstance(c, dict) and c:
+                print("      成本账本：%s（%s 笔成交，更新于 %s）" % (
+                    "、".join("%s %.2f" % (k, v) for k, v in c.items()), p.get("fills"), p.get("updated_at")))
+                return {str(k).upper(): float(v) for k, v in c.items()}
+        except (ValueError, OSError) as e:
+            print("      [warn] 成本账本读取失败：%s" % e)
+    cal = root / "crypto_cost.json"
+    if cal.exists():
+        try:
+            p = json.loads(cal.read_text(encoding="utf-8"))
+            c = (p.get("calibration") or {}).get("cost_total_usdt")
+            if c:
+                print("      成本账本：使用 %s 校准值" % (p["calibration"].get("date"),))
+                return {str(k).upper(): float(v) for k, v in c.items()}
+        except (ValueError, OSError) as e:
+            print("      [warn] crypto_cost.json 读取失败：%s" % e)
+    return {}
+
 
 def load_crypto(cfg, rate, prev_items=None):
     prev_items = prev_items or {}
@@ -396,6 +424,23 @@ def main():
             "note": "",
         })
 
+    # ---- 按成本账本（净入金校准 + Bitget 成交）补齐加密币的成本与逐项盈亏 ----
+    cost_map = load_cost_total()
+    if cost_map:
+        for row in crypto_rows:
+            if row["group"] != CRYPTO_GROUP:
+                continue
+            coin = str(row["id"]).upper()
+            if coin not in cost_map:
+                continue
+            usdt = float(cost_map[coin] or 0)
+            cost_cny = r2(usdt * rate, 2)
+            row["cost_cny"] = cost_cny
+            row["cost_price"] = r2(usdt / float(row["shares"]), 4) if row.get("shares") else None
+            row["pnl_cny"] = r2((row["value_cny"] or 0) - cost_cny, 2)
+            row["pnl_pct"] = r2(row["pnl_cny"] / cost_cny * 100, 2) if cost_cny else None
+            row["cost_source"] = "净入金校准 + Bitget 成交"
+
     trad_cny = sum(r["value_cny"] or 0 for r in trad_rows)
     crypto_cny = sum(r["value_cny"] or 0 for r in crypto_rows if r["group"] == CRYPTO_GROUP)
     stable_cash_cny = sum(r["value_cny"] or 0 for r in crypto_rows if r["group"] == CASH_GROUP)
@@ -411,11 +456,19 @@ def main():
     trad_cost = sum(r["cost_cny"] or 0 for r in trad_rows)
     trad_pnl = sum(r["pnl_cny"] or 0 for r in trad_rows)
     cost_pending = [r["id"] for r in trad_rows if r.get("cost_pending") and r["shares"]]
-    crypto_pnl_usdt = crypto_meta.get("real_pnl_usdt")
-    crypto_pnl_cny = crypto_pnl_usdt * rate if crypto_pnl_usdt is not None else None
+    if cost_map:
+        crypto_pnl_cny = r2(sum(r["pnl_cny"] or 0 for r in crypto_rows if r["group"] == CRYPTO_GROUP), 2)
+        crypto_pnl_usdt = r2(crypto_pnl_cny / rate, 2)
+    else:
+        crypto_pnl_usdt = crypto_meta.get("real_pnl_usdt")
+        crypto_pnl_cny = crypto_pnl_usdt * rate if crypto_pnl_usdt is not None else None
     total_pnl = trad_pnl + (crypto_pnl_cny or 0) if (trad_cost or crypto_pnl_cny is not None) else None
     # 总盈亏的基准成本：传统成本 + 加密账户净入金（折算人民币）
-    total_cost_base = trad_cost + (crypto_meta.get("net_deposit_usdt") or 0) * rate
+    if cost_map:
+        crypto_cost_cny = sum(r.get("cost_cny") or 0 for r in crypto_rows) + stable_cash_cny
+    else:
+        crypto_cost_cny = (crypto_meta.get("net_deposit_usdt") or 0) * rate
+    total_cost_base = trad_cost + crypto_cost_cny
     total_pnl_pct = round(total_pnl / total_cost_base * 100, 2) if (total_pnl is not None and total_cost_base) else None
     pending = [r["id"] for r in trad_rows if r["pending"]]
 
@@ -514,7 +567,7 @@ def main():
             {"key": "crypto", "name": "加密货币",
              "pnl_cny": r2(crypto_pnl_cny, 2) if crypto_pnl_cny is not None else None,
              "pnl_pct": crypto_meta.get("real_pnl_pct"),
-             "cost_cny": r2((crypto_meta.get("net_deposit_usdt") or 0) * rate, 2),
+             "cost_cny": r2(crypto_cost_cny, 2),
              "day_cny": r2(crypto_day, 2),
              "day_pct": round(crypto_day / (crypto_cny - crypto_day) * 100, 2) if (crypto_cny - crypto_day) else 0.0,
              "items": pnl_rows([r for r in crypto_rows if r["group"] == CRYPTO_GROUP], "crypto")},

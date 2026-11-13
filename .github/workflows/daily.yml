@@ -33,6 +33,14 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: 同步 Bitget 成交成本账本
+        continue-on-error: true
+        env:
+          BITGET_KEY: ${{ secrets.BITGET_KEY }}
+          BITGET_SECRET: ${{ secrets.BITGET_SECRET }}
+          BITGET_PASSPHRASE: ${{ secrets.BITGET_PASSPHRASE }}
+        run: python3 scripts/bitget_ledger.py
+
       - name: 抓取价格并计算资产
         env:
           BUILD_SOURCE: ${{ github.event.inputs.source || 'auto' }}
@@ -45,7 +53,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           STAMP="$(TZ=Asia/Shanghai date +%F)"
           commit_if_any() {
-            git add data/dashboard.json data/snapshots.json
+            git add data/dashboard.json data/snapshots.json data/bitget_ledger.json
             if git diff --cached --quiet; then
               echo "数据无变化，跳过提交"
               return 1
@@ -66,9 +74,11 @@ jobs:
             # 否则 reset --soft 会把「旧版页面文件」留在暂存区，跟着数据一起提交，回滚线上代码。
             cp data/dashboard.json /tmp/_dash.json
             cp data/snapshots.json /tmp/_snap.json
+            cp data/bitget_ledger.json /tmp/_ledger.json 2>/dev/null || true
             git reset --hard "origin/${GITHUB_REF_NAME:-main}"
             cp /tmp/_dash.json data/dashboard.json
             cp /tmp/_snap.json data/snapshots.json
+            cp /tmp/_ledger.json data/bitget_ledger.json 2>/dev/null || true
             echo "第 $i 次推送失败，已重置到远端最新后重试"
             sleep 5
           done

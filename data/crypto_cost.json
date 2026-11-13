@@ -1,0 +1,15 @@
+{
+  "calibration": {
+    "date": "2026-11-13",
+    "fills_since": "2026-11-13",
+    "note": "以 2026-11-13 净入金口径的币成本为校准起点，之后由 Bitget 成交自动累加",
+    "fx_usdcny": 6.6858,
+    "net_deposit_usdt": 15065.0,
+    "stable_cost_usdt": 5573.92,
+    "cost_total_usdt": {
+      "BTC": 5912.12,
+      "SOL": 3578.96,
+      "BGB": 0
+    }
+  }
+}

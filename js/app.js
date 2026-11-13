@@ -451,9 +451,18 @@
         (i.currency === "USD" || i.currency === "USDT" ? "$" : "¥") + num(i.price, i.price < 10 ? 4 : 2);
       var sharesTxt = (i.shares === null || i.shares === undefined)
         ? '<span class="muted">—</span>' : num(i.shares, i.shares < 1 ? 6 : 4);
-      var costTxt = (i.group === "crypto" || i.group === "cash") ? '<span class="muted">—</span>'
-        : (!i.cost_price ? '<span class="muted">待填</span>'
-          : (i.currency === "USD" ? "$" : "¥") + num(i.cost_price, i.cost_price < 10 ? 4 : 2));
+      var costTxt;
+      if (i.group === "cash") {
+        costTxt = '<span class="muted">—</span>';
+      } else if (i.group === "crypto") {
+        // 加密货币成本来自「净入金校准 + Bitget 成交」账本，没有则显示 —
+        costTxt = (i.cost_price === null || i.cost_price === undefined)
+          ? '<span class="muted">—</span>'
+          : "$" + num(i.cost_price, i.cost_price < 10 ? 4 : 2);
+      } else {
+        costTxt = !i.cost_price ? '<span class="muted">待填</span>'
+          : (i.currency === "USD" ? "$" : "¥") + num(i.cost_price, i.cost_price < 10 ? 4 : 2);
+      }
       var pnlTxt;
       // 浮动盈亏列统一按「当日浮动收益」口径：份额 × 当日涨跌（按标的币种折算成 CNY）
       var dc = i.day_change_cny;
