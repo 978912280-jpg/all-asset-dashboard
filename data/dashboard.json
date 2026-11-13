@@ -6,7 +6,7 @@
     "subtitle": "传统股票/基金 + 加密货币 合并统计 · 份额 × 价格 = 市值",
     "version": "1.3.6",
     "version_date": "2026.11.13",
-    "generated_at": "2026-11-13T12:19:15+08:00",
+    "generated_at": "2026-11-13T12:22:28+08:00",
     "build_source": "manual",
     "crypto_price_mode": "live",
     "page_version": "1.3.6",
@@ -23,19 +23,19 @@
     }
   },
   "summary": {
-    "total_cny": 130667.32,
+    "total_cny": 130749.26,
     "traditional_cny": 28979.21,
-    "crypto_cny": 61689.22,
+    "crypto_cny": 61771.16,
     "cash_cny": 39998.89,
     "stable_cash_cny": 37264.89,
     "fiat_cash_cny": 2734.0,
-    "crypto_account_cny": 98954.11,
-    "traditional_weight": 22.18,
-    "crypto_weight": 47.21,
-    "cash_weight": 30.61,
-    "day_change_cny": -2249.15,
-    "day_change_pct": -1.69,
-    "crypto_usdt": 14802.25,
+    "crypto_account_cny": 99036.05,
+    "traditional_weight": 22.16,
+    "crypto_weight": 47.24,
+    "cash_weight": 30.59,
+    "day_change_cny": -2167.3,
+    "day_change_pct": -1.63,
+    "crypto_usdt": 14814.5,
     "count": 12,
     "pending_count": 0,
     "pending_ids": [],
@@ -46,20 +46,20 @@
     "traditional_pnl_pct": -0.42,
     "cost_pending_count": 0,
     "cost_pending_ids": [],
-    "crypto_pnl_cny": -1825.79,
-    "crypto_day_change_cny": -2198.62,
-    "crypto_day_change_pct": -3.44,
-    "crypto_pnl_usdt": -273.11,
-    "crypto_pnl_pct": -1.74,
-    "total_pnl_cny": -1949.34,
-    "total_pnl_pct": -1.5
+    "crypto_pnl_cny": -1743.85,
+    "crypto_day_change_cny": -2116.77,
+    "crypto_day_change_pct": -3.31,
+    "crypto_pnl_usdt": -260.86,
+    "crypto_pnl_pct": -1.66,
+    "total_pnl_cny": -1867.4,
+    "total_pnl_pct": -1.44
   },
   "groups": [
     {
       "key": "traditional",
       "name": "传统股票 & 基金",
       "cny": 28979.21,
-      "weight": 22.18,
+      "weight": 22.16,
       "count": 6,
       "items": [
         "QQQM",
@@ -73,8 +73,8 @@
     {
       "key": "crypto",
       "name": "加密货币",
-      "cny": 61689.22,
-      "weight": 47.21,
+      "cny": 61771.16,
+      "weight": 47.24,
       "count": 3,
       "items": [
         "BTC",
@@ -86,7 +86,7 @@
       "key": "cash",
       "name": "现金",
       "cny": 39998.89,
-      "weight": 30.61,
+      "weight": 30.59,
       "count": 3,
       "items": [
         "USDC",
@@ -144,7 +144,7 @@
       "price_ts": "2026-11-12 16:00:01",
       "pending": false,
       "note": "",
-      "weight": 4.7
+      "weight": 4.69
     },
     {
       "id": "QQQI",
@@ -194,7 +194,7 @@
       "price_ts": "2026-11-12",
       "pending": false,
       "note": "",
-      "weight": 11.03
+      "weight": 11.02
     },
     {
       "id": "VWO",
@@ -244,7 +244,7 @@
       "price_ts": "2026-11-12 16:00:01",
       "pending": false,
       "note": "",
-      "weight": 0.36
+      "weight": 0.35
     },
     {
       "id": "BTC",
@@ -252,12 +252,12 @@
       "asset_class": "加密货币",
       "group": "crypto",
       "shares": 0.08320154,
-      "price": 68988.97,
+      "price": 69040.81,
       "currency": "USDT",
-      "change_pct": -3.5,
-      "value_native": 5739.99,
-      "value_cny": 38372.23,
-      "day_change_cny": -1387.64,
+      "change_pct": -3.42,
+      "value_native": 5744.3,
+      "value_cny": 38401.06,
+      "day_change_cny": -1358.86,
       "day_basis": "prev_snapshot",
       "price_source": "Bitget 实时价",
       "price_ts": "2026-11-13",
@@ -265,8 +265,8 @@
       "note": "现货+理财（earn/spot）",
       "cost_cny": 39589.41,
       "cost_price": 71177.3147,
-      "pnl_cny": -1217.18,
-      "pnl_pct": -3.07,
+      "pnl_cny": -1188.35,
+      "pnl_pct": -3.0,
       "cost_source": "净入金校准 + Bitget 成交",
       "weight": 29.37
     },
@@ -287,7 +287,7 @@
       "price_ts": "2026-11-13",
       "pending": false,
       "note": "现货+理财（earn/spot）",
-      "weight": 27.63
+      "weight": 27.61
     },
     {
       "id": "SOL",
@@ -295,12 +295,12 @@
       "asset_class": "加密货币",
       "group": "crypto",
       "shares": 44.02911758,
-      "price": 78.57,
+      "price": 78.75,
       "currency": "USDT",
-      "change_pct": -3.38,
-      "value_native": 3459.37,
-      "value_cny": 23126.12,
-      "day_change_cny": -809.33,
+      "change_pct": -3.16,
+      "value_native": 3467.29,
+      "value_cny": 23179.1,
+      "day_change_cny": -756.36,
       "day_basis": "prev_snapshot",
       "price_source": "Bitget 实时价",
       "price_ts": "2026-11-13",
@@ -308,10 +308,10 @@
       "note": "现货+理财（earn/spot）",
       "cost_cny": 23925.6,
       "cost_price": 81.2862,
-      "pnl_cny": -799.48,
-      "pnl_pct": -3.34,
+      "pnl_cny": -746.5,
+      "pnl_pct": -3.12,
       "cost_source": "净入金校准 + Bitget 成交",
-      "weight": 17.7
+      "weight": 17.73
     },
     {
       "id": "USDT",
@@ -338,12 +338,12 @@
       "asset_class": "加密货币",
       "group": "crypto",
       "shares": 17.24518498,
-      "price": 1.6556,
+      "price": 1.6568,
       "currency": "USDT",
-      "change_pct": -1.18,
-      "value_native": 28.55,
-      "value_cny": 190.87,
-      "day_change_cny": -1.65,
+      "change_pct": -1.1,
+      "value_native": 28.57,
+      "value_cny": 191.0,
+      "day_change_cny": -1.55,
       "day_basis": "prev_snapshot",
       "price_source": "Bitget 实时价",
       "price_ts": "2026-11-13",
@@ -351,7 +351,7 @@
       "note": "现货+理财（spot）",
       "cost_cny": 0.0,
       "cost_price": 0.0,
-      "pnl_cny": 190.87,
+      "pnl_cny": 191.0,
       "pnl_pct": null,
       "cost_source": "净入金校准 + Bitget 成交",
       "weight": 0.15
@@ -379,23 +379,23 @@
     "source": "bitget-pnl-dashboard / data/history.json",
     "url": "https://978912280-jpg.github.io/bitget-pnl-dashboard/data/history.json",
     "snapshot_date": "2026-11-13",
-    "total_usdt": 14802.25,
+    "total_usdt": 14814.5,
     "spot_usdt": 53.07,
     "earn_usdt": 14746.7,
     "coin_count": 5,
     "daily_change_usdt": -576.92,
-    "real_pnl_usdt": -262.75,
-    "real_pnl_pct": -1.74,
+    "real_pnl_usdt": -250.49,
+    "real_pnl_pct": -1.66,
     "net_deposit_usdt": 15065.0,
     "price_mode": "live",
     "live_price_count": 3,
-    "price_updated_at": "2026-11-13T12:19:15+08:00",
+    "price_updated_at": "2026-11-13T12:22:28+08:00",
     "snapshot_total_usdt": 14799.77
   },
   "pnl_breakdown": {
     "prev_date": "2026-11-12",
     "fx_usdcny": 6.6851,
-    "generated_at": "2026-11-13T12:19:15+08:00",
+    "generated_at": "2026-11-13T12:22:28+08:00",
     "groups": [
       {
         "key": "traditional",
@@ -519,11 +519,11 @@
       {
         "key": "crypto",
         "name": "加密货币",
-        "pnl_cny": -1825.79,
-        "pnl_pct": -1.74,
+        "pnl_cny": -1743.85,
+        "pnl_pct": -1.66,
         "cost_cny": 100779.9,
-        "day_cny": -2198.62,
-        "day_pct": -3.44,
+        "day_cny": -2116.77,
+        "day_pct": -3.31,
         "items": [
           {
             "id": "BTC",
@@ -532,15 +532,15 @@
             "prev_shares": 0.08306037,
             "prev_price": 71488.04,
             "prev_date": "2026-11-12",
-            "price": 68988.97,
+            "price": 69040.81,
             "currency": "USDT",
             "fx": 6.6851,
             "cost_price": 71177.3147,
             "cost_cny": 39589.41,
-            "value_cny": 38372.23,
-            "day_change_cny": -1387.64,
+            "value_cny": 38401.06,
+            "day_change_cny": -1358.86,
             "day_basis": "prev_snapshot",
-            "pnl_cny": -1217.18,
+            "pnl_cny": -1188.35,
             "price_source": "Bitget 实时价"
           },
           {
@@ -550,15 +550,15 @@
             "prev_shares": 44.02387949,
             "prev_price": 81.32,
             "prev_date": "2026-11-12",
-            "price": 78.57,
+            "price": 78.75,
             "currency": "USDT",
             "fx": 6.6851,
             "cost_price": 81.2862,
             "cost_cny": 23925.6,
-            "value_cny": 23126.12,
-            "day_change_cny": -809.33,
+            "value_cny": 23179.1,
+            "day_change_cny": -756.36,
             "day_basis": "prev_snapshot",
-            "pnl_cny": -799.48,
+            "pnl_cny": -746.5,
             "price_source": "Bitget 实时价"
           },
           {
@@ -568,15 +568,15 @@
             "prev_shares": 12.5343652,
             "prev_price": 1.6753,
             "prev_date": "2026-11-12",
-            "price": 1.6556,
+            "price": 1.6568,
             "currency": "USDT",
             "fx": 6.6851,
             "cost_price": 0.0,
             "cost_cny": 0.0,
-            "value_cny": 190.87,
-            "day_change_cny": -1.65,
+            "value_cny": 191.0,
+            "day_change_cny": -1.55,
             "day_basis": "prev_snapshot",
-            "pnl_cny": 190.87,
+            "pnl_cny": 191.0,
             "price_source": "Bitget 实时价"
           }
         ]
@@ -597,14 +597,14 @@
     },
     {
       "date": "2026-11-13",
-      "total_cny": 130667.32,
+      "total_cny": 130749.26,
       "traditional_cny": 28979.21,
-      "crypto_cny": 98954.11,
+      "crypto_cny": 99036.05,
       "cash_cny": 39998.89,
-      "day_change_cny": -2249.15,
-      "day_change_pct": -1.69,
+      "day_change_cny": -2167.3,
+      "day_change_pct": -1.63,
       "fx_usdcny": 6.6851,
-      "crypto_usdt": 14802.25
+      "crypto_usdt": 14814.5
     }
   ]
 }
