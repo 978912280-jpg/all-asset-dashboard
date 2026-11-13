@@ -59,6 +59,7 @@ def build_message(d):
         "现金：%s（含稳定币 %s）" % (fmt_cny(s.get("cash_cny")), fmt_cny(s.get("stable_cash_cny"))),
         "",
         "v%s · %s" % (meta.get("version") or "—", str(meta.get("generated_at") or "")[:16].replace("T", " ")),
+        "https://978912280-jpg.github.io/all-asset-dashboard/",
     ]
     return "资产日报", "\n".join(lines)
 
