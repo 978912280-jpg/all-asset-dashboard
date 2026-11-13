@@ -1,0 +1,12 @@
+{
+  "updated_at": "2026-11-13T12:09:17+08:00",
+  "since": "2026-11-13",
+  "fills": 1,
+  "cost_total_usdt": {
+    "BTC": 5912.12,
+    "SOL": 3578.96,
+    "BGB": 0
+  },
+  "realized_usdt": {},
+  "source": "bitget_fills"
+}
