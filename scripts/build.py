@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.3.6"
+PAGE_VERSION = "1.3.7"
 PAGE_DATE = "2026.11.12"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -191,8 +191,19 @@ def build_traditional(holdings, fund_items, rate, prev_items=None):
 # --------------------------------------------------------------------------
 
 def load_cost_total():
-    """读取加密币成本总额（USDT）：优先 data/bitget_ledger.json，其次 crypto_cost.json 的校准值。"""
+    """读取加密币成本总额（USDT）与成交净数量。
+
+    返回 (cost_map, qty_net, calib_shares)。qty_net 是校准日之后 Bitget 成交累计的净数量，
+    用于判断「成交已入账但加密货币快照份额尚未更新」的滞后情形。
+    """
     root = Path(ROOT) / "data"
+    qty_net, calib_shares = {}, {}
+    calib_file = root / "crypto_cost.json"
+    if calib_file.exists():
+        try:
+            calib_shares = (json.loads(calib_file.read_text(encoding="utf-8")).get("calibration") or {}).get("calib_shares") or {}
+        except (ValueError, OSError):
+            calib_shares = {}
     ledger = root / "bitget_ledger.json"
     if ledger.exists():
         try:
@@ -201,7 +212,8 @@ def load_cost_total():
             if isinstance(c, dict) and c:
                 print("      成本账本：%s（%s 笔成交，更新于 %s）" % (
                     "、".join("%s %.2f" % (k, v) for k, v in c.items()), p.get("fills"), p.get("updated_at")))
-                return {str(k).upper(): float(v) for k, v in c.items()}
+                qty_net = {str(k).upper(): float(v) for k, v in (p.get("qty_net") or {}).items()}
+                return {str(k).upper(): float(v) for k, v in c.items()}, qty_net, {str(k).upper(): float(v) for k, v in calib_shares.items()}
         except (ValueError, OSError) as e:
             print("      [warn] 成本账本读取失败：%s" % e)
     cal = root / "crypto_cost.json"
@@ -211,10 +223,10 @@ def load_cost_total():
             c = (p.get("calibration") or {}).get("cost_total_usdt")
             if c:
                 print("      成本账本：使用 %s 校准值" % (p["calibration"].get("date"),))
-                return {str(k).upper(): float(v) for k, v in c.items()}
+                return {str(k).upper(): float(v) for k, v in c.items()}, qty_net, {str(k).upper(): float(v) for k, v in calib_shares.items()}
         except (ValueError, OSError) as e:
             print("      [warn] crypto_cost.json 读取失败：%s" % e)
-    return {}
+    return {}, {}, {}
 
 
 def load_crypto(cfg, rate, prev_items=None):
@@ -425,7 +437,7 @@ def main():
         })
 
     # ---- 按成本账本（净入金校准 + Bitget 成交）补齐加密币的成本与逐项盈亏 ----
-    cost_map = load_cost_total()
+    cost_map, qty_net, calib_shares = load_cost_total()
     if cost_map:
         for row in crypto_rows:
             if row["group"] != CRYPTO_GROUP:
@@ -434,12 +446,25 @@ def main():
             if coin not in cost_map:
                 continue
             usdt = float(cost_map[coin] or 0)
+            # 成交当晚快照份额可能还没跟上：此时成本已累加但市值未增加，会把亏损虚增。
+            # 用「校准份额 + 成交净数量 − 当前快照份额」的缺口，按单位成本暂缓对应成本。
+            pending_usdt = 0.0
+            expected = float(calib_shares.get(coin) or 0) + float(qty_net.get(coin) or 0)
+            actual = float(row.get("shares") or 0)
+            if expected > 0 and actual > 0 and usdt > 0:
+                gap = expected - actual
+                if gap > max(1e-9, expected * 1e-5):
+                    pending_usdt = gap * (usdt / expected)
+                    usdt = max(0.0, usdt - pending_usdt)
+                    print("      %s 有 %.8f 尚未进入份额，暂缓 %.2f USDT 成本" % (coin, gap, pending_usdt))
+            row["cost_pending_usdt"] = r2(pending_usdt, 4) if pending_usdt else 0
             cost_cny = r2(usdt * rate, 2)
             row["cost_cny"] = cost_cny
             row["cost_price"] = r2(usdt / float(row["shares"]), 4) if row.get("shares") else None
             row["pnl_cny"] = r2((row["value_cny"] or 0) - cost_cny, 2)
             row["pnl_pct"] = r2(row["pnl_cny"] / cost_cny * 100, 2) if cost_cny else None
-            row["cost_source"] = "净入金校准 + Bitget 成交"
+            row["cost_source"] = "净入金校准 + Bitget 成交" + (
+                "（含 %.2f USDT 成交待份额更新）" % pending_usdt if pending_usdt else "")
 
     trad_cny = sum(r["value_cny"] or 0 for r in trad_rows)
     crypto_cny = sum(r["value_cny"] or 0 for r in crypto_rows if r["group"] == CRYPTO_GROUP)
