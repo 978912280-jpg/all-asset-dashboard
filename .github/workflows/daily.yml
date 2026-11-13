@@ -1,6 +1,6 @@
 name: 每日资产统计与 Pages 部署
 
-# 定时触发交给外部服务 cron-job.org（北京时间每日 08:15 调用 workflow_dispatch）。
+# 定时触发交给外部服务 cron-job.org（北京时间每日 23:00 调用 workflow_dispatch，2026-11-13 由 08:15 调整）。
 # GitHub 自带 schedule 常延迟/漏跑，故已移除，避免重复运行；只保留手动与外部触发入口。
 on:
   repository_dispatch:

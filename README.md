@@ -131,7 +131,7 @@ GitHub 自带的 `schedule` 经常延迟甚至漏跑（实测有延迟数小时�
 - **标题**：全维度资产统计 · 每日构建
 - **URL**：`https://api.github.com/repos/978912280-jpg/all-asset-dashboard/actions/workflows/daily.yml/dispatches`
 - **请求方式**：`POST`
-- **执行计划**：每天 `08:15`，时区 `Asia/Shanghai`（必须在加密仪表台 07:00 快照之后）
+- **执行计划**：每天 `23:00`，时区 `Asia/Shanghai`（2026-11-13 由 `08:15` 调整为 `23:00`）
 - **请求头**：
   - `Authorization: Bearer <你的 GitHub Token>`
   - `Accept: application/vnd.github+json`
@@ -150,7 +150,7 @@ Token 建议单独建一个 **fine-grained PAT**，只授权本仓库、只勾 *
   接口不可用或该币无 USDT 交易对时，自动回退快照价（稳定币按 1:1 不动）。
 - 重估后同步重算：币类市值、加密账户合计、账户真实盈亏、加密货币资产 / 传统资产 / 总资产、当日浮动收益。
 - 结果写回 `data/dashboard.json` 与 `data/snapshots.json`（history），并在快照条目里记录 `updated_at` / `source`（auto / manual）/ `price_mode`（live / snapshot）。
-- 同一天被自动（08:15）和手动各构建一次时，**以较晚的一次为准**：后一次构建会用更新的 `updated_at` 覆盖当日记录；若已有记录的 `updated_at` 更晚则保留原记录（打印提示，不覆盖明细）。
+- 同一天被自动（23:00）和手动各构建一次时，**以较晚的一次为准**：后一次构建会用更新的 `updated_at` 覆盖当日记录；若已有记录的 `updated_at` 更晚则保留原记录（打印提示，不覆盖明细）。
 
 ## 版本号规则
 版本号显示为 `v1.2.0（2026.11.12）`：数字每发布一次 +0.0.1（末位到 10 进 1），括号里是**该版本的发布当日日期**（存在 holdings.json 的 `meta.version_date`），每次发版同步更新。
