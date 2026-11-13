@@ -6,10 +6,9 @@
 累计结果写到 data/bitget_ledger.json（只含聚合金额与笔数，不含任何密钥）。
 """
 import base64, hashlib, hmac, json, os, time
+import urllib.parse, urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-
-import requests
 
 BASE = "https://api.bitget.com"
 LEDGER = Path(__file__).resolve().parent.parent / "data" / "bitget_ledger.json"
@@ -33,10 +32,13 @@ def _get(path, params, key, secret, passphrase, timeout=20):
         "locale": "zh-CN",
         "Content-Type": "application/json",
     }
-    r = requests.get(BASE + path, params=params, headers=headers, timeout=timeout)
-    if r.status_code != 200:
-        raise RuntimeError("HTTP %s %s" % (r.status_code, r.text[:160]))
-    body = r.json()
+    url = BASE + path + (("?" + query) if query else "")
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        raw = urllib.request.urlopen(req, timeout=timeout).read()
+    except urllib.error.HTTPError as e:
+        raise RuntimeError("HTTP %s %s" % (e.code, e.read()[:160]))
+    body = json.loads(raw)
     if str(body.get("code")) != "00000":
         raise RuntimeError("API %s %s" % (body.get("code"), body.get("msg")))
     return body.get("data") or []
