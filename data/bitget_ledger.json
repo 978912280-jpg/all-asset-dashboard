@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-13T12:22:21+08:00",
+  "updated_at": "2026-11-13T12:23:21+08:00",
   "since": "2026-11-13",
   "fills": 1,
   "cost_total_usdt": {
@@ -8,5 +8,8 @@
     "BGB": 0
   },
   "realized_usdt": {},
+  "qty_net": {
+    "BTC": 0.000139
+  },
   "source": "bitget_fills"
 }
