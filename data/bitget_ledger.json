@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-13T12:34:57+08:00",
+  "updated_at": "2026-11-13T12:36:44+08:00",
   "since": "2026-11-13",
   "fills": 1,
   "cost_total_usdt": {
@@ -9,9 +9,7 @@
   },
   "realized_usdt": {},
   "qty_net": {
-    "BTC": 0.08333997,
-    "SOL": 44.023879,
-    "BGB": 17.245185
+    "BTC": 0.000139
   },
   "realized_pnl_usdt": {},
   "source": "bitget_fills"
