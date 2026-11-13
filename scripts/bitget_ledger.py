@@ -62,6 +62,10 @@ def fetch_fills(key, secret, passphrase, start_ms, log=print):
         time.sleep(0.25)
     out.sort(key=lambda x: int(x.get("cTime") or 0))
     log("    Bitget 成交记录：%d 笔（%d 页）" % (len(out), pages))
+    for f in out[:20]:
+        log("      fill %s %s size=%s price=%s fee=%s(%s) cTime=%s" % (
+            f.get("symbol"), f.get("side"), f.get("size"), f.get("price"),
+            f.get("fee"), f.get("feeCoin"), f.get("cTime")))
     return out
 
 
