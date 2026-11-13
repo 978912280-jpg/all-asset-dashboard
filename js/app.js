@@ -708,6 +708,8 @@
         return "<tr>" +
           "<td>" + escapeHtml(i.name || i.id) + "</td>" +
           "<td>" + (i.shares === null || i.shares === undefined ? "—" : num(i.shares, 6)) + "</td>" +
+          "<td>" + (i.cost_price === null || i.cost_price === undefined || i.cost_price === 0 && i.group === "cash" ? "—" :
+            sym + num(i.cost_price, i.cost_price < 10 ? 4 : 2)) + "</td>" +
           "<td>" + priceTxt + "</td>" +
           "<td>" + prevSymTxt + "</td>" +
           "<td>" + (diff === null ? "—" :
@@ -737,9 +739,9 @@
           : "") +
         '<span class="pa-metric pa-dim">成本 ¥' + num(g.cost_cny || 0, 2) + "</span></div>" +
         '<table class="pa-table"><thead><tr>' +
-        "<th>标的</th><th>份额</th><th>现价</th><th>上一快照价</th><th>价差</th>" +
+        "<th>标的</th><th>份额</th><th>成本价</th><th>现价</th><th>上一快照价</th><th>价差</th>" +
         "<th>市值</th><th>成本</th><th>当日浮动收益</th><th>净盈亏</th></tr></thead><tbody>" +
-        (rows || '<tr><td colspan="9" class="pa-empty">无持仓</td></tr>') +
+        (rows || '<tr><td colspan="10" class="pa-empty">无持仓</td></tr>') +
         "</tbody></table></div>";
     }).join("") + '<div class="pa-total">合计：净盈亏 <b class="' + cls(totalPnlOf(pb)) + '">' +
       (totalPnlOf(pb) >= 0 ? "+" : "−") + "¥" + num(Math.abs(totalPnlOf(pb)), 2) +
