@@ -87,6 +87,7 @@
           : "当前为 GitHub Pages 静态页面：填入下方 GitHub Token 后点「保存并计算」，直接提交 <code>data/holdings.json</code> 并触发 Actions 重建。";
         renderTable();
         renderCash();
+        renderPoolx();
         syncGhUi();
         restoreDraftIfAny();
       });
@@ -227,6 +228,84 @@
       state.holdings.cash_accounts[0].amount_cny = isNaN(v) ? 0 : Math.max(0, v);
       markDirty();
       renderCash();
+    });
+  }
+
+  // ---------- PoolX 持仓（官方 API 读不到，手工登记） ----------
+  function poolxRows() {
+    if (!Array.isArray(state.holdings.poolx)) state.holdings.poolx = [];
+    return state.holdings.poolx;
+  }
+
+  function accountShares(coin) {
+    var items = (state.dashboard && state.dashboard.items) || [];
+    var hit = items.filter(function (i) {
+      return String(i.id).toUpperCase() === String(coin).toUpperCase();
+    })[0];
+    return hit ? Number(hit.shares) : null;
+  }
+
+  function renderPoolx() {
+    var body = $("poolx-body");
+    if (!body) return;
+    var rows = poolxRows();
+    body.innerHTML = rows.map(function (r, idx) {
+      var actual = accountShares(r.coin);
+      return "<tr>" +
+        '<td><input type="text" data-pidx="' + idx + '" data-pfield="coin" value="' +
+        esc(r.coin || "") + '" placeholder="BGB" aria-label="PoolX 币种" style="width:90px;text-transform:uppercase"></td>' +
+        '<td class="num"><input type="number" step="0.000001" min="0" data-pidx="' + idx +
+        '" data-pfield="amount" value="' + (Number(r.amount) || 0) + '" aria-label="PoolX 数量"></td>' +
+        '<td><input type="date" data-pidx="' + idx + '" data-pfield="since" value="' + esc(r.since || "") +
+        '" aria-label="开始日期"></td>' +
+        '<td><input type="text" data-pidx="' + idx + '" data-pfield="note" value="' + esc(r.note || "") +
+        '" placeholder="如 PoolX 第 12 期" aria-label="备注"></td>' +
+        '<td class="num">' + (actual === null ? '<span class="muted">—</span>' : num(actual, 6)) + "</td>" +
+        '<td><button class="row-del" data-pdel="' + idx + '" type="button">删除</button></td>' +
+        "</tr>";
+    }).join("");
+    var hint = $("poolx-hint");
+    if (hint) {
+      var sum = rows.reduce(function (a, r) { return a + (Number(r.amount) || 0); }, 0);
+      hint.textContent = sum > 0 ? "已登记合计 " + num(sum, 6) + " 枚（按 0 成本并入份额）"
+        : "未登记时按账户接口实际持仓计算";
+    }
+  }
+
+  function bindPoolx() {
+    var add = $("poolx-add");
+    if (add) add.addEventListener("click", function () {
+      poolxRows().push({ coin: "", amount: 0, since: "", note: "" });
+      markDirty();
+      renderPoolx();
+    });
+    var body = $("poolx-body");
+    if (!body) return;
+    body.addEventListener("input", function (e) {
+      var el = e.target;
+      if (el.tagName !== "INPUT") return;
+      var idx = Number(el.getAttribute("data-pidx"));
+      var field = el.getAttribute("data-pfield");
+      var row = poolxRows()[idx];
+      if (!row || !field) return;
+      if (field === "amount") {
+        var v = Number(el.value);
+        row.amount = isNaN(v) ? 0 : Math.max(0, v);
+      } else if (field === "coin") {
+        row.coin = String(el.value || "").trim().toUpperCase();
+      } else {
+        row[field] = el.value;
+      }
+      markDirty();
+      if (field === "amount") renderPoolx();
+    });
+    body.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-pdel]");
+      if (!btn) return;
+      var idx = Number(btn.getAttribute("data-pdel"));
+      poolxRows().splice(idx, 1);
+      markDirty();
+      renderPoolx();
     });
   }
 
@@ -840,6 +919,7 @@
     bindUpload();
     bindAdd();
     bindCash();
+    bindPoolx();
     bindButtons();
     ghLoad();
     loadAll().catch(function (e) { toast("加载失败：" + e.message); });

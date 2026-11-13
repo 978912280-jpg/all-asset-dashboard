@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.4.2"
+PAGE_VERSION = "1.4.3"
 PAGE_DATE = "2026.11.12"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -243,8 +243,84 @@ def load_realized_pnl():
     return {str(k).upper(): float(v) for k, v in (p.get("realized_pnl_usdt") or {}).items()}
 
 
+def _read_json(path):
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return None
+
+
+def load_crypto_from_account(cfg, rate, prev_items=None):
+    """直接从 Bitget 私有接口读取现货+理财持仓，不依赖上游加密仪表台。
+
+    返回 (rows, meta)；账户文件缺失或为空时返回 (None, None)，由调用方回退上游。
+    """
+    acct = _read_json(Path(ROOT) / "data" / "bitget_account.json")
+    coins = (acct or {}).get("coins") or {}
+    if not coins:
+        return None, None
+    include = set((cfg.get("crypto") or {}).get("include_coins") or [])
+    exclude = set((cfg.get("crypto") or {}).get("exclude_coins") or [])
+    coins = {c: v for c, v in coins.items()
+             if (not include or c in include) and c not in exclude and float(v.get("total") or 0) > 0}
+    if not coins:
+        return None, None
+    # 价格：稳定币按 1，其余取 Bitget 实时行情
+    live = sources.bitget_prices([c for c in coins if c not in STABLE_COINS])
+    rows = []
+    for coin, v in sorted(coins.items(), key=lambda kv: -float(kv[1].get("total") or 0)):
+        amt = float(v.get("total") or 0)
+        price = 1.0 if coin in STABLE_COINS else (live.get(coin) or 0)
+        if not price:
+            # 无实时价时退回上游快照价（若能取到），否则跳过该币
+            continue
+        value_cny = amt * price * rate
+        pp = (prev_items.get(coin) or {}).get("price")
+        prev_amt = (prev_items.get(coin) or {}).get("shares") or amt
+        day_cny = (prev_amt * (price - pp) * rate) if pp else 0.0
+        chg = ((price - pp) / pp * 100) if pp else None
+        is_cash = coin in STABLE_COINS
+        rows.append({
+            "id": coin,
+            "name": coin,
+            "asset_class": "现金（稳定币）" if is_cash else "加密货币",
+            "group": CASH_GROUP if is_cash else CRYPTO_GROUP,
+            "shares": r2(amt, 8),
+            "price": r2(price, 4),
+            "currency": "USDT",
+            "change_pct": r2(chg, 2) if chg is not None else None,
+            "value_native": r2(amt * price, 2),
+            "value_cny": r2(value_cny, 2),
+            "day_change_cny": r2(day_cny, 2),
+            "day_basis": "prev_snapshot" if pp else "live",
+            "price_source": "Bitget 实时价" if not is_cash else "面值",
+            "price_ts": (acct or {}).get("updated_at"),
+            "pending": False,
+            "note": "Bitget 现货 %.6g + 理财 %.6g" % (
+                float(v.get("spot") or 0), float(v.get("earn") or 0)) if not is_cash else "Bitget 账户",
+        })
+    if not rows:
+        return None, None
+    print("      加密货币：直接读取 Bitget 账户（%d 个币种，%s）" % (
+        len(rows), (acct or {}).get("updated_at")))
+    coins_total = sum(float(r.get("value_native") or 0) for r in rows)
+    return rows, {
+        "source": "bitget_account",
+        "url": "Bitget 私有接口（现货+理财）",
+        "price_mode": "live",
+        "live_price_count": len([r for r in rows if r["group"] == CRYPTO_GROUP]),
+        "updated_at": (acct or {}).get("updated_at"),
+        "snapshot_date": now_cst().strftime("%Y-%m-%d"),
+        "coin_count": len(rows),
+        "total_usdt": r2(coins_total, 2),
+    }
+
+
 def load_crypto(cfg, rate, prev_items=None):
     prev_items = prev_items or {}
+    rows, meta = load_crypto_from_account(cfg, rate, prev_items)
+    if rows:
+        return rows, meta
     url = (cfg.get("crypto") or {}).get("source_url")
     raw = sources._fetch(url, retries=2)
     if not raw:
@@ -419,6 +495,20 @@ def main():
 
     print("[4/5] 抓取加密货币资产仪表台 …")
     crypto_rows, crypto_meta = load_crypto(holdings, rate, prev_items)
+    # PoolX 等官方 API 不暴露的仓位：合并 data/holdings.json 手工登记的份额（零成本，摊薄成本价）
+    for px in (holdings.get("poolx") or []):
+        coin = str(px.get("coin") or "").upper()
+        amt = float(px.get("amount") or 0)
+        if not coin or amt <= 0:
+            continue
+        row = next((r for r in crypto_rows if str(r["id"]).upper() == coin), None)
+        if row is None:
+            continue
+        row["shares"] = r2(float(row.get("shares") or 0) + amt, 8)
+        row["value_native"] = r2(row["shares"] * float(row.get("price") or 0), 2)
+        row["value_cny"] = r2(row["value_native"] * (rate if row.get("currency") in ("USD", "USDT") else 1.0), 2)
+        row["note"] = (row.get("note") or "") + "；PoolX +%.6g" % amt
+        print("      PoolX 合并：%s +%.6g（手工登记）" % (coin, amt))
     if crypto_meta.get("error"):
         print("      [warn] " + crypto_meta["error"])
     else:

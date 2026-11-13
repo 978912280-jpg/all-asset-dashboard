@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-version="1.4.2">
+<html lang="zh-CN" data-page-version="1.4.3">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,9 +20,9 @@
   })();
   </script>
   <link rel="stylesheet" href="css/style.css?v=20261112a">
-  <link rel="stylesheet" href="css/admin.css?v=1.4.2">
+  <link rel="stylesheet" href="css/admin.css?v=1.4.3">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-  <script src="js/admin.js?v=1.4.2" defer></script>
+  <script src="js/admin.js?v=1.4.3" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -102,6 +102,32 @@
           <input id="alipay-amount" type="number" step="0.01" min="0" placeholder="0.00" aria-label="支付宝现金金额">
         </label>
         <span class="cash-note" id="alipay-pill">—</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>PoolX 持仓（手工登记）</h2>
+        <p class="card-desc">PoolX 等营销仓位官方 API 读不到：在这里登记「质押进 PoolX 的币和数量」，构建时会以零成本并入对应币的份额（成本价自动摊薄）。进出 PoolX 各改一次即可。</p>
+      </div>
+      <div class="table-scroll">
+        <table class="main-table admin-table" id="poolx-table">
+          <thead>
+            <tr>
+              <th>币种</th>
+              <th class="num">数量</th>
+              <th>开始日期</th>
+              <th>备注</th>
+              <th class="num">账户内实际持有</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="poolx-body"></tbody>
+        </table>
+      </div>
+      <div class="cash-form">
+        <button class="btn ghost" id="poolx-add" type="button">+ 登记一笔 PoolX 持仓</button>
+        <span class="cash-note" id="poolx-hint">未登记时按账户接口实际持仓计算</span>
       </div>
     </section>
 
