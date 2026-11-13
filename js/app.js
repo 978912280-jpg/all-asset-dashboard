@@ -1060,6 +1060,24 @@
   }
 
   // ---------- 趋势 ----------
+  var TR_GOLD = "#d4a017", TR_UP = "#16a34a", TR_DOWN = "#dc2626";
+  function trTip(rec) {
+    function cny(v) { return (v === null || v === undefined) ? '<span class="pa-dim">—</span>' : "¥" + num(v); }
+    function signed(v) {
+      if (v === null || v === undefined) return '<span class="pa-dim">—</span>';
+      return '<span class="' + (v >= 0 ? "pos" : "neg") + '">' + (v >= 0 ? "+" : "−") + "¥" + num(Math.abs(v)) + "</span>";
+    }
+    return '<div class="tr-tip"><div class="tr-tip-h">' + rec.date + '</div>' +
+      '<div>总资产&nbsp;&nbsp;' + cny(rec.total_cny) + "</div>" +
+      '<div>总盈亏&nbsp;&nbsp;' + signed(rec.total_pnl_cny) + "</div>" +
+      '<div>传统&nbsp;&nbsp;' + cny(rec.traditional_cny) + "（" + signed(rec.traditional_pnl_cny) + "）</div>" +
+      '<div>加密&nbsp;&nbsp;' + cny(rec.crypto_cny) + "（" + signed(rec.crypto_pnl_cny) + "）</div>" +
+      '<div>现金&nbsp;&nbsp;' + cny(rec.cash_cny) + "</div>" +
+      '<div>当日浮动&nbsp;&nbsp;' + signed(rec.day_change_cny) +
+      (rec.day_change_pct === null || rec.day_change_pct === undefined ? "" : "（" + pct(rec.day_change_pct) + "）") +
+      "</div></div>";
+  }
+
   function renderTrend() {
     var h = state.data.history || [];
     if (!window.echarts) {
@@ -1068,35 +1086,24 @@
     }
     if (!state.trend) state.trend = echarts.init($("trend-chart"));
     var dates = h.map(function (x) { return x.date; });
-    var total = h.map(function (x) { return (x.date === undefined || x.total_cny === null) ? null : Math.round(x.total_cny || 0); });
+    var byDate = {};
+    h.forEach(function (x) { byDate[x.date] = x; });
+    var total = h.map(function (x) {
+      return (x.total_cny === null || x.total_cny === undefined) ? "-" : Math.round(x.total_cny);
+    });
     var pnl = h.map(function (x) {
       return (x.total_pnl_cny === null || x.total_pnl_cny === undefined) ? null : Math.round(x.total_pnl_cny);
     });
-    var byDate = {};
-    h.forEach(function (x) { byDate[x.date] = x; });
+    function pnlColor(v) { return v >= 0 ? TR_UP : TR_DOWN; }
 
     state.trend.setOption({
-      grid: { left: 12, right: 52, top: 34, bottom: 26, containLabel: true },
+      grid: { left: 12, right: 56, top: 34, bottom: 26, containLabel: true },
       tooltip: {
-        trigger: "item",   // 仅在悬浮到数据点上时显示明细
-        axisPointer: { type: "line" },
+        trigger: "item",
         formatter: function (p) {
-          var rec = byDate[p.name] || {};
-          function cny(v) { return (v === null || v === undefined) ? "—" : "¥" + num(v); }
-          function signed(v) {
-            if (v === null || v === undefined) return '<span class="pa-dim">—</span>';
-            var cl = v >= 0 ? "pos" : "neg";
-            return '<span class="' + cl + '">' + (v >= 0 ? "+" : "−") + "¥" + num(Math.abs(v)) + "</span>";
-          }
-          return '<div class="tr-tip"><div class="tr-tip-h">' + p.name + '</div>' +
-            '<div>总资产&nbsp;&nbsp;' + cny(rec.total_cny) + "</div>" +
-            '<div>总盈亏&nbsp;&nbsp;' + signed(rec.total_pnl_cny) + "</div>" +
-            '<div>传统&nbsp;&nbsp;' + cny(rec.traditional_cny) + "（" + signed(rec.traditional_pnl_cny) + "）</div>" +
-            '<div>加密&nbsp;&nbsp;' + cny(rec.crypto_cny) + "（" + signed(rec.crypto_pnl_cny) + "）</div>" +
-            '<div>现金&nbsp;&nbsp;' + cny(rec.cash_cny) + "</div>" +
-            '<div>当日浮动&nbsp;&nbsp;' + signed(rec.day_change_cny) +
-            (rec.day_change_pct === null || rec.day_change_pct === undefined ? "" : "（" + pct(rec.day_change_pct) + "）") +
-            "</div></div>";
+          var ds = (dates.indexOf(p.name) >= 0) ? p.name :
+            (p.dataIndex !== undefined && dates[p.dataIndex]) || "";
+          return trTip(byDate[ds] || { date: ds });
         },
       },
       legend: { top: 0, itemWidth: 14, itemHeight: 9, textStyle: { fontSize: 11 },
@@ -1114,7 +1121,7 @@
           axisLabel: {
             color: "#9a7b1f", fontSize: 11,
             formatter: function (v) {
-              return v >= 10000 ? "¥" + (v / 10000).toFixed(0) + "万" : "¥" + Math.round(v);
+              return v >= 10000 ? "¥" + (v / 10000).toFixed(1) + "万" : "¥" + Math.round(v);
             },
           },
           splitLine: { lineStyle: { color: "#f1f3f5" } },
@@ -1131,22 +1138,13 @@
           splitNumber: 4,
         },
       ],
-      visualMap: {
-        show: false,
-        seriesIndex: 1,
-        dimension: 1,
-        pieces: [
-          { gt: 0, color: "#16a34a" },   // 0 上方：绿（涨）
-          { lte: 0, color: "#dc2626" },  // 0 下方：红（跌）
-        ],
-      },
       series: [
         {
           name: "总资产", type: "line", yAxisIndex: 0, smooth: true,
-          data: dates.map(function (d, i) { return [d, total[i]]; }),
-          symbol: "circle", symbolSize: 7, showSymbol: true,
-          lineStyle: { width: 2.4, color: "#d4a017" },
-          itemStyle: { color: "#d4a017", borderColor: "#fff", borderWidth: 1.5 },
+          data: total.map(function (v, i) { return [dates[i], v]; }),
+          symbol: "circle", symbolSize: 7,
+          lineStyle: { width: 2.4, color: TR_GOLD },
+          itemStyle: { color: TR_GOLD, borderColor: "#fff", borderWidth: 1.5 },
           areaStyle: {
             color: {
               type: "linear", x: 0, y: 0, x2: 0, y2: 1,
@@ -1157,18 +1155,48 @@
             },
           },
         },
+        // 总盈亏：自定义绘制，逐段按 0 值水平线着色（0 上方绿、0 下方红）
         {
-          name: "总盈亏", type: "line", yAxisIndex: 1, smooth: true, connectNulls: true,
-          data: dates.map(function (d, i) { return [d, pnl[i]]; }),
-          symbol: "circle", symbolSize: 6, showSymbol: true,
-          lineStyle: { width: 2, color: "#16a34a" },
-          itemStyle: { color: "#16a34a", borderColor: "#fff", borderWidth: 1.2 },
-          markLine: {
-            symbol: "none", silent: true,
-            lineStyle: { color: "#9ca3af", type: "dashed", width: 1 },
-            data: [{ yAxis: 0 }],
-            label: { show: true, formatter: "盈亏 0", color: "#9ca3af", fontSize: 10, position: "insideEndTop" },
+          name: "总盈亏", type: "custom", yAxisIndex: 1, z: 3,
+          itemStyle: { color: TR_UP },
+          data: pnl.map(function (v, i) { return [i, v]; }),
+          encode: { x: 0, y: 1 },
+          renderItem: function (params, api) {
+            var i = params.dataIndex;
+            var v1 = api.value(1, i);
+            var pi = i - 1;
+            var v0 = pi >= 0 ? api.value(1, pi) : null;
+            var out = [];
+            if (v0 !== null && v0 !== "-" && typeof v0 === "number" && typeof v1 === "number") {
+              var a = api.coord([pi, v0]);
+              var b = api.coord([i, v1]);
+              function poly(pts, color) {
+                return { type: "polyline", shape: { points: pts },
+                  style: { stroke: color, fill: null, lineWidth: 2 } };
+              }
+              if ((v0 >= 0 && v1 >= 0) || (v0 < 0 && v1 < 0)) {
+                out.push(poly([a, b], pnlColor(v1)));
+              } else {
+                var t = v0 === v1 ? 0 : v0 / (v0 - v1);
+                var cx = a[0] + (b[0] - a[0]) * t, cy = a[1] + (b[1] - a[1]) * t;
+                out.push(poly([a, [cx, cy]], pnlColor(v0)));
+                out.push(poly([[cx, cy], b], pnlColor(v1)));
+              }
+            }
+            if (typeof v1 === "number") {
+              var p1 = api.coord([i, v1]);
+              out.push({ type: "circle", shape: { cx: p1[0], cy: p1[1], r: 3.4 },
+                style: { fill: pnlColor(v1), stroke: "#fff", lineWidth: 1.2 } });
+            }
+            return { type: "group", children: out };
           },
+        },
+        // 0 值参考虚线（不参与交互，避免遮挡悬浮）
+        {
+          name: "_zero", type: "line", yAxisIndex: 1, silent: true, z: 1,
+          data: dates.length ? [[dates[0], 0], [dates[dates.length - 1], 0]] : [],
+          symbol: "none", lineStyle: { color: "#9ca3af", type: "dashed", width: 1 },
+          tooltip: { show: false },
         },
       ],
     }, true);
