@@ -827,13 +827,13 @@
     var rows = [];
     if (tab === "trades") {
       head.innerHTML = '<tr><th class="col-name">时间</th><th>币种</th><th>方向</th>' +
-        '<th class="num">数量</th><th class="num">成交价</th><th class="num">金额</th><th class="num">手续费</th></tr>';
+        '<th class="num">数量</th><th class="num">成交价</th><th class="num">金额</th><th class="num col-fee">手续费</th></tr>';
       (ev.trades || []).forEach(function (t) {
         rows.push('<tr><td class="col-name">' + escapeHtml(shortDate(t.date)) + "</td><td>" +
           escapeHtml(t.coin) + '</td><td class="' + (t.side === "买入" ? "neg" : "pos") + '">' +
           escapeHtml(t.side) + '</td><td class="num">' + qtyText(t.qty) +
           '</td><td class="num">' + num(t.price, 2) + '</td><td class="num">' + flowMoney(t.quote_usdt) +
-          '</td><td class="num muted">' + escapeHtml(t.fee || "—") + "</td></tr>");
+          '</td><td class="num muted col-fee">' + escapeHtml(t.fee || "—") + "</td></tr>");
       });
       var buys = (ev.trades || []).filter(function (t) { return t.side === "买入"; });
       var sells = (ev.trades || []).filter(function (t) { return t.side === "卖出"; });

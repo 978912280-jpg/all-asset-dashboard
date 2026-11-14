@@ -697,3 +697,8 @@ html[data-theme="dark"] .pin-pad .pin-fn { color: #6b7688; background: transpare
   .realized-kpis { grid-template-columns: 1fr 1fr; }
   .rk-value { font-size: 16px; }
 }
+
+@media (max-width: 560px) {
+  .flow-table .col-fee { display: none; }
+  .flow-table td.col-name { font-size: 12px; }
+}
