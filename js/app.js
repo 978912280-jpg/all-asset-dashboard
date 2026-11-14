@@ -475,11 +475,10 @@
         return x.label + " " + (x.value / sumAll * 100).toFixed(1) + "%";
       });
       bigSlices.push({
-        label: "小额合计 " + (smallVal / sumAll * 100).toFixed(1) + "%",
-        full: "低于 1% 的标的合计",
+        label: "小额合计",
+        full: "低于 1% 的标的合计：" + lines.join(" / "),
         value: smallVal,
         color: "#9aa5b1",
-        detail: lines,
       });
     } else {
       bigSlices = bigSlices.concat(smallSlices);
@@ -514,23 +513,22 @@
       series: [{
         name: "资产占比",
         type: "pie",
-        radius: compact ? ["34%", "54%"] : ["38%", "56%"],
+        radius: compact ? ["36%", "58%"] : ["40%", "62%"],
         center: ["50%", "50%"],
         avoidLabelOverlap: true,
-        minAngle: 1.5,
-        labelLayout: function (params) {
-          if (mergedIdx !== null && params.dataIndex === mergedIdx) {
-            return { x: compact ? 84 : 112, y: compact ? 4 : 8, align: "left", verticalAlign: "top", moveOverlap: "none" };
-          }
-          return { moveOverlap: "shiftY" };
+        minAngle: 8,
+        labelLayout: function () {
+          return { moveOverlap: "shiftY", hideOverlap: false };
         },
         itemStyle: { borderColor: cssVar("--card", "#fff"), borderWidth: 1 },
         label: {
           show: true,
           position: "outside",
           formatter: function (p) {
-            if (p.data.detail) return p.data.label + "\n" + p.data.detail.join("\n");
-            return p.data.label + "\n" + p.percent.toFixed(1) + "%";
+            if (p.data.label === "小额合计") {
+              return "小额合计  " + p.percent.toFixed(1) + "%";
+            }
+            return p.data.label + "  " + p.percent.toFixed(1) + "%";
           },
           fontSize: compact ? 8.5 : 9,
           color: cssVar("--text", "#374151"),
@@ -538,8 +536,8 @@
         },
         labelLine: {
           show: true,
-          length: compact ? 6 : 8,
-          length2: compact ? 8 : 12,
+          length: compact ? 3 : 5,
+          length2: compact ? 5 : 8,
           smooth: true,
           lineStyle: { width: 1, color: cssVar("--muted", "#9ca3af") },
         },
