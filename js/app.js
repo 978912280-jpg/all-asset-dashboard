@@ -960,7 +960,7 @@
       .filter(function (t) { return t.side === "卖出"; });
     var kpis = [
       { label: "累计已实现", value: signedMoney(cryptoRealized), cls: cls(cryptoRealized) },
-      { label: "加密货币", value: signedMoney(cryptoRealized), cls: cls(cryptoRealized) },
+      { label: "卖出笔数（近 90 天）", value: sells.length + " 笔", cls: "muted" },
       { label: "传统股票 &amp; 基金", value: "待接入", cls: "muted" },
     ];
     $("realized-kpis").innerHTML = kpis.map(function (k) {

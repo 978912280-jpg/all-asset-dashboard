@@ -717,3 +717,10 @@ html[data-theme="dark"] .pin-pad .pin-fn { color: #6b7688; background: transpare
   .flow-card td.num { white-space: normal; }
   .flow-card td span { white-space: nowrap; }
 }
+
+.realized-table { min-width: 100%; }
+@media (max-width: 560px) {
+  .realized-table { font-size: 12px; table-layout: fixed; }
+  .realized-table td, .realized-table th { padding: 6px 4px; }
+  .realized-table th:first-child, .realized-table td:first-child { width: 42%; }
+}
