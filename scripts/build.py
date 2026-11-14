@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.9.6"
+PAGE_VERSION = "1.9.7"
 PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -241,6 +241,18 @@ def load_realized_pnl():
     except (ValueError, OSError):
         return {}
     return {str(k).upper(): float(v) for k, v in (p.get("realized_pnl_usdt") or {}).items()}
+
+
+def load_crypto_sell_entries():
+    """加密逐笔卖出明细（累积，不限 90 天）：来自成交回放。"""
+    f = Path(ROOT) / "data" / "bitget_ledger.json"
+    if not f.exists():
+        return []
+    try:
+        p = json.loads(f.read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return []
+    return list(p.get("sell_entries") or [])
 
 
 def _read_json(path):
@@ -844,6 +856,26 @@ def main():
             })
         return out
 
+    # 逐笔已实现明细（累积，供「盈亏分析」里的两个模块展示）
+    crypto_detail = []
+    for e in load_crypto_sell_entries():
+        try:
+            pnl_cny = r2(float(e.get("pnl_usdt") or 0) * rate, 2)
+        except (TypeError, ValueError):
+            pnl_cny = 0.0
+        crypto_detail.append({
+            "date": e.get("date") or "", "coin": e.get("coin") or "",
+            "shares": e.get("shares"), "price": e.get("price"),
+            "cost_price": e.get("cost_price"),
+            "pnl_usdt": e.get("pnl_usdt"), "pnl_cny": pnl_cny,
+            "proceeds_usdt": e.get("proceeds"),
+        })
+    trad_detail = [{"date": x.get("date") or "", "id": x.get("id") or "",
+                    "shares": x.get("shares"), "price": x.get("price_usd"),
+                    "cost_price": x.get("cost_price_usd"),
+                    "pnl_usd": x.get("realized_usd"), "pnl_cny": x.get("realized_cny")}
+                   for x in trad_realized_entries]
+
     cash_all = [r for r in crypto_rows if r["group"] == CASH_GROUP] + cash_rows
     pnl_breakdown = {
         "prev_date": prev_snapshot_date,
@@ -972,6 +1004,7 @@ def main():
         "crypto_meta": crypto_meta,
         "events": events,
         "pnl_breakdown": pnl_breakdown,
+        "realized_detail": {"crypto": crypto_detail, "traditional": trad_detail},
         "history": hist[-400:],
     }
     save_json(dashboard_path, dashboard)

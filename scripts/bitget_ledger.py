@@ -80,6 +80,7 @@ def replay(fills, base_cost, calib_shares=None, fx_price=None, log=print):
     qty = {str(k).upper(): float(v) for k, v in (calib_shares or {}).items()}
     qty_delta = {}
     realized_pnl = {}
+    sell_entries = []
     for f in fills:
         coin = (f.get("coin") or "").upper() or (f.get("symbol") or "").split("USDT")[0]
         if not coin:
@@ -118,10 +119,23 @@ def replay(fills, base_cost, calib_shares=None, fx_price=None, log=print):
             qty_delta[coin] = qty_delta.get(coin, 0.0) - size
             realized[coin] = realized.get(coin, 0.0) + proceeds
             realized_pnl[coin] = realized_pnl.get(coin, 0.0) + (proceeds - basis)
+            try:
+                ts = int(f.get("cTime") or 0)
+                when = datetime.fromtimestamp(ts / 1000, CST).strftime("%Y-%m-%d %H:%M")
+            except (TypeError, ValueError, OSError):
+                when = ""
+            sell_entries.append({
+                "date": when, "coin": coin, "shares": round(size, 8),
+                "price": round(price, 4),
+                "cost_price": round(avg_cost, 4),
+                "proceeds": round(proceeds, 2), "fee": round(fee_usdt, 4),
+                "pnl_usdt": round(proceeds - basis, 4),
+            })
     return ({k: round(v, 4) for k, v in cost.items()},
             {k: round(v, 4) for k, v in realized.items()},
             {k: round(v, 8) for k, v in qty_delta.items()},
-            {k: round(v, 4) for k, v in realized_pnl.items()})
+            {k: round(v, 4) for k, v in realized_pnl.items()},
+            sorted(sell_entries, key=lambda x: x["date"], reverse=True))
 
 
 def update(data_path=None, log=print):
@@ -138,7 +152,7 @@ def update(data_path=None, log=print):
     start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=CST).timestamp() * 1000)
     fills = fetch_fills(key, secret, passphrase, start_ms, log=log)
     base = cal.get("cost_total_usdt") or {}
-    cost, realized, qty, realized_pnl = replay(fills, base, calib_shares=cal.get("calib_shares"), log=log)
+    cost, realized, qty, realized_pnl, sell_entries = replay(fills, base, calib_shares=cal.get("calib_shares"), log=log)
     payload = {
         "updated_at": datetime.now(CST).strftime("%Y-%m-%dT%H:%M:%S+08:00"),
         "since": start,
@@ -148,6 +162,7 @@ def update(data_path=None, log=print):
         "qty_net": qty,
         "qty_mode": "delta",
         "realized_pnl_usdt": realized_pnl,
+        "sell_entries": sell_entries,
         "source": "bitget_fills",
     }
     LEDGER.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

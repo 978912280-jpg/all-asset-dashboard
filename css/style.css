@@ -965,3 +965,14 @@ drawer-title, .rail .drawer-title { margin: 0 0 6px; padding: 0 8px; font-size: 
 .kpi-val { white-space: nowrap; font-variant-numeric: tabular-nums; }
 body.view-mode .subtitle,
 body.view-mode .topbar-meta { display: none !important; }
+
+/* 已实现盈亏：加密 / 传统 两块分区标题 */
+.ra-title {
+  margin: 18px 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  padding-left: 9px;
+  border-left: 3px solid var(--accent, #4c8dff);
+}
+.ra-title:first-of-type { margin-top: 14px; }

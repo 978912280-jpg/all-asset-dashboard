@@ -1099,33 +1099,52 @@
 
   function renderRealized() {
     var s = (state.data && state.data.summary) || {};
+    var d = (state.data && state.data.realized_detail) || {};
     var cryptoRealized = Number(s.crypto_realized_cny || 0);
     var tradRealized = Number(s.traditional_realized_cny || 0);
-    var tradEntries = (((state.data || {}).pnl_breakdown || {}).groups || [])
-      .filter(function (g) { return g.key === "traditional"; })[0] || {};
-    var STABLE_IDS = ["USDT", "USDC", "DAI", "FDUSD", "TUSD", "USDG", "USDGO", "USDP", "PYUSD"];
-    var sells = ((state.data && state.data.events && state.data.events.trades) || [])
-      .filter(function (t) {
-        if (t.side !== "卖出") return false;
-        var c = String(t.coin || "").toUpperCase() ||
-          String(t.symbol || "").toUpperCase().replace(/USDT$/i, "");
-        return STABLE_IDS.indexOf(c) < 0;
-      });
+    var cRows = d.crypto || [];
+    var tRows = d.traditional || [];
+
     var kpis = [
-      { label: "累计已实现", value: signedMoney(cryptoRealized), cls: cls(cryptoRealized) },
-      { label: "卖出笔数（近 90 天）", value: sells.length + " 笔", cls: "muted" },
-      { label: "传统已实现（累计）", value: signedMoney(tradRealized), cls: cls(tradRealized) },
+      { label: "加密累计已实现", value: signedMoney(cryptoRealized), cls: cls(cryptoRealized) },
+      { label: "加密累计卖出笔数", value: cRows.length + " 笔", cls: "muted" },
+      { label: "传统累计已实现", value: signedMoney(tradRealized), cls: cls(tradRealized) },
+      { label: "传统累计卖出笔数", value: tRows.length + " 笔", cls: "muted" },
     ];
     $("realized-kpis").innerHTML = kpis.map(function (k) {
       return '<div class="rk-item"><p class="rk-label">' + k.label + '</p><p class="rk-value ' +
         k.cls + '">' + k.value + "</p></div>";
     }).join("");
-    $("realized-body").innerHTML =
-      '<tr><td class="col-name">加密货币</td><td>Bitget 卖出</td><td class="num ' + cls(cryptoRealized) + '">' +
-      signedMoney(cryptoRealized) + '</td><td class="num muted">' + sells.length + "</td></tr>" +
-      '<tr><td class="col-name">传统股票 &amp; 基金</td><td>卖出净差额自动推断</td>' +
-      '<td class="num ' + cls(tradRealized) + '">' + signedMoney(tradRealized) + '</td>' +
-      '<td class="num muted">' + ((tradEntries.realized_entries || []).length || 0) + ' 笔</td></tr>';
+
+    var cb = $("ra-crypto-body");
+    if (cb) {
+      cb.innerHTML = cRows.length
+        ? cRows.map(function (r) {
+            return "<tr><td class=\"col-name\">" + escapeHtml(r.date || "—") + "</td>" +
+              "<td>" + escapeHtml(r.coin || "") + "</td>" +
+              '<td class="num">' + num(r.shares, 6) + "</td>" +
+              '<td class="num">$' + num(r.price, 2) + "</td>" +
+              '<td class="num">$' + num(r.cost_price, 2) + "</td>" +
+              '<td class="num ' + cls(r.pnl_usdt) + '">' + (r.pnl_usdt < 0 ? "−" : "+") + "$" + num(Math.abs(Number(r.pnl_usdt) || 0), 2) + "</td>" +
+              '<td class="num ' + cls(r.pnl_cny) + '">' + signedMoney(r.pnl_cny, 2) + "</td></tr>";
+          }).join("")
+        : '<tr><td colspan="7" class="pa-empty">校准日以来还没有卖出记录</td></tr>';
+    }
+
+    var tb = $("ra-trad-body");
+    if (tb) {
+      tb.innerHTML = tRows.length
+        ? tRows.map(function (r) {
+            return "<tr><td class=\"col-name\">" + escapeHtml(r.date || "—") + "</td>" +
+              "<td>" + escapeHtml(r.id || "") + "</td>" +
+              '<td class="num">' + num(r.shares, 6) + "</td>" +
+              '<td class="num">$' + num(r.price, 2) + "</td>" +
+              '<td class="num">$' + num(r.cost_price, 2) + "</td>" +
+              '<td class="num ' + cls(r.pnl_usd) + '">' + (r.pnl_usd < 0 ? "−" : "+") + "$" + num(Math.abs(Number(r.pnl_usd) || 0), 2) + "</td>" +
+              '<td class="num ' + cls(r.pnl_cny) + '">' + signedMoney(r.pnl_cny, 2) + "</td></tr>";
+          }).join("")
+        : '<tr><td colspan="7" class="pa-empty">还没有记录：卖出后更新份额与美股现金余额即可自动累计</td></tr>';
+    }
   }
 
   // ---------- 盈亏日历 ----------

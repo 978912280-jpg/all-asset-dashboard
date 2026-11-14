@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-version="1.9.6">
+<html lang="zh-CN" data-page-version="1.9.7">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -38,10 +38,10 @@
     window.__applyTheme = apply;
   })();
   </script>
-  <link rel="stylesheet" href="css/style.css?v=1.9.6">
+  <link rel="stylesheet" href="css/style.css?v=1.9.7">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231f2329'/%3E%3Cpath d='M5 17 L10 11 L13 14 L18 7' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <script src="https://fastly.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" defer></script>
-  <script src="js/app.js?v=1.9.6" defer></script>
+  <script src="js/app.js?v=1.9.7" defer></script>
 </head>
 <body class="locked">
   <div class="pin-lock" id="pin-lock" hidden>
@@ -253,23 +253,46 @@
     <section class="card realized-card">
                 <div class="card-head">
                   <h2>已实现盈亏</h2>
-                  <p class="card-desc">总盈亏 = 未实现盈亏 + 已实现盈亏；这里只列已卖出的部分，不再单独相加</p>
+                  <p class="card-desc">总盈亏 = 未实现盈亏 + 已实现盈亏。以下按加密与传统分两块，累积列出每笔卖出的份额、卖出价、成本价与已实现金额，不再按 90 天截断。</p>
                 </div>
                 <div class="realized-kpis" id="realized-kpis"></div>
+
+                <h3 class="ra-title">加密货币</h3>
                 <div class="table-scroll">
-                  <table class="main-table realized-table" id="realized-table">
+                  <table class="main-table realized-table">
                     <thead>
                       <tr>
-                        <th class="col-name">标的</th>
-                        <th>类别</th>
-                        <th class="num">已实现盈亏</th>
-                        <th class="num">笔数</th>
+                        <th class="col-name">时间</th>
+                        <th>币种</th>
+                        <th class="num">卖出份额</th>
+                        <th class="num">卖出价</th>
+                        <th class="num">成本价</th>
+                        <th class="num">已实现 (USDT)</th>
+                        <th class="num">已实现 (CNY)</th>
                       </tr>
                     </thead>
-                    <tbody id="realized-body"></tbody>
+                    <tbody id="ra-crypto-body"></tbody>
                   </table>
                 </div>
-                <p class="table-hint" id="realized-hint">加密已实现盈亏自 2026-11-13 成本校准起累计；卖出所得按摊薄成本冲减剩余成本，因此该数字已计入总盈亏。</p>
+
+                <h3 class="ra-title">传统股票 &amp; 基金</h3>
+                <div class="table-scroll">
+                  <table class="main-table realized-table">
+                    <thead>
+                      <tr>
+                        <th class="col-name">时间</th>
+                        <th>标的</th>
+                        <th class="num">卖出份额</th>
+                        <th class="num">卖出价</th>
+                        <th class="num">成本价</th>
+                        <th class="num">已实现 (USD)</th>
+                        <th class="num">已实现 (CNY)</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ra-trad-body"></tbody>
+                  </table>
+                </div>
+                <p class="table-hint" id="realized-hint">加密已实现自 2026-11-13 成本校准起逐笔累计；传统已实现由「份额减少 + 美股现金净增」自动推断（已扣除同期划入美股账户的金额），首次填现金余额后开始累计。</p>
               </section>
 
   </section>
