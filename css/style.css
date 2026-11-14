@@ -230,6 +230,9 @@ code {
 }
 .main-table tbody tr:hover { background: #fafbfc; }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
+/* 金额与正负号整体不换行，避免窄屏下「−」被挤到单独一行 */
+.amt { white-space: nowrap; display: inline-block; }
+.main-table td.num { white-space: nowrap; }
 .main-table thead th.num { text-align: right; }
 .col-name { min-width: 190px; }
 .col-src { min-width: 120px; }

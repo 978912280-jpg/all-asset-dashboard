@@ -550,7 +550,8 @@
         var sub = (i.pnl_pct === null || i.pnl_pct === undefined)
           ? '<div class="sub muted">—</div>'
           : '<div class="sub ' + cls(i.pnl_pct) + '">' + pct(i.pnl_pct) + "</div>";
-        pnlTxt = '<span class="' + cls(pv) + '">' + (pv >= 0 ? "+" : "−") + "¥" + num(Math.abs(pv)) + sub + "</span>";
+        pnlTxt = '<span class="' + cls(pv) + '"><span class="amt">' + (pv >= 0 ? "+" : "−") + "¥" + num(Math.abs(pv)) +
+          "</span>" + sub + "</span>";
       }
       return "<tr>" +
         '<td class="name-cell"><div class="nm">' + escapeHtml(i.name) +
@@ -577,7 +578,7 @@
     $("table-foot").innerHTML = "<tr>" +
       '<td class="name-cell">合计</td><td></td><td></td><td></td><td></td>' +
       '<td class="num">¥' + num(sumVal) + "</td>" +
-      '<td class="num ' + cls(sumPnl) + '">' + (sumPnl >= 0 ? "+" : "−") + "¥" + num(Math.abs(sumPnl)) + "</td>" +
+      '<td class="num ' + cls(sumPnl) + '"><span class="amt">' + (sumPnl >= 0 ? "+" : "−") + "¥" + num(Math.abs(sumPnl)) + "</span></td>" +
       '<td class="num">' + sumWTxt + "</td></tr>";
   }
 
