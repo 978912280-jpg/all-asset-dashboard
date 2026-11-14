@@ -1032,10 +1032,15 @@
       empty.hidden = !!(ev.flows || []).length;
       if (!(ev.flows || []).length) empty.textContent = "近 90 天没有链上充提记录。";
     } else {
+      var isStock = tab === "stock";
+      var list = (ev.transfers || []).filter(function (t) {
+        var k = String(t.kind || "");
+        return isStock ? k.indexOf("美股") >= 0 : k.indexOf("美股") < 0;
+      });
       cols = narrow
         ? [T("日期", "col-name"), T("币种 / 类型"), T("数量", "num"), T("估值", "num")]
         : [T("日期", "col-name"), T("币种"), T("类型"), T("数量", "num"), T("估值", "num")];
-      (ev.transfers || []).forEach(function (t) {
+      list.forEach(function (t) {
         rows.push(narrow
           ? [T(shortDate(t.date), "col-name"),
              S([[escapeHtml(t.coin), ""], [escapeHtml(t.kind), "muted"]]),
@@ -1044,13 +1049,15 @@
              T(escapeHtml(t.kind)), T(qtyText(t.qty), "num"),
              T(flowMoney(t.value_usdt), "num")]);
       });
-      var trTotal = (ev.transfers || []).reduce(function (a, t) { return a + (t.value_usdt || 0); }, 0);
+      var trTotal = list.reduce(function (a, t) { return a + (t.value_usdt || 0); }, 0);
+      var label = isStock ? "美股账户划转合计（不计入净入金）" : "内部划转合计（不计入净入金）";
       footCells = narrow
-        ? [{ t: "划转合计", c: "", s: 3 }, { t: flowMoney(trTotal), c: "num total-gold", s: 1 }]
-        : [{ t: "划转合计（不计入净入金）", c: "", s: 4 },
+        ? [{ t: (isStock ? "美股划转 " : "划转 ") + list.length + " 笔", c: "", s: 2 },
+           { t: flowMoney(trTotal), c: "num total-gold", s: 2 }]
+        : [{ t: label + " · " + list.length + " 笔", c: "", s: 4 },
            { t: flowMoney(trTotal), c: "num total-gold", s: 1 }];
-      empty.hidden = !!(ev.transfers || []).length;
-      if (!(ev.transfers || []).length) empty.textContent = "近 90 天没有内部划转记录。";
+      empty.hidden = !!list.length;
+      if (!list.length) empty.textContent = isStock ? "近 90 天没有划往美股账户的记录。" : "近 90 天没有内部划转记录。";
     }
 
     function td(c) {
