@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-version="1.5.6">
+<html lang="zh-CN" data-page-version="1.5.7">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -38,10 +38,10 @@
     window.__applyTheme = apply;
   })();
   </script>
-  <link rel="stylesheet" href="css/style.css?v=1.5.6">
+  <link rel="stylesheet" href="css/style.css?v=1.5.7">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231f2329'/%3E%3Cpath d='M5 17 L10 11 L13 14 L18 7' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <script src="https://fastly.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" defer></script>
-  <script src="js/app.js?v=1.5.6" defer></script>
+  <script src="js/app.js?v=1.5.7" defer></script>
 </head>
 <body class="locked">
   <div class="pin-lock" id="pin-lock" hidden>
@@ -83,7 +83,7 @@
       </div>
     </div>
     <div class="disclaimer" id="disclaimer" hidden>
-      <p><strong>计算口径</strong>：市值 = 持有份额 × 最新价格 × 汇率（USD/USDT → CNY）。浮动盈亏 = 市值 − 持仓成本（份额 × 成本价 × 汇率），收益率 = 浮动盈亏 / 持仓成本。传统标的价格优先取「全球资产仪表台」已抓取的行情，缺失时回退腾讯实时 / 东方财富基金 / Yahoo；加密货币直接读取「加密货币资产仪表台」的最新快照（现货 + 理财合并），其盈亏按该仪表台的净入金口径（真实盈亏）折算。</p>
+      <p><strong>计算口径</strong>：市值 = 持有份额 × 最新价格 × 汇率（USD/USDT → CNY）。浮动盈亏 = 市值 − 持仓成本（份额 × 成本价 × 汇率），收益率 = 浮动盈亏 / 持仓成本。传统标的价格取自「全球资产仪表台」已抓取的行情，缺失时回退腾讯实时 / 东方财富基金 / Yahoo；加密资产直连 Bitget 私有接口（现货 + 理财），成本按成交回放的平均成本法自动维护，加密盈亏百分比的分母只算币类成本（剔除稳定币面值）。</p>
       <p><strong>当日浮动收益</strong>：按「上一份快照里的份额 × 当日价差 × 汇率」计算。这样即使某天没及时更新份额、事后才补录，历史日历上的数字也不会被改写；补录当天新增的份额不计入当日盈亏（视为收盘价买入）。若没有更早的快照可用，才退化为「今日份额 × 当日涨跌幅」。</p>
       <p><strong>份额来源</strong>：仅 <code>data/holdings.json</code> 中的 shares 为人工维护，价格、市值、占比、日变动全部由后台脚本自动计算。修改份额后需重新运行 <code>python3 scripts/build.py</code> 或等待 GitHub Actions 每日构建。</p>
       <p>本页面仅用于个人资产记录与研究，<strong>不构成任何投资建议</strong>。</p>

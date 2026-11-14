@@ -427,8 +427,8 @@
           text: "{a|总资产}\n{b|¥" + num(total) + "}",
           textAlign: "center",
           rich: {
-            a: { fontSize: compact ? 9 : 10, fill: "#6b7280", lineHeight: compact ? 15 : 16 },
-            b: { fontSize: compact ? 12 : 14, fontWeight: "bold", fill: "#1f2329", lineHeight: compact ? 17 : 19 },
+            a: { fontSize: compact ? 9 : 10, fill: cssVar("--muted", "#6b7280"), lineHeight: compact ? 15 : 16 },
+            b: { fontSize: compact ? 12 : 14, fontWeight: "bold", fill: cssVar("--text", "#1f2329"), lineHeight: compact ? 17 : 19 },
           },
         },
       }],
@@ -1271,16 +1271,21 @@
   function renderSources() {
     var m = state.data.meta || {};
     var s = m.sources || {};
-    var cryptoMeta = state.data.crypto_meta || {};
+    var cm = state.data.crypto_meta || {};
     var rows = [
-      "<li>传统标的价格：<strong>" + escapeHtml(s.traditional_price || "—") + "</strong>；全球资产仪表台数据地址 <code>" +
-      escapeHtml(s.traditional_price_url || "—") + "</code></li>",
-      "<li>加密货币资产：<strong>加密货币资产仪表台</strong>（" + escapeHtml(cryptoMeta.snapshot_date || "—") +
-      " 快照，现货 " + num(cryptoMeta.spot_usdt) + " + 理财 " + num(cryptoMeta.earn_usdt) +
-      " = " + num(cryptoMeta.total_usdt) + " USDT）</li>",
+      "<li>传统标的价格：<strong>" + escapeHtml(s.traditional_price || "腾讯实时 / 东方财富基金 / Yahoo") +
+      "</strong>，取自「全球资产仪表台」已抓取的行情 <code>" +
+      escapeHtml(s.traditional_price_url || "—") + "</code>，缺失时本地回退抓取。</li>",
+      "<li>加密资产：<strong>直连 Bitget 私有接口</strong>读取现货账户与理财（Earn）持仓，本快照 " +
+      escapeHtml(cm.snapshot_date || "—") + " 合计 <strong>" + num(cm.total_usdt) + " USDT</strong>；" +
+      "接口读不到的仓位（如 PoolX 锁仓）在「份额维护后台」手工登记进出，本仪表台不再依赖任何上游加密仪表台。</li>",
+      "<li>加密成本：以 <code>data/crypto_cost.json</code> 的校准点为起点，" +
+      "用 <code>data/bitget_ledger.json</code> 记录的成交（fills）逐笔回放买入/卖出，" +
+      "按平均成本法自动维护成本价，无需手工填写。</li>",
       "<li>汇率：USD/USDT → CNY = <strong>" + num((m.fx || {}).usdcny, 4) + "</strong>（" +
-      escapeHtml((m.fx || {}).source || "—") + "）</li>",
-      "<li>份额与成本维护：<code>data/holdings.json</code> 中的 <code>shares</code> 与 <code>cost_price</code>，市值/盈亏/占比/趋势全部由 <code>scripts/build.py</code> 自动计算</li>",
+      escapeHtml((m.fx || {}).source || "—") + "）。</li>",
+      "<li>份额与成本人工维护：仅 <code>data/holdings.json</code> 中的 <code>shares</code> 与 <code>cost_price</code>（传统标的）；" +
+      "市值、盈亏、占比、日历与趋势全部由 <code>scripts/build.py</code> 自动计算。</li>",
     ];
     $("source-list").innerHTML = rows.join("");
   }
