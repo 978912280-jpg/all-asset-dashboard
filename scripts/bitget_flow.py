@@ -253,7 +253,7 @@ def main():
         elif board == "transfer":
             transfers.append({
                 "date": dstr(r.get("cTime")), "day": day(r.get("cTime")),
-                "coin": coin, "qty": qty, "value_usdt": value_usdt(coin, qty, prices),
+                "coin": coin, "qty": abs(qty), "value_usdt": abs(value_usdt(coin, qty, prices)),
                 "kind": sub, "ref": r.get("bizOrderId") or r.get("billId"),
             })
         elif board == "trade_bill" and sub == "闪兑":
@@ -302,7 +302,7 @@ def main():
         coin = str(r.get("coin") or "").upper()
         qty = num(r.get("size"))
         transfers.append({"date": dstr(r.get("ts")), "day": day(r.get("ts")), "coin": coin,
-                          "qty": qty, "value_usdt": value_usdt(coin, qty, prices),
+                          "qty": abs(qty), "value_usdt": abs(value_usdt(coin, qty, prices)),
                           "kind": "%s → %s" % (ft, tt), "ref": r.get("transferId")})
 
     # 去重：同一 ref 只留一条
