@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-15T03:12:22+08:00",
+  "updated_at": "2026-11-15T03:15:18+08:00",
   "since": "2026-11-13",
   "fills": 3,
   "cost_total_usdt": {
@@ -13,5 +13,6 @@
   },
   "qty_mode": "delta",
   "realized_pnl_usdt": {},
+  "sell_entries": [],
   "source": "bitget_fills"
 }
