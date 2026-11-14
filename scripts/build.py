@@ -639,6 +639,8 @@ def main():
         if total_cny - day_change else 0.0,
         "fx_usdcny": r2(rate, 4),
         "crypto_usdt": crypto_meta.get("total_usdt"),
+        "crypto_coin_cny": r2(crypto_cny, 2),
+        "stable_cash_cny": r2(stable_cash_cny, 2),
         "total_pnl_cny": r2(total_pnl, 2) if total_pnl is not None else None,
         "traditional_pnl_cny": r2(trad_pnl, 2),
         "crypto_pnl_cny": r2(crypto_pnl_cny, 2) if crypto_pnl_cny is not None else None,
@@ -672,11 +674,19 @@ def main():
             items = sn.get("items") or []
             v = round(sum((i.get("pnl_cny") or 0) for i in items
                           if (want is None or i.get("group") == want)), 2)
+        if v is None and key in ("crypto_coin_cny", "stable_cash_cny"):
+            # 老快照兜底：按当日分组（crypto = 币类，cash = 稳定币+法币余额）取值
+            for g in (sn.get("groups") or []):
+                if (key == "crypto_coin_cny" and g.get("key") == "crypto") or \
+                   (key == "stable_cash_cny" and g.get("key") == "cash"):
+                    v = g.get("cny")
+                    break
         return v
 
     hist = [{kk: snap_field(sn, kk) for kk in ("date", "total_cny", "traditional_cny", "crypto_cny",
                                                "cash_cny", "day_change_cny", "day_change_pct",
-                                               "fx_usdcny", "crypto_usdt", "total_pnl_cny",
+                                               "fx_usdcny", "crypto_usdt", "crypto_coin_cny",
+                                               "stable_cash_cny", "total_pnl_cny",
                                                "traditional_pnl_cny", "crypto_pnl_cny")}
             for sn in snapshots if sn.get("date") != today]
     hist.append({"date": today, "total_cny": entry["total_cny"],
@@ -685,6 +695,8 @@ def main():
                  "day_change_cny": entry["day_change_cny"],
                  "day_change_pct": entry["day_change_pct"],
                  "fx_usdcny": entry["fx_usdcny"], "crypto_usdt": entry["crypto_usdt"],
+                 "crypto_coin_cny": entry["crypto_coin_cny"],
+                 "stable_cash_cny": entry["stable_cash_cny"],
                  "total_pnl_cny": entry["total_pnl_cny"],
                  "traditional_pnl_cny": entry["traditional_pnl_cny"],
                  "crypto_pnl_cny": entry["crypto_pnl_cny"]})
