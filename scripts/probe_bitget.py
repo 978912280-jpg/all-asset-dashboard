@@ -36,7 +36,8 @@ def main():
     print("Bitget 钱包接口探针  key 尾号：%s" % key[-4:])
 
     now = int(time.time() * 1000)
-    start = now - 85 * 86400 * 1000
+    import datetime as _d
+    start = int(_d.datetime(2026, 10, 1, tzinfo=_d.timezone(_d.timedelta(hours=8))).timestamp() * 1000)
     rng = {"startTime": str(start), "endTime": str(now), "limit": "20"}
     probe("/api/v2/spot/account/assets", {}, "现货账户（基准）", key, secret, passphrase)
     probe("/api/v2/spot/wallet/deposit-records", dict(rng, coin="USDC"), "充值记录 USDC", key, secret, passphrase)
