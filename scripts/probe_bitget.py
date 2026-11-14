@@ -42,13 +42,39 @@ def main():
     probe("/api/v2/spot/wallet/deposit-records", dict(rng, coin="USDC"), "充值记录 USDC", key, secret, passphrase)
     probe("/api/v2/spot/wallet/withdrawal-records", dict(rng, coin="USDC"), "提现记录 USDC", key, secret, passphrase)
     probe("/api/v2/spot/account/bills", dict(rng, coin="USDC"), "账户流水 bills USDC", key, secret, passphrase)
-    for path, label in [
-        ("/api/v2/spot/wallet/transfer-records", "内部划转 A"),
-        ("/api/v2/spot/account/transfer-records", "内部划转 B"),
-        ("/api/v2/spot/account/transferRecords", "内部划转 C"),
-        ("/api/v2/spot/wallet/transfer-record", "内部划转 D"),
-    ]:
-        probe(path, dict(rng, coin="USDC"), label, key, secret, passphrase)
+    # 全量内部划转（不限币种），打印每条的类型与方向
+    try:
+        rows = L._get("/api/v2/spot/account/transferRecords",
+                      {"startTime": str(start), "endTime": str(now), "limit": "100"},
+                      key, secret, passphrase)
+        print("[OK ] 内部划转全量 -> %d 条" % len(rows))
+        types = {}
+        for r in rows:
+            k = "%s->%s" % (r.get("fromType"), r.get("toType"))
+            types[k] = types.get(k, 0) + 1
+        print("      方向分布：%s" % types)
+        for r in rows[:8]:
+            import datetime as dt
+            t = dt.datetime.fromtimestamp(int(r.get("ts") or 0) / 1000, dt.timezone(dt.timedelta(hours=8))
+            print("      %s %s %s %s->%s %s" % (t.strftime("%Y-%m-%d %H:%M"), r.get("coin"), r.get("size"),
+                                               r.get("fromType"), r.get("toType"), r.get("status")))
+    except Exception as e:
+        print("[ERR] 内部划转全量 -> %s" % str(e)[:160])
+
+    # 账户流水：统计业务类型分布，确认划转是否体现在流水里
+    try:
+        rows = L._get("/api/v2/spot/account/bills",
+                      {"startTime": str(start), "endTime": str(now), "limit": "100"},
+                      key, secret, passphrase)
+        print("[OK ] 账户流水全量 -> %d 条" % len(rows))
+        types = {}
+        for r in rows:
+            k = "%s/%s" % (r.get("groupType"), r.get("businessType"))
+            types[k] = types.get(k, 0) + 1
+        for k, v in sorted(types.items(), key=lambda x: -x[1]):
+            print("      %-52s %d 笔" % (k, v))
+    except Exception as e:
+        print("[ERR] 账户流水全量 -> %s" % str(e)[:160])
     probe("/api/v2/spot/trade/fills", {"limit": "5"}, "成交记录（基准）", key, secret, passphrase)
     probe("/api/v2/earn/account/assets", {}, "理财持仓（基准）", key, secret, passphrase)
     return 0
