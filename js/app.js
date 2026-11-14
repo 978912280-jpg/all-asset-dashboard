@@ -515,7 +515,8 @@
       tooltip: Object.assign(tipSkin(), {
         trigger: "item",
         formatter: function (p) {
-          return (p.data.full || p.data.name) + "<br/>¥" + num(p.value) + "（" + p.percent.toFixed(2) + "%）";
+          return (p.data.full || p.data.name) + "<br/>" + curSym() + num(convCny(p.value)) +
+            "（" + p.percent.toFixed(2) + "%）";
         },
       }),
       legend: { show: false },
@@ -1350,8 +1351,11 @@
       var fs = firstSnap[k] || {}, ls = lastSnap[k] || {};
       out[k] = {
         value: g[k], count: cnt[k], from: first[k], to: last[k],
-        start_total: (fs.total_cny || 0) - (fs.day_change_cny || 0),
+        // 期初 = 周期首日收盘总资产；期末 = 周期末日收盘总资产（均为真实快照，不再用日变动反推）
+        start_total: fs.total_cny || 0,
         end_total: ls.total_cny || 0,
+        start_date: first[k],
+        end_date: last[k],
       };
     });
     return out;
@@ -1398,8 +1402,8 @@
       if (key === state.calKey) cls += " sel";
       var vstr = rec === null ? "—" : (rec.value >= 0 ? "+" : "−") + curSym() + num(Math.abs(convCny(rec.value)), 0);
       var blocked = rec === null ? "" :
-        ' data-open="' + num(rec.start_total) + '" data-end="' + num(rec.end_total) +
-        '" data-pnl="' + rec.value + '"';
+        ' data-open="' + Number(rec.start_total || 0) + '" data-end="' + Number(rec.end_total || 0) +
+        '" data-pnl="' + Number(rec.value || 0) + '"';
       html += '<div class="' + cls + '" data-key="' + key + '" data-label="' + label + '"' + blocked +
         '><div class="pb-label">' + label +
         '</div><div class="pb-val">' + vstr + "</div></div>";
@@ -1438,8 +1442,10 @@
     var rows = [
       ["周期", label + " " + key],
       ["数据区间", rec.from + " ~ " + rec.to],
-      ["期初资产", money(rec.start_total)],
-      ["期末资产", money(rec.end_total)],
+      ["期初资产（" + (rec.start_date || "首日") + " 收盘）", money(rec.start_total)],
+      ["期末资产（" + (rec.end_date || "末日") + " 收盘）", money(rec.end_total)],
+      ["期末 − 期初", '<span class="' + cls(rec.end_total - rec.start_total) + '">' +
+        signedMoney(rec.end_total - rec.start_total) + "</span>"],
       ["有数据天数", rec.count + " 天"],
       ["累计浮动收益", '<span class="' + cls2 + '">' + signedMoney(rec.value) + "</span>"],
       ["日均浮动收益", signedMoney(rec.value / rec.count)],
@@ -1470,8 +1476,11 @@
       tip.innerHTML = '<div class="tip-label">' + label + "</div>" +
         '<div class="tip-row"><span>累计浮动收益</span><span class="' + (pv >= 0 ? "pos" : "neg") +
         '">' + signedMoney(pv) + "</span></div>" +
-        '<div class="tip-row"><span>期初资产</span><span>' + money(parseFloat(cell.getAttribute("data-open"))) + "</span></div>" +
-        '<div class="tip-row"><span>期末资产</span><span>' + money(parseFloat(cell.getAttribute("data-end"))) + "</span></div>";
+        '<div class="tip-row"><span>期初资产（首日）</span><span>' + money(parseFloat(cell.getAttribute("data-open"))) + "</span></div>" +
+        '<div class="tip-row"><span>期末资产（末日）</span><span>' + money(parseFloat(cell.getAttribute("data-end"))) + "</span></div>" +
+        '<div class="tip-row"><span>期末 − 期初</span><span class="' +
+        ((parseFloat(cell.getAttribute("data-end")) - parseFloat(cell.getAttribute("data-open"))) >= 0 ? "pos" : "neg") +
+        '">' + signedMoney(parseFloat(cell.getAttribute("data-end")) - parseFloat(cell.getAttribute("data-open"))) + "</span></div>";
       tip.hidden = false;
       var x = e.clientX + 12, y = e.clientY - 10;
       tip.style.left = Math.min(x, document.documentElement.clientWidth - tip.offsetWidth - 8) + "px";
