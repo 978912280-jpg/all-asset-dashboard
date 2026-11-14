@@ -27,6 +27,16 @@
   function themeMode() {
     try { return localStorage.getItem(THEME_KEY) || "auto"; } catch (e) { return "auto"; }
   }
+  function tipSkin() {
+    return {
+      backgroundColor: isDark() ? "#131c2b" : "#ffffff",
+      borderColor: isDark() ? "#263244" : "#e5e7eb",
+      borderWidth: 1,
+      textStyle: { color: cssVar("--text", "#1f2329"), fontSize: 12 },
+      extraCssText: "box-shadow:0 8px 24px rgba(0,0,0," + (isDark() ? ".5" : ".12") + ");border-radius:10px;",
+    };
+  }
+
   function repaintCharts() {
     if (state.donut) renderSplit();
     if (state.trend) renderTrend();
@@ -422,12 +432,12 @@
           },
         },
       }],
-      tooltip: {
+      tooltip: Object.assign(tipSkin(), {
         trigger: "item",
         formatter: function (p) {
           return (p.data.full || p.data.name) + "<br/>¥" + num(p.value) + "（" + p.percent.toFixed(2) + "%）";
         },
-      },
+      }),
       legend: { show: false },
       series: [{
         name: "资产占比",
@@ -1152,15 +1162,16 @@
 
     state.trend.setOption({
       grid: { left: 12, right: 56, top: 34, bottom: 26, containLabel: true },
-      tooltip: {
+      tooltip: Object.assign(tipSkin(), {
         trigger: "item",
         formatter: function (p) {
           var ds = (dates.indexOf(p.name) >= 0) ? p.name :
             (p.dataIndex !== undefined && dates[p.dataIndex]) || "";
           return trTip(byDate[ds] || { date: ds });
         },
-      },
-      legend: { top: 0, itemWidth: 14, itemHeight: 9, textStyle: { fontSize: 11 },
+      }),
+      legend: { top: 0, itemWidth: 14, itemHeight: 9,
+        textStyle: { fontSize: 11, color: cssVar("--muted", "#6b7280") },
         data: [{ name: "总资产", icon: "circle" }, { name: "总盈亏", icon: "circle" }] },
       xAxis: {
         type: "category",
