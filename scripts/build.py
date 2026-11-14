@@ -33,8 +33,8 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.6.3"
-PAGE_DATE = "2026.11.12"
+PAGE_VERSION = "1.7.0"
+PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
 CASH_GROUP = "cash"
@@ -509,6 +509,14 @@ def main():
         row["value_cny"] = r2(row["value_native"] * (rate if row.get("currency") in ("USD", "USDT") else 1.0), 2)
         row["note"] = (row.get("note") or "") + "；PoolX +%.6g" % amt
         print("      PoolX 合并：%s +%.6g（手工登记）" % (coin, amt))
+    # 净入金：以加密流水归档的「基准 + 基准日之后链上充提」为准，不再依赖上游仪表台
+    events = _read_json(os.path.join(ROOT, "data", "crypto_events.json"))
+    if events and (events.get("net_deposit") or {}).get("computed_usdt") is not None:
+        crypto_meta["net_deposit_usdt"] = r2(events["net_deposit"]["computed_usdt"], 2)
+        print("      净入金（充值口径）：%.2f USDT（基准 %.0f @ %s，之后入 %.2f / 出 %.2f）" % (
+            crypto_meta["net_deposit_usdt"], events["net_deposit"]["baseline_usdt"],
+            events["net_deposit"]["baseline_date"], events["net_deposit"]["deposit_after"],
+            events["net_deposit"]["withdraw_after"]))
     if crypto_meta.get("error"):
         print("      [warn] " + crypto_meta["error"])
     else:
@@ -847,6 +855,7 @@ def main():
         ],
         "items": trad_rows + crypto_rows + cash_rows,
         "crypto_meta": crypto_meta,
+        "events": events,
         "pnl_breakdown": pnl_breakdown,
         "history": hist[-400:],
     }

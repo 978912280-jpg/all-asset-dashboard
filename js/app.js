@@ -154,6 +154,8 @@
     renderPending();
     renderSplit();
     renderTable();
+    renderFlow();
+    renderRealized();
     renderCalendar();
     renderPnlAnalysis();
     renderTrend();
@@ -775,6 +777,145 @@
       });
       renderTable();
     });
+    var flowBox = $("flow-tabs");
+    if (flowBox) {
+      flowBox.addEventListener("click", function (e) {
+        var btn = e.target.closest(".seg-btn");
+        if (!btn) return;
+        state.flowTab = btn.getAttribute("data-flow");
+        Array.prototype.forEach.call(flowBox.children, function (b) {
+          b.classList.toggle("active", b === btn);
+        });
+        renderFlow();
+      });
+    }
+  }
+
+  // ---------- 资金流水 ----------
+  function flowMoney(usdt) {
+    var v = Number(usdt || 0);
+    return money(v * fxRate());
+  }
+
+  function qtyText(v) {
+    var n = Number(v || 0);
+    if (!n) return "0";
+    if (Math.abs(n) >= 1000) return num(n, 2);
+    return num(n, Math.abs(n) >= 1 ? 6 : 8);
+  }
+
+  function shortDate(s) {
+    return String(s || "").replace(/^\d{4}-/, "");
+  }
+
+  function renderFlow() {
+    var ev = state.data && state.data.events;
+    var body = $("flow-body");
+    if (!body) return;
+    var tab = state.flowTab || "trades";
+    var head = $("flow-head"), foot = $("flow-foot"), empty = $("flow-empty");
+    if (!ev) {
+      head.innerHTML = "";
+      body.innerHTML = "";
+      foot.innerHTML = "";
+      if (empty) { empty.hidden = false; empty.textContent = "当前快照不含流水数据（历史复现时不可用）。"; }
+      return;
+    }
+
+    var rows = [];
+    if (tab === "trades") {
+      head.innerHTML = '<tr><th class="col-name">时间</th><th>币种</th><th>方向</th>' +
+        '<th class="num">数量</th><th class="num">成交价</th><th class="num">金额</th><th class="num">手续费</th></tr>';
+      (ev.trades || []).forEach(function (t) {
+        rows.push('<tr><td class="col-name">' + escapeHtml(shortDate(t.date)) + "</td><td>" +
+          escapeHtml(t.coin) + '</td><td class="' + (t.side === "买入" ? "neg" : "pos") + '">' +
+          escapeHtml(t.side) + '</td><td class="num">' + qtyText(t.qty) +
+          '</td><td class="num">' + num(t.price, 2) + '</td><td class="num">' + flowMoney(t.quote_usdt) +
+          '</td><td class="num muted">' + escapeHtml(t.fee || "—") + "</td></tr>");
+      });
+      var buys = (ev.trades || []).filter(function (t) { return t.side === "买入"; });
+      var sells = (ev.trades || []).filter(function (t) { return t.side === "卖出"; });
+      var buyAmt = buys.reduce(function (a, t) { return a + (t.quote_usdt || 0); }, 0);
+      var sellAmt = sells.reduce(function (a, t) { return a + (t.quote_usdt || 0); }, 0);
+      foot.innerHTML = '<tr><td colspan="5">买入 ' + buys.length + " 笔 / 卖出 " + sells.length + " 笔</td>" +
+        '<td class="num total-gold">' + flowMoney(buyAmt) + " 买 · " + flowMoney(sellAmt) + " 卖</td><td></td></tr>";
+      empty.hidden = !!(ev.trades || []).length;
+      if (!(ev.trades || []).length) empty.textContent = "近 90 天没有成交记录。";
+    } else if (tab === "earn") {
+      head.innerHTML = '<tr><th class="col-name">日期</th><th>币种</th><th class="num">当日收益</th>' +
+        '<th class="num">估值</th><th class="num">笔数</th></tr>';
+      (ev.earn_daily || []).forEach(function (e) {
+        rows.push('<tr><td class="col-name">' + escapeHtml(shortDate(e.day)) + "</td><td>" +
+          escapeHtml(e.coin) + '</td><td class="num pos">+' + qtyText(e.qty) +
+          '</td><td class="num">' + flowMoney(e.value_usdt) +
+          '</td><td class="num muted">' + (e.count || 1) + "</td></tr>");
+      });
+      var earnTotal = (ev.earn_daily || []).reduce(function (a, e) { return a + (e.value_usdt || 0); }, 0);
+      var earnCount = (ev.earn_daily || []).reduce(function (a, e) { return a + (e.count || 0); }, 0);
+      foot.innerHTML = '<tr><td colspan="3">累计理财收益</td><td class="num total-gold">' +
+        flowMoney(earnTotal) + '</td><td class="num muted">' + earnCount + " 笔</td></tr>";
+      empty.hidden = !!(ev.earn_daily || []).length;
+      if (!(ev.earn_daily || []).length) empty.textContent = "近 90 天没有理财收益记录。";
+    } else if (tab === "flows") {
+      head.innerHTML = '<tr><th class="col-name">日期</th><th>方向</th><th>币种</th>' +
+        '<th class="num">数量</th><th class="num">金额</th><th>通道</th></tr>';
+      (ev.flows || []).forEach(function (f) {
+        rows.push('<tr><td class="col-name">' + escapeHtml(shortDate(f.date)) + '</td><td class="' +
+          (f.direction === "入金" ? "pos" : "neg") + '">' + escapeHtml(f.direction) + "</td><td>" +
+          escapeHtml(f.coin) + '</td><td class="num">' + qtyText(f.qty) +
+          '</td><td class="num">' + flowMoney(f.value_usdt) +
+          '</td><td class="muted">' + escapeHtml(f.channel || "—") + "</td></tr>");
+      });
+      var nd = ev.net_deposit || {};
+      foot.innerHTML = '<tr><td colspan="3">基准 ' + num(nd.baseline_usdt, 0) + " USDT（" +
+        escapeHtml(nd.baseline_date || "") + "）</td><td class="num muted">之后入 ' +
+        flowMoney(nd.deposit_after) + "</td>" + '<td class="num muted">出 ' + flowMoney(nd.withdraw_after) +
+        '</td><td class="num total-gold">净入金 ' + flowMoney(nd.computed_usdt) + "</td></tr>";
+      empty.hidden = !!(ev.flows || []).length;
+      if (!(ev.flows || []).length) empty.textContent = "近 90 天没有链上充提记录。";
+    } else {
+      head.innerHTML = '<tr><th class="col-name">日期</th><th>币种</th><th>类型</th>' +
+        '<th class="num">数量</th><th class="num">估值</th></tr>';
+      (ev.transfers || []).forEach(function (t) {
+        rows.push('<tr><td class="col-name">' + escapeHtml(shortDate(t.date)) + "</td><td>" +
+          escapeHtml(t.coin) + "</td><td>" + escapeHtml(t.kind) + '</td><td class="num">' +
+          qtyText(t.qty) + '</td><td class="num">' + flowMoney(t.value_usdt) + "</td></tr>");
+      });
+      var trTotal = (ev.transfers || []).reduce(function (a, t) { return a + (t.value_usdt || 0); }, 0);
+      foot.innerHTML = '<tr><td colspan="4">划转合计（不计入净入金）</td><td class="num total-gold">' +
+        flowMoney(trTotal) + "</td></tr>";
+      empty.hidden = !!(ev.transfers || []).length;
+      if (!(ev.transfers || []).length) empty.textContent = "近 90 天没有内部划转记录。";
+    }
+    body.innerHTML = rows.join("");
+    var desc = {
+      trades: "Bitget 成交明细 · 按时间倒序",
+      earn: "理财派息 / 锁仓收益 / 活动奖励 · 按日汇总",
+      flows: "链上充值 = 外部入金，链上提现 = 外部出金",
+      transfers: "账户间划转 / 划入美股账户 · 不计入净入金",
+    };
+    $("flow-desc").textContent = desc[tab] || "";
+  }
+
+  function renderRealized() {
+    var s = (state.data && state.data.summary) || {};
+    var cryptoRealized = Number(s.crypto_realized_cny || 0);
+    var sells = ((state.data && state.data.events && state.data.events.trades) || [])
+      .filter(function (t) { return t.side === "卖出"; });
+    var kpis = [
+      { label: "累计已实现", value: signedMoney(cryptoRealized), cls: cls(cryptoRealized) },
+      { label: "加密货币", value: signedMoney(cryptoRealized), cls: cls(cryptoRealized) },
+      { label: "传统股票 &amp; 基金", value: "待接入", cls: "muted" },
+    ];
+    $("realized-kpis").innerHTML = kpis.map(function (k) {
+      return '<div class="rk-item"><p class="rk-label">' + k.label + '</p><p class="rk-value ' +
+        k.cls + '">' + k.value + "</p></div>";
+    }).join("");
+    $("realized-body").innerHTML =
+      '<tr><td class="col-name">加密货币</td><td>Bitget 卖出</td><td class="num ' + cls(cryptoRealized) + '">' +
+      signedMoney(cryptoRealized) + '</td><td class="num muted">' + sells.length + "</td></tr>" +
+      '<tr><td class="col-name">传统股票 &amp; 基金</td><td>后台交易台账</td>' +
+      '<td class="num muted">—</td><td class="num muted">—</td></tr>';
   }
 
   // ---------- 盈亏日历 ----------

@@ -1,4 +1,4 @@
-name: Bitget 钱包接口探针（临时）
+name: 流水归档试运行（临时）
 
 on:
   workflow_dispatch:
@@ -16,9 +16,26 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: 运行探针
+      - name: 归档 Bitget 流水
         env:
           BITGET_KEY: ${{ secrets.BITGET_KEY }}
           BITGET_SECRET: ${{ secrets.BITGET_SECRET }}
           BITGET_PASSPHRASE: ${{ secrets.BITGET_PASSPHRASE }}
-        run: python3 scripts/probe_bitget5.py
+        run: python3 scripts/bitget_flow.py
+      - name: 构建仪表台
+        run: python3 scripts/build.py
+      - name: 校验产物
+        run: |
+          python3 - <<'PY'
+          import json
+          ev = json.load(open("data/crypto_events.json"))
+          print("counts:", ev["counts"])
+          print("net_deposit:", ev["net_deposit"])
+          print("trades[0]:", json.dumps(ev["trades"][:2], ensure_ascii=False))
+          print("earn_daily[0]:", json.dumps(ev["earn_daily"][:3], ensure_ascii=False))
+          print("flows[0]:", json.dumps(ev["flows"][:2], ensure_ascii=False))
+          print("transfers[0]:", json.dumps(ev["transfers"][:2], ensure_ascii=False))
+          d = json.load(open("data/dashboard.json"))
+          print("version:", d["meta"]["page_version"], "net_deposit_usdt:", d["crypto_meta"].get("net_deposit_usdt"))
+          print("events_in_dashboard:", bool(d.get("events")), "total:", d["summary"]["total_cny"])
+          PY

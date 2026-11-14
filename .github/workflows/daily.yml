@@ -49,6 +49,14 @@ jobs:
           BITGET_PASSPHRASE: ${{ secrets.BITGET_PASSPHRASE }}
         run: python3 scripts/bitget_account.py
 
+      - name: 归档 Bitget 流水（交易 / 理财 / 出入金 / 划转）
+        continue-on-error: true
+        env:
+          BITGET_KEY: ${{ secrets.BITGET_KEY }}
+          BITGET_SECRET: ${{ secrets.BITGET_SECRET }}
+          BITGET_PASSPHRASE: ${{ secrets.BITGET_PASSPHRASE }}
+        run: python3 scripts/bitget_flow.py
+
       - name: 抓取价格并计算资产
         env:
           BUILD_SOURCE: ${{ github.event.inputs.source || 'auto' }}
@@ -71,6 +79,8 @@ jobs:
             # 成本账本可能因 API 未配置而不存在，单独判断，避免 pathspec 失败导致整次 add 回滚
             if [ -f data/bitget_ledger.json ]; then git add data/bitget_ledger.json; fi
             if [ -f data/bitget_account.json ]; then git add data/bitget_account.json; fi
+            if [ -f data/crypto_events.json ]; then git add data/crypto_events.json; fi
+            if [ -f data/crypto_cost.json ]; then git add data/crypto_cost.json; fi
             if git diff --cached --quiet; then
               echo "数据无变化，跳过提交"
               return 1
