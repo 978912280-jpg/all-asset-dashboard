@@ -724,3 +724,81 @@ html[data-theme="dark"] .pin-pad .pin-fn { color: #6b7688; background: transpare
   .realized-table td, .realized-table th { padding: 6px 4px; }
   .realized-table th:first-child, .realized-table td:first-child { width: 42%; }
 }
+
+/* ---------- 首页两栏 ---------- */
+.home-grid { display: grid; gap: 18px; }
+@media (min-width: 900px) {
+  .home-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+}
+.split-legend .bar { max-width: 62%; }
+
+/* ---------- 右侧栏 ---------- */
+.rail {
+  position: fixed; right: 10px; top: 34%; z-index: 40;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.rail button {
+  writing-mode: vertical-rl; letter-spacing: 2px;
+  padding: 12px 8px; font-size: 13px; color: var(--muted);
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+.rail button.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+/* ---------- 滑出面板 ---------- */
+.panel-mask { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.42); z-index: 60; }
+.panel {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(760px, 100%);
+  background: var(--bg); z-index: 61; display: flex; flex-direction: column;
+  box-shadow: -18px 0 44px rgba(15, 23, 42, 0.18);
+}
+.panel-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; background: var(--card); border-bottom: 1px solid var(--line);
+  position: sticky; top: 0;
+}
+.panel-bar h2 { margin: 0; font-size: 16px; }
+.panel-close {
+  width: 32px; height: 32px; border-radius: 10px; border: 1px solid var(--line);
+  background: transparent; color: var(--muted); font-size: 15px; line-height: 1;
+}
+.panel-body { overflow: auto; padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+.panel-body > section { display: none; }
+.panel-body > section.active { display: block; }
+
+/* ---------- 月份切换 ---------- */
+.month-nav {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 8px;
+  border: 1px solid var(--line); border-radius: 999px; padding: 2px 4px; background: var(--card);
+}
+.month-nav button {
+  width: 26px; height: 26px; border: 0; background: transparent; color: var(--muted); font-size: 14px;
+}
+.month-nav span { font-size: 12.5px; color: var(--text); min-width: 62px; text-align: center; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 560px) {
+  .rail { right: 6px; top: 30%; gap: 6px; }
+  .rail button { padding: 10px 6px; font-size: 12px; letter-spacing: 1px; }
+  .split-legend .bar { max-width: 100%; }
+}
+
+body.panel-open { overflow: hidden; }
+
+.panel[hidden], .panel-mask[hidden] { display: none !important; }
+
+@media (min-width: 900px) {
+  .home-grid .split-body { grid-template-columns: 1fr; gap: 12px; }
+  .home-grid .donut-box .chart { height: 320px; }
+}
+.legend-top .name { white-space: nowrap; }
+.legend-num { white-space: nowrap; }
+
+.panel-body .card-head h2 { display: none; }
+
+@media (max-width: 560px) {
+  .container { padding-right: 46px; }
+}
+
+@media (max-width: 560px) {
+  .container { padding: 14px 46px 4px 12px; }
+}

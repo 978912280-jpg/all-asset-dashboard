@@ -767,6 +767,56 @@
     };
   }
 
+  function bindPanel() {
+    var rail = $("rail"), panel = $("panel"), mask = $("panel-mask"), close = $("panel-close");
+    if (!rail || !panel) return;
+    var titles = { flow: "资金流水", realized: "已实现盈亏", pnl: "盈亏分析", trend: "总资产趋势" };
+    function setActive(key) {
+      Array.prototype.forEach.call(rail.children, function (b) {
+        b.classList.toggle("active", b.getAttribute("data-panel") === key && !panel.hidden);
+      });
+    }
+    function openPanel(key) {
+      $("panel-title").textContent = titles[key] || "";
+      var secs = panel.querySelectorAll(".panel-body > section");
+      Array.prototype.forEach.call(secs, function (sec) {
+        sec.classList.toggle("active", sec.getAttribute("data-panel") === key);
+      });
+      panel.hidden = false;
+      panel.setAttribute("aria-hidden", "false");
+      if (mask) mask.hidden = false;
+      document.body.classList.add("panel-open");
+      setActive(key);
+      // 面板从隐藏变可见后图表需要重新量尺寸
+      setTimeout(function () {
+        if (key === "trend" && state.trend) { state.trend.resize(); }
+        if (key === "flow") renderFlow();
+      }, 60);
+    }
+    function closePanel() {
+      panel.hidden = true;
+      panel.setAttribute("aria-hidden", "true");
+      if (mask) mask.hidden = true;
+      document.body.classList.remove("panel-open");
+      setActive(null);
+    }
+    rail.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-panel]");
+      if (!b) return;
+      if (!panel.hidden && $("panel-title").textContent === titles[b.getAttribute("data-panel")]) {
+        closePanel();
+        return;
+      }
+      openPanel(b.getAttribute("data-panel"));
+    });
+    if (mask) mask.addEventListener("click", closePanel);
+    if (close) close.addEventListener("click", closePanel);
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !panel.hidden) closePanel();
+    });
+    state.openPanel = openPanel;
+  }
+
   function bindTabs() {
     $("group-tabs").addEventListener("click", function (e) {
       var btn = e.target.closest(".seg-btn");
@@ -777,6 +827,20 @@
       });
       renderTable();
     });
+    var mnav = $("flow-month-nav");
+    if (mnav) {
+      mnav.addEventListener("click", function (e) {
+        var b = e.target.closest("[data-mstep]");
+        if (!b || b.disabled) return;
+        var months = state.flowMonths || [];
+        var idx = months.indexOf(state.flowMonth);
+        var step = Number(b.getAttribute("data-mstep"));
+        var next = idx + (step === -1 ? 1 : -1);   // ‹ 看更早的月份，› 回到更近的
+        if (next < 0 || next >= months.length) return;
+        state.flowMonth = months[next];
+        renderFlow();
+      });
+    }
     var flowBox = $("flow-tabs");
     if (flowBox) {
       flowBox.addEventListener("click", function (e) {
@@ -821,6 +885,38 @@
       head.innerHTML = ""; body.innerHTML = ""; foot.innerHTML = "";
       if (empty) { empty.hidden = false; empty.textContent = "当前快照不含流水数据（历史复现时不可用）。"; }
       return;
+    }
+
+    // 按月过滤（月份取最近 90 天里出现过的自然月）
+    var evAll = ev;
+    var months = [];
+    (ev.trades || []).concat().forEach(function (x) { months.push((x.date_day || "").slice(0, 7)); });
+    (ev.earn_daily || []).forEach(function (x) { months.push(x.day); });
+    (ev.flows || []).forEach(function (x) { months.push(x.day); });
+    (ev.transfers || []).forEach(function (x) { months.push(x.day); });
+    months = months.filter(function (m) { return m; }).map(function (m) { return m.slice(0, 7); });
+    months = months.filter(function (m, i) { return months.indexOf(m) === i; }).sort().reverse();
+    if (!state.flowMonth || months.indexOf(state.flowMonth) < 0) state.flowMonth = months[0] || "";
+    var mKey = state.flowMonth;
+    function inMonth(x) {
+      var d = x.date_day || x.day || x.date || "";
+      return !mKey || String(d).slice(0, 7) === mKey;
+    }
+    ev = {
+      trades: (evAll.trades || []).filter(inMonth),
+      earn_daily: (evAll.earn_daily || []).filter(inMonth),
+      flows: (evAll.flows || []).filter(inMonth),
+      transfers: (evAll.transfers || []).filter(inMonth),
+      net_deposit: evAll.net_deposit,
+    };
+    if ($("flow-month")) {
+      $("flow-month").textContent = mKey || "—";
+      var prevBtn = document.querySelector('[data-mstep="-1"]');
+      var nextBtn = document.querySelector('[data-mstep="1"]');
+      var idx = months.indexOf(mKey);
+      if (prevBtn) prevBtn.disabled = idx < 0 || idx >= months.length - 1;
+      if (nextBtn) nextBtn.disabled = idx <= 0;
+      state.flowMonths = months;
     }
 
     function T(t, c) { return { t: t, c: c || "" }; }
@@ -895,12 +991,16 @@
              T(flowMoney(f.value_usdt), "num"), T(escapeHtml(f.channel || "—"), "muted")]);
       });
       var nd = ev.net_deposit || {};
+      var mIn = (ev.flows || []).filter(function (f) { return f.direction === "入金"; })
+        .reduce(function (a, f) { return a + (f.value_usdt || 0); }, 0);
+      var mOut = (ev.flows || []).filter(function (f) { return f.direction === "出金"; })
+        .reduce(function (a, f) { return a + (f.value_usdt || 0); }, 0);
       footCells = narrow
-        ? [{ t: "净入金（基准 " + num(nd.baseline_usdt, 0) + "）", c: "", s: 3 },
-           { t: flowMoney(nd.computed_usdt), c: "num total-gold", s: 1 }]
-        : [{ t: "基准 " + num(nd.baseline_usdt, 0) + " USDT（" + escapeHtml(nd.baseline_date || "") + "）", c: "", s: 3 },
-           { t: "之后入 " + flowMoney(nd.deposit_after) + " / 出 " + flowMoney(nd.withdraw_after), c: "num muted", s: 1 },
-           { t: "净入金 " + flowMoney(nd.computed_usdt), c: "num total-gold", s: 2 }];
+        ? [{ t: "当月入 " + flowMoney(mIn) + " / 出 " + flowMoney(mOut), c: "", s: 2 },
+           { t: "净入金 " + flowMoney(nd.computed_usdt), c: "num total-gold", s: 2 }]
+        : [{ t: "当月累计入金 " + flowMoney(mIn) + " · 出金 " + flowMoney(mOut), c: "", s: 3 },
+           { t: "净入金 " + flowMoney(nd.computed_usdt), c: "num total-gold", s: 2 },
+           { t: "基准 " + num(nd.baseline_usdt, 0), c: "num muted", s: 1 }];
       empty.hidden = !!(ev.flows || []).length;
       if (!(ev.flows || []).length) empty.textContent = "近 90 天没有链上充提记录。";
     } else {
@@ -1604,6 +1704,7 @@
     bindTheme();
     bindCurrency();
     bindTabs();
+    bindPanel();
     bindRefreshPrice();
     bindSort();
     bindPinLock();

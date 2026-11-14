@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-version="1.7.0">
+<html lang="zh-CN" data-page-version="1.8.0">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -38,10 +38,10 @@
     window.__applyTheme = apply;
   })();
   </script>
-  <link rel="stylesheet" href="css/style.css?v=1.7.0">
+  <link rel="stylesheet" href="css/style.css?v=1.8.0">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231f2329'/%3E%3Cpath d='M5 17 L10 11 L13 14 L18 7' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <script src="https://fastly.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" defer></script>
-  <script src="js/app.js?v=1.7.0" defer></script>
+  <script src="js/app.js?v=1.8.0" defer></script>
 </head>
 <body class="locked">
   <div class="pin-lock" id="pin-lock" hidden>
@@ -99,146 +99,180 @@
     </div>
 
   <main class="container">
-    <section class="kpi-grid" id="kpi-grid" aria-label="总览"></section>
-
-    <section class="alert-card" id="pending-alert" hidden>
-      <div class="alert-text" id="pending-text"></div>
-      <a class="alert-action" href="admin.html">去填写份额 →</a>
-    </section>
-
-    <section class="card split-card">
-      <div class="card-head">
-        <h2>资产占比</h2>
-        <p class="card-desc">传统股票 &amp; 基金 / 加密货币 / 现金（稳定币）</p>
-      </div>
-      <div class="split-body">
-        <div class="donut-box">
-          <div id="donut-chart" class="chart"></div>
-        </div>
-        <div class="split-legend" id="split-legend"></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card-head">
-        <h2>持仓明细</h2>
-        <div class="sort-box" id="sort-box" aria-label="持仓排序">
-          <span class="sort-label">排序</span>
-          <button class="sort-btn active" data-sort="value_cny" type="button" id="sort-value">市值</button>
-          <button class="sort-btn" data-sort="pnl_cny" type="button">净收益</button>
-          <button class="sort-dir" id="sort-dir" data-dir="desc" type="button">降序 ↓</button>
-        </div>
-        <div class="seg" id="group-tabs" role="tablist">
-          <button class="seg-btn active" data-group="all" type="button">全部</button>
-          <button class="seg-btn" data-group="traditional" type="button">传统股票&amp;基金</button>
-          <button class="seg-btn" data-group="crypto" type="button">加密货币</button>
-          <button class="seg-btn" data-group="cash" type="button">现金</button>
-        </div>
-      </div>
-      <div class="table-scroll">
-        <table class="main-table" id="main-table">
-          <thead>
-            <tr>
-              <th class="col-name">标的</th>
-              <th>类别</th>
-              <th class="num">份额</th>
-              <th class="num">成本价</th>
-              <th class="num">现价</th>
-              <th class="num" id="th-value">市值 (CNY)</th>
-              <th class="num">净收益</th>
-              <th class="num">占比</th>
-            </tr>
-          </thead>
-          <tbody id="table-body"></tbody>
-          <tfoot id="table-foot"></tfoot>
-        </table>
-      </div>
-      <p class="empty-tip" id="empty-tip" hidden>当前分组暂无数据。</p>
-      <p class="table-hint"><span id="group-hint"></span>「净收益」= 市值 − 成本（相对成本价的累计盈亏），下方百分比为收益率 = 净收益 ÷ 成本；现金与未填成本价的标的不计。</p>
-    </section>
-
-    <section class="card flow-card">
-      <div class="card-head">
-        <h2>资金流水</h2>
-        <p class="card-desc" id="flow-desc">Bitget 直读 · 交易 / 理财 / 出入金 / 内部划转</p>
-        <div class="seg" id="flow-tabs" role="tablist">
-          <button class="seg-btn active" data-flow="trades" type="button">交易记录</button>
-          <button class="seg-btn" data-flow="earn" type="button">理财记录</button>
-          <button class="seg-btn" data-flow="flows" type="button">出入金</button>
-          <button class="seg-btn" data-flow="transfers" type="button">内部划转</button>
-        </div>
-      </div>
-      <div class="table-scroll">
-        <table class="main-table flow-table" id="flow-table">
-          <thead id="flow-head"></thead>
-          <tbody id="flow-body"></tbody>
-          <tfoot id="flow-foot"></tfoot>
-        </table>
-      </div>
-      <p class="empty-tip" id="flow-empty" hidden>暂无记录。</p>
-      <p class="table-hint" id="flow-hint">净入金 = 链上充值 − 链上提现；划入美股账户、账户间划转属于内部划转，不计入净入金。理财收益按日汇总。</p>
-    </section>
-
-    <section class="card realized-card">
-      <div class="card-head">
-        <h2>已实现盈亏</h2>
-        <p class="card-desc">独立口径 · 只统计已卖出部分，不与总盈亏相加</p>
-      </div>
-      <div class="realized-kpis" id="realized-kpis"></div>
-      <div class="table-scroll">
-        <table class="main-table realized-table" id="realized-table">
-          <thead>
-            <tr>
-              <th class="col-name">标的</th>
-              <th>类别</th>
-              <th class="num">已实现盈亏</th>
-              <th class="num">笔数</th>
-            </tr>
-          </thead>
-          <tbody id="realized-body"></tbody>
-        </table>
-      </div>
-      <p class="table-hint" id="realized-hint">加密已实现盈亏自 2026-11-13 成本校准起累计；卖出所得按摊薄成本冲减剩余成本，因此该数字不与上方「净收益」相加。</p>
-    </section>
-
-    <section class="card">
-      <div class="card-head">
-        <h2>盈亏日历</h2>
-        <div class="seg" id="cal-tabs" role="tablist">
-          <button class="seg-btn active" data-period="day" type="button">日</button>
-          <button class="seg-btn" data-period="week" type="button">周</button>
-          <button class="seg-btn" data-period="month" type="button">月</button>
-          <button class="seg-btn" data-period="year" type="button">年</button>
-        </div>
-      </div>
-      <div id="pnl-calendar" class="pnl-calendar"></div>
-      <p class="cal-hint">绿色为盈利、红色为亏损；日视图每格为当日浮动收益，周/月/年为该周期累计，点击有数据的格子可查看明细。</p>
-    </section>
-
-    <section class="card">
-      <div class="card-head">
-        <h2>盈亏分析</h2>
-        <p class="card-desc" id="pa-desc">当日浮动收益 = 上一快照份额 ×（现价 − 上一快照价）× 汇率；净盈亏 = 现价市值 − 成本</p>
-      </div>
-      <div id="pnl-analysis" class="pnl-analysis"></div>
-    </section>
+        <section class="kpi-grid" id="kpi-grid" aria-label="总览"></section>
 
 
-    <section class="card">
-      <div class="card-head">
-        <h2>总资产趋势</h2>
-        <p class="card-desc" id="trend-desc">每日快照 · 传统与加密分列</p>
-      </div>
-      <div id="trend-chart" class="chart chart-tall"></div>
-      <p class="chart-tip" id="trend-tip"></p>
-    </section>
+        <section class="alert-card" id="pending-alert" hidden>
+          <div class="alert-text" id="pending-text"></div>
+          <a class="alert-action" href="admin.html">去填写份额 →</a>
+        </section>
 
-    <section class="card source-card">
-      <div class="card-head"><h2>数据来源</h2></div>
-      <ul class="source-list" id="source-list"></ul>
-      <p class="foot-note">免费行情源仅供个人研究使用，不构成投资建议；数据准确性以各官方披露为准。</p>
-    </section>
+
+    <div class="home-grid">
+
+          <section class="card split-card">
+            <div class="card-head">
+              <h2>资产占比</h2>
+              <p class="card-desc">传统股票 &amp; 基金 / 加密货币 / 现金（稳定币）</p>
+            </div>
+            <div class="split-body">
+              <div class="donut-box">
+                <div id="donut-chart" class="chart"></div>
+              </div>
+              <div class="split-legend" id="split-legend"></div>
+            </div>
+          </section>
+
+
+          <section class="card">
+            <div class="card-head">
+              <h2>盈亏日历</h2>
+              <div class="seg" id="cal-tabs" role="tablist">
+                <button class="seg-btn active" data-period="day" type="button">日</button>
+                <button class="seg-btn" data-period="week" type="button">周</button>
+                <button class="seg-btn" data-period="month" type="button">月</button>
+                <button class="seg-btn" data-period="year" type="button">年</button>
+              </div>
+            </div>
+            <div id="pnl-calendar" class="pnl-calendar"></div>
+            <p class="cal-hint">绿色为盈利、红色为亏损；日视图每格为当日浮动收益，周/月/年为该周期累计，点击有数据的格子可查看明细。</p>
+          </section>
+
+
+    </div>
+
+        <section class="card" id="holdings-card">
+          <div class="card-head">
+            <h2>持仓明细</h2>
+            <div class="sort-box" id="sort-box" aria-label="持仓排序">
+              <span class="sort-label">排序</span>
+              <button class="sort-btn active" data-sort="value_cny" type="button" id="sort-value">市值</button>
+              <button class="sort-btn" data-sort="pnl_cny" type="button">净收益</button>
+              <button class="sort-dir" id="sort-dir" data-dir="desc" type="button">降序 ↓</button>
+            </div>
+            <div class="seg" id="group-tabs" role="tablist">
+              <button class="seg-btn active" data-group="all" type="button">全部</button>
+              <button class="seg-btn" data-group="traditional" type="button">传统股票&amp;基金</button>
+              <button class="seg-btn" data-group="crypto" type="button">加密货币</button>
+              <button class="seg-btn" data-group="cash" type="button">现金</button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="main-table" id="main-table">
+              <thead>
+                <tr>
+                  <th class="col-name">标的</th>
+                  <th>类别</th>
+                  <th class="num">份额</th>
+                  <th class="num">成本价</th>
+                  <th class="num">现价</th>
+                  <th class="num" id="th-value">市值 (CNY)</th>
+                  <th class="num">净收益</th>
+                  <th class="num">占比</th>
+                </tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+              <tfoot id="table-foot"></tfoot>
+            </table>
+          </div>
+          <p class="empty-tip" id="empty-tip" hidden>当前分组暂无数据。</p>
+          <p class="table-hint"><span id="group-hint"></span>「净收益」= 市值 − 成本（相对成本价的累计盈亏），下方百分比为收益率 = 净收益 ÷ 成本；现金与未填成本价的标的不计。</p>
+        </section>
+
+
+        <section class="card source-card" id="source-card">
+          <div class="card-head"><h2>数据来源</h2></div>
+          <ul class="source-list" id="source-list"></ul>
+          <p class="foot-note">免费行情源仅供个人研究使用，不构成投资建议；数据准确性以各官方披露为准。</p>
+        </section>
   </main>
+
+  <nav class="rail" id="rail" aria-label="功能面板">
+    <button type="button" data-panel="flow">资金流水</button>
+    <button type="button" data-panel="realized">已实现盈亏</button>
+    <button type="button" data-panel="pnl">盈亏分析</button>
+    <button type="button" data-panel="trend">总资产趋势</button>
+  </nav>
+
+  <div class="panel-mask" id="panel-mask" hidden></div>
+  <aside class="panel" id="panel" hidden aria-hidden="true">
+    <div class="panel-bar">
+      <h2 id="panel-title">资金流水</h2>
+      <button type="button" class="panel-close" id="panel-close" aria-label="关闭">✕</button>
+    </div>
+    <div class="panel-body" id="panel-body">
+          <section class="card flow-card" data-panel="flow">
+            <div class="card-head">
+              <h2>资金流水</h2>
+              <p class="card-desc" id="flow-desc">Bitget 直读 · 交易 / 理财 / 出入金 / 内部划转</p>
+              <div class="seg" id="flow-tabs" role="tablist">
+                <button class="seg-btn active" data-flow="trades" type="button">交易记录</button>
+                <button class="seg-btn" data-flow="earn" type="button">理财记录</button>
+                <button class="seg-btn" data-flow="flows" type="button">出入金</button>
+                <button class="seg-btn" data-flow="transfers" type="button">内部划转</button>
+              </div>
+              <div class="month-nav" id="flow-month-nav">
+                <button type="button" data-mstep="-1" aria-label="上个月">‹</button>
+                <span id="flow-month">—</span>
+                <button type="button" data-mstep="1" aria-label="下个月">›</button>
+              </div>
+            </div>
+            <div class="table-scroll">
+              <table class="main-table flow-table" id="flow-table">
+                <thead id="flow-head"></thead>
+                <tbody id="flow-body"></tbody>
+                <tfoot id="flow-foot"></tfoot>
+              </table>
+            </div>
+            <p class="empty-tip" id="flow-empty" hidden>暂无记录。</p>
+            <p class="table-hint" id="flow-hint">净入金 = 链上充值 − 链上提现；划入美股账户、账户间划转属于内部划转，不计入净入金。理财收益按日汇总；流水卡按自然月切换，底栏「净入金」为 2026-11-13 基准 15065 USDT 加之后链上充提后的累计值，「当月累计入金/出金」只统计当前所选月份。</p>
+          </section>
+
+
+          <section class="card realized-card" data-panel="realized">
+            <div class="card-head">
+              <h2>已实现盈亏</h2>
+              <p class="card-desc">独立口径 · 只统计已卖出部分，不与总盈亏相加</p>
+            </div>
+            <div class="realized-kpis" id="realized-kpis"></div>
+            <div class="table-scroll">
+              <table class="main-table realized-table" id="realized-table">
+                <thead>
+                  <tr>
+                    <th class="col-name">标的</th>
+                    <th>类别</th>
+                    <th class="num">已实现盈亏</th>
+                    <th class="num">笔数</th>
+                  </tr>
+                </thead>
+                <tbody id="realized-body"></tbody>
+              </table>
+            </div>
+            <p class="table-hint" id="realized-hint">加密已实现盈亏自 2026-11-13 成本校准起累计；卖出所得按摊薄成本冲减剩余成本，因此该数字不与上方「净收益」相加。</p>
+          </section>
+
+
+          <section class="card" data-panel="pnl">
+            <div class="card-head">
+              <h2>盈亏分析</h2>
+              <p class="card-desc" id="pa-desc">当日浮动收益 = 上一快照份额 ×（现价 − 上一快照价）× 汇率；净盈亏 = 现价市值 − 成本</p>
+            </div>
+            <div id="pnl-analysis" class="pnl-analysis"></div>
+          </section>
+
+
+
+          <section class="card" data-panel="trend">
+            <div class="card-head">
+              <h2>总资产趋势</h2>
+              <p class="card-desc" id="trend-desc">每日快照 · 传统与加密分列</p>
+            </div>
+            <div id="trend-chart" class="chart chart-tall"></div>
+            <p class="chart-tip" id="trend-tip"></p>
+          </section>
+
+    </div>
+  </aside>
 
   <footer class="footer">
     <p>全维度资产统计 · 静态仪表台 · <span id="footer-version">v—</span></p>
