@@ -679,7 +679,7 @@ html[data-theme="dark"] .pin-pad .pin-fn { color: #6b7688; background: transpare
 
 .realized-kpis {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   margin: 14px 0 6px;
 }
@@ -694,8 +694,10 @@ html[data-theme="dark"] .pin-pad .pin-fn { color: #6b7688; background: transpare
 .realized-table td, .realized-table th { white-space: nowrap; }
 
 @media (max-width: 560px) {
-  .realized-kpis { grid-template-columns: 1fr 1fr; }
-  .rk-value { font-size: 16px; }
+  .realized-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .rk-item { padding: 7px 6px; }
+  .rk-label { font-size: 10px; line-height: 1.25; }
+  .rk-value { font-size: 13px; }
 }
 
 @media (max-width: 560px) {
@@ -976,3 +978,22 @@ body.view-mode .topbar-meta { display: none !important; }
   border-left: 3px solid var(--accent, #4c8dff);
 }
 .ra-title:first-of-type { margin-top: 14px; }
+
+/* 标题旁的货币切换 chip：总览与板块视图都常驻 */
+.cur-chip {
+  margin-left: 8px;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 24px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--card, #fff);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+body.view-mode .cur-chip { display: inline-flex !important; }

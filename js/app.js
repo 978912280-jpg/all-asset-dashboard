@@ -104,6 +104,11 @@
     return curCode() === "USD" ? Number(v) / fxRate() : Number(v);
   }
   function curSym() { return curCode() === "USD" ? "$" : "¥"; }
+  // 美元计价的价格按当前币种展示（USD 原值，CNY 乘汇率）
+  function usdToCur(v) {
+    var n = Number(v || 0);
+    return curCode() === "USD" ? n : n * fxRate();
+  }
   function money(cny, digits) {
     var v = convCny(cny);
     if (v === null) return "—";
@@ -254,6 +259,7 @@
   function syncCurrencyButton() {
     if ($("cur-label")) $("cur-label").textContent = curCode() === "USD" ? "美元" : "人民币";
     if ($("cur-ico")) $("cur-ico").textContent = curSym();
+    if ($("cur-ico-head")) $("cur-ico-head").textContent = curSym();
     if ($("th-value")) $("th-value").textContent = "市值 (" + curCode() + ")";
     if ($("sort-value")) $("sort-value").textContent = curCode() === "USD" ? "市值 ($)" : "市值";
   }
@@ -264,12 +270,15 @@
       if (saved === "USD" || saved === "CNY") state.currency = saved;
     } catch (e) { /* 忽略隐私模式 */ }
     syncCurrencyButton();
-    if (!$("btn-currency")) return;
-    $("btn-currency").addEventListener("click", function () {
+    function flip() {
       state.currency = curCode() === "USD" ? "CNY" : "USD";
       try { localStorage.setItem(CUR_KEY, state.currency); } catch (e) { /* 忽略 */ }
       syncCurrencyButton();
       if (state.data) renderAll();
+    }
+    ["btn-currency", "btn-currency-head"].forEach(function (id) {
+      var b = $(id);
+      if (b) b.addEventListener("click", flip);
     });
   }
 
@@ -1121,12 +1130,11 @@
             return "<tr><td class=\"col-name\">" + escapeHtml(r.date || "—") + "</td>" +
               "<td>" + escapeHtml(r.coin || "") + "</td>" +
               '<td class="num">' + num(r.shares, 6) + "</td>" +
-              '<td class="num">$' + num(r.price, 2) + "</td>" +
-              '<td class="num">$' + num(r.cost_price, 2) + "</td>" +
-              '<td class="num ' + cls(r.pnl_usdt) + '">' + (r.pnl_usdt < 0 ? "−" : "+") + "$" + num(Math.abs(Number(r.pnl_usdt) || 0), 2) + "</td>" +
+              '<td class="num">' + curSym() + num(usdToCur(r.price), 2) + "</td>" +
+              '<td class="num">' + curSym() + num(usdToCur(r.cost_price), 2) + "</td>" +
               '<td class="num ' + cls(r.pnl_cny) + '">' + signedMoney(r.pnl_cny, 2) + "</td></tr>";
           }).join("")
-        : '<tr><td colspan="7" class="pa-empty">校准日以来还没有卖出记录</td></tr>';
+        : '<tr><td colspan="6" class="pa-empty">校准日以来还没有卖出记录</td></tr>';
     }
 
     var tb = $("ra-trad-body");
@@ -1136,12 +1144,11 @@
             return "<tr><td class=\"col-name\">" + escapeHtml(r.date || "—") + "</td>" +
               "<td>" + escapeHtml(r.id || "") + "</td>" +
               '<td class="num">' + num(r.shares, 6) + "</td>" +
-              '<td class="num">$' + num(r.price, 2) + "</td>" +
-              '<td class="num">$' + num(r.cost_price, 2) + "</td>" +
-              '<td class="num ' + cls(r.pnl_usd) + '">' + (r.pnl_usd < 0 ? "−" : "+") + "$" + num(Math.abs(Number(r.pnl_usd) || 0), 2) + "</td>" +
+              '<td class="num">' + curSym() + num(usdToCur(r.price), 2) + "</td>" +
+              '<td class="num">' + curSym() + num(usdToCur(r.cost_price), 2) + "</td>" +
               '<td class="num ' + cls(r.pnl_cny) + '">' + signedMoney(r.pnl_cny, 2) + "</td></tr>";
           }).join("")
-        : '<tr><td colspan="7" class="pa-empty">还没有记录：卖出后更新份额与美股现金余额即可自动累计</td></tr>';
+        : '<tr><td colspan="6" class="pa-empty">还没有记录：卖出后更新份额与美股现金余额即可自动累计</td></tr>';
     }
   }
 
