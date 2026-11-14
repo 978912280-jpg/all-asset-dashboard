@@ -362,6 +362,10 @@ code {
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body, a, button, .seg-btn, .cal-cell, .pnl-block, .kpi, .tag, input, select { touch-action: manipulation; }
 
+/* 合计行：总额与占比用金色；净收益仍按红跌绿涨 */
+.main-table tfoot td.total-gold { color: #b8860b; }
+.main-table tfoot td.total-gold.pos { color: var(--up); }
+.main-table tfoot td.total-gold.neg { color: var(--down); }
 .main-table tfoot td {
   font-weight: 700;
   background: #f8fafc;
@@ -568,6 +572,9 @@ html[data-theme="dark"] .main-table tbody tr:hover { background: #0d1420; }
 html[data-theme="dark"] .main-table tfoot td {
   background: #0d1420; border-top-color: var(--line); color: var(--text);
 }
+html[data-theme="dark"] .main-table tfoot td.total-gold { color: #f5b301; }
+html[data-theme="dark"] .main-table tfoot td.total-gold.pos { color: var(--up); }
+html[data-theme="dark"] .main-table tfoot td.total-gold.neg { color: var(--down); }
 html[data-theme="dark"] .tag.pending {
   color: #f6c453; border-color: rgba(246, 196, 83, .4); background: rgba(246, 196, 83, .12);
 }

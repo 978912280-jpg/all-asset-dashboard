@@ -624,9 +624,9 @@
     var sumWTxt = Math.abs(sumW - 100) < 0.05 ? "100.00%" : num(sumW, 2) + "%";
     $("table-foot").innerHTML = "<tr>" +
       '<td class="name-cell">合计</td><td></td><td></td><td></td><td></td>' +
-      '<td class="num">' + money(sumVal) + "</td>" +
-      '<td class="num ' + cls(sumPnl) + '"><span class="amt">' + signedMoney(sumPnl) + "</span></td>" +
-      '<td class="num">' + sumWTxt + "</td></tr>";
+      '<td class="num total-gold">' + money(sumVal) + "</td>" +
+      '<td class="num total-gold ' + cls(sumPnl) + '"><span class="amt">' + signedMoney(sumPnl) + "</span></td>" +
+      '<td class="num total-gold">' + sumWTxt + "</td></tr>";
   }
 
   function bindSort() {
