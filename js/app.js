@@ -1103,8 +1103,14 @@
     var tradRealized = Number(s.traditional_realized_cny || 0);
     var tradEntries = (((state.data || {}).pnl_breakdown || {}).groups || [])
       .filter(function (g) { return g.key === "traditional"; })[0] || {};
+    var STABLE_IDS = ["USDT", "USDC", "DAI", "FDUSD", "TUSD", "USDG", "USDGO", "USDP", "PYUSD"];
     var sells = ((state.data && state.data.events && state.data.events.trades) || [])
-      .filter(function (t) { return t.side === "卖出"; });
+      .filter(function (t) {
+        if (t.side !== "卖出") return false;
+        var c = String(t.coin || "").toUpperCase() ||
+          String(t.symbol || "").toUpperCase().replace(/USDT$/i, "");
+        return STABLE_IDS.indexOf(c) < 0;
+      });
     var kpis = [
       { label: "累计已实现", value: signedMoney(cryptoRealized), cls: cls(cryptoRealized) },
       { label: "卖出笔数（近 90 天）", value: sells.length + " 笔", cls: "muted" },
