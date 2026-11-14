@@ -15,8 +15,8 @@ body, a, button, input, select, textarea, .seg-btn, .cal-cell, .kpi, .alert-acti
   --accent: #14532d;
   --accent-soft: #ecfdf5;
   --gold: #b58900;
-  --up: #c62828;
-  --down: #2e7d32;
+  --up: #16a34a;   /* 绿涨 / 盈利 */
+  --down: #dc2626; /* 红跌 / 亏损 */
   --crypto: #b45309;
   --trad: #1d4ed8;
   --radius: 14px;
@@ -543,8 +543,8 @@ html[data-theme="dark"] {
   --accent: #f5b301;
   --accent-soft: rgba(245, 179, 1, .12);
   --gold: #f5b301;
-  --up: #f87171;
-  --down: #34d399;
+  --up: #34d399;   /* 暗色：绿涨 */
+  --down: #f87171; /* 暗色：红跌 */
   --trad: #60a5fa;
   --crypto: #fbbf24;
   --shadow: 0 1px 2px rgba(0, 0, 0, .45), 0 10px 26px rgba(0, 0, 0, .4);
