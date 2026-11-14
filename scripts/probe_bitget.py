@@ -45,7 +45,7 @@ def main():
     # 全量内部划转（不限币种），打印每条的类型与方向
     try:
         rows = L._get("/api/v2/spot/account/transferRecords",
-                      {"startTime": str(start), "endTime": str(now), "limit": "100"},
+                      {"startTime": str(start), "endTime": str(now), "limit": "20"},
                       key, secret, passphrase)
         print("[OK ] 内部划转全量 -> %d 条" % len(rows))
         types = {}
@@ -53,18 +53,18 @@ def main():
             k = "%s->%s" % (r.get("fromType"), r.get("toType"))
             types[k] = types.get(k, 0) + 1
         print("      方向分布：%s" % types)
-        for r in rows[:8]:
+        for r in rows[:20]:
             import datetime as dt
             t = dt.datetime.fromtimestamp(int(r.get("ts") or 0) / 1000, dt.timezone(dt.timedelta(hours=8)))
-            print("      %s %s %s %s->%s %s" % (t.strftime("%Y-%m-%d %H:%M"), r.get("coin"), r.get("size"),
-                                               r.get("fromType"), r.get("toType"), r.get("status")))
+            print("      %s %-5s %-16s %-10s->%-10s %s" % (t.strftime("%Y-%m-%d %H:%M"), r.get("coin"),
+                  r.get("size"), r.get("fromType"), r.get("toType"), r.get("status")))
     except Exception as e:
         print("[ERR] 内部划转全量 -> %s" % str(e)[:160])
 
     # 账户流水：统计业务类型分布，确认划转是否体现在流水里
     try:
         rows = L._get("/api/v2/spot/account/bills",
-                      {"startTime": str(start), "endTime": str(now), "limit": "100"},
+                      {"startTime": str(start), "endTime": str(now), "limit": "20"},
                       key, secret, passphrase)
         print("[OK ] 账户流水全量 -> %d 条" % len(rows))
         types = {}
