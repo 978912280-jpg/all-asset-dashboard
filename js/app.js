@@ -341,7 +341,7 @@
     }
     if (s.cost_pending_count) {
       msgs.push("<strong>" + s.cost_pending_count + " 个标的成本价未填写：</strong>" +
-        escapeHtml((s.cost_pending_ids || []).join("、")) + "。填成本价后才会计算浮动盈亏与收益率。");
+        escapeHtml((s.cost_pending_ids || []).join("、")) + "。填成本价后才会计算未实现盈亏与收益率。");
     }
     var m = state.data.meta || {};
     if (m.shares_age_days && m.shares_age_days >= 7) {
@@ -811,7 +811,7 @@
       setTimeout(function () {
         if (key === "trend" && state.trend) { state.trend.resize(); }
         if (key === "flow") renderFlow();
-        if (key === "realized") renderRealized();
+        if (key === "pnl") renderRealized();
       }, 50);
     }
     var toggle = $("menu-toggle"), mask = $("drawer-mask");
@@ -1155,7 +1155,7 @@
       $("pa-desc").hidden = false;
       $("pa-desc").textContent = "上一快照：" + (pb.prev_date || "—") +
         " · 汇率 " + num(pb.fx_usdcny, 4) +
-        " · 当日浮动收益 = 上一快照份额 ×（现价 − 上一快照价）× 汇率；净盈亏 = 现价市值 − 成本";
+        " · 当日浮动收益 = 上一快照份额 ×（现价 − 上一快照价）× 汇率；未实现盈亏 = 现价市值 − 成本";
     }
     var html = pb.groups.filter(function (g) { return g.key !== "cash"; }).map(function (g) {
       var rows = (g.items || []).map(function (i) {
@@ -1186,7 +1186,7 @@
       }).join("");
       return '<div class="pa-group">' +
         '<div class="pa-head"><span class="pa-name">' + escapeHtml(g.name) + "</span>" +
-        '<span class="pa-metric">净盈亏 ' +
+        '<span class="pa-metric">未实现盈亏 ' +
         (g.pnl_cny === null || g.pnl_cny === undefined ? "—" :
           '<b class="' + cls(g.pnl_cny) + '">' + signedMoney(g.pnl_cny, 2) + "</b>" +
           (g.pnl_pct === null || g.pnl_pct === undefined ? "" : "（" + pct(g.pnl_pct) + "）")) +
@@ -1201,11 +1201,17 @@
         '<span class="pa-metric pa-dim">成本 ' + money(g.cost_cny || 0, 2) + "</span></div>" +
         '<table class="pa-table"><thead><tr>' +
         "<th>标的</th><th>份额</th><th>成本价</th><th>现价</th><th>上一快照价</th><th>价差</th>" +
-        "<th>市值</th><th>成本</th><th>当日浮动收益</th><th>净盈亏</th></tr></thead><tbody>" +
+        "<th>市值</th><th>成本</th><th>当日浮动收益</th><th>未实现盈亏</th></tr></thead><tbody>" +
         (rows || '<tr><td colspan="10" class="pa-empty">无持仓</td></tr>') +
         "</tbody></table></div>";
-    }).join("") + '<div class="pa-total">合计：净盈亏 <b class="' + cls(totalPnlOf(pb)) + '">' +
-      signedMoney(totalPnlOf(pb), 2) +
+    }).join("");
+    var sumPnl = totalPnlOf(pb);
+    var s2 = (state.data && state.data.summary) || {};
+    var realC = Number(s2.crypto_realized_cny || 0) + Number(s2.traditional_realized_cny || 0);
+    var grand = sumPnl + realC;
+    html += '<div class="pa-total">未实现盈亏 <b class="' + cls(sumPnl) + '">' + signedMoney(sumPnl, 2) +
+      "</b> ＋ 已实现盈亏 <b class=\"" + cls(realC) + "\">" + signedMoney(realC, 2) +
+      "</b> ＝ 总盈亏 <b class=\"" + cls(grand) + "\">" + signedMoney(grand, 2) +
       "</b> · 当日浮动收益 <b class=\"" + cls(totalDayOf(pb)) + "\">" +
       signedMoney(totalDayOf(pb), 2) + "</b></div>";
     box.innerHTML = html;
