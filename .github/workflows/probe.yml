@@ -21,4 +21,4 @@ jobs:
           BITGET_KEY: ${{ secrets.BITGET_KEY }}
           BITGET_SECRET: ${{ secrets.BITGET_SECRET }}
           BITGET_PASSPHRASE: ${{ secrets.BITGET_PASSPHRASE }}
-        run: python3 scripts/probe_bitget3.py
+        run: python3 scripts/probe_bitget4.py
