@@ -116,13 +116,17 @@
     <section class="card">
       <div class="card-head">
         <h2>现金账户（手工维护）</h2>
-        <p class="card-desc">支付宝等账户里的实际余额，按人民币录入，计入首页「现金」卡片</p>
+        <p class="card-desc">支付宝按人民币录入、美股账户按美元录入，均计入首页「现金」卡片。美股现金用于反推卖出成交：份额减少 + 现金增加 = 一笔卖出，系统自动累计传统已实现盈亏；只填份额和现金两项，成本价卖出后不用改。</p>
       </div>
       <div class="cash-form" id="cash-form">
         <label>支付宝现金（CNY）
           <input id="alipay-amount" type="number" step="0.01" min="0" placeholder="0.00" aria-label="支付宝现金金额">
         </label>
         <span class="cash-note" id="alipay-pill">—</span>
+        <label>美股账户现金（USD）
+          <input id="us-stock-amount" type="number" step="0.01" min="0" placeholder="0.00" aria-label="美股账户现金金额">
+        </label>
+        <span class="cash-note" id="us-stock-pill">—</span>
       </div>
     </section>
 

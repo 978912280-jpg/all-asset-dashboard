@@ -1100,12 +1100,15 @@
   function renderRealized() {
     var s = (state.data && state.data.summary) || {};
     var cryptoRealized = Number(s.crypto_realized_cny || 0);
+    var tradRealized = Number(s.traditional_realized_cny || 0);
+    var tradEntries = (((state.data || {}).pnl_breakdown || {}).groups || [])
+      .filter(function (g) { return g.key === "traditional"; })[0] || {};
     var sells = ((state.data && state.data.events && state.data.events.trades) || [])
       .filter(function (t) { return t.side === "卖出"; });
     var kpis = [
       { label: "累计已实现", value: signedMoney(cryptoRealized), cls: cls(cryptoRealized) },
       { label: "卖出笔数（近 90 天）", value: sells.length + " 笔", cls: "muted" },
-      { label: "传统股票 &amp; 基金", value: "待接入", cls: "muted" },
+      { label: "传统已实现（累计）", value: signedMoney(tradRealized), cls: cls(tradRealized) },
     ];
     $("realized-kpis").innerHTML = kpis.map(function (k) {
       return '<div class="rk-item"><p class="rk-label">' + k.label + '</p><p class="rk-value ' +
@@ -1114,8 +1117,9 @@
     $("realized-body").innerHTML =
       '<tr><td class="col-name">加密货币</td><td>Bitget 卖出</td><td class="num ' + cls(cryptoRealized) + '">' +
       signedMoney(cryptoRealized) + '</td><td class="num muted">' + sells.length + "</td></tr>" +
-      '<tr><td class="col-name">传统股票 &amp; 基金</td><td>后台交易台账</td>' +
-      '<td class="num muted">—</td><td class="num muted">—</td></tr>';
+      '<tr><td class="col-name">传统股票 &amp; 基金</td><td>卖出净差额自动推断</td>' +
+      '<td class="num ' + cls(tradRealized) + '">' + signedMoney(tradRealized) + '</td>' +
+      '<td class="num muted">' + ((tradEntries.realized_entries || []).length || 0) + ' 笔</td></tr>';
   }
 
   // ---------- 盈亏日历 ----------

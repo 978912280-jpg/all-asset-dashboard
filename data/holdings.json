@@ -88,6 +88,13 @@
       "name": "支付宝现金",
       "currency": "CNY",
       "amount_cny": 2734
+    },
+    {
+      "id": "us_stock",
+      "name": "美股账户现金",
+      "currency": "USD",
+      "amount_usd": 0,
+      "updated_at": ""
     }
   ],
   "poolx": []

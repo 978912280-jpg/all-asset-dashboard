@@ -210,25 +210,60 @@
     }
   }
 
+  function cashBy(id) {
+    ensureCash();
+    var list = state.holdings.cash_accounts;
+    var hit = list.filter(function (c) { return c.id === id; })[0];
+    if (!hit) {
+      hit = id === "us_stock"
+        ? { id: "us_stock", name: "美股账户现金", currency: "USD", amount_usd: 0, updated_at: "" }
+        : { id: "alipay", name: "支付宝现金", currency: "CNY", amount_cny: 0 };
+      list.push(hit);
+    }
+    return hit;
+  }
+
   function renderCash() {
-    var ca = (state.holdings.cash_accounts || [])[0] || {};
-    var v = Number(ca.amount_cny) || 0;
+    var a = cashBy("alipay");
+    var av = Number(a.amount_cny) || 0;
     var inp = $("alipay-amount");
-    if (inp && document.activeElement !== inp) inp.value = v ? String(v) : "";
+    if (inp && document.activeElement !== inp) inp.value = av ? String(av) : "";
     var pill = $("alipay-pill");
-    if (pill) pill.textContent = v > 0 ? "当前 ¥" + num(v, 2) : "未填写则不计入现金";
+    if (pill) pill.textContent = av > 0 ? "当前 ¥" + num(av, 2) : "未填写则不计入现金";
+
+    var u = cashBy("us_stock");
+    var uv = Number(u.amount_usd) || 0;
+    var uinp = $("us-stock-amount");
+    if (uinp && document.activeElement !== uinp) uinp.value = uv ? String(uv) : "";
+    var upill = $("us-stock-pill");
+    if (upill) {
+      var when = u.updated_at ? String(u.updated_at).replace("T", " ").slice(0, 16) : "从未更新";
+      upill.textContent = "当前 $" + num(uv, 2) + " · 更新于 " + when;
+    }
   }
 
   function bindCash() {
     var inp = $("alipay-amount");
-    if (!inp) return;
-    inp.addEventListener("input", function () {
-      ensureCash();
-      var v = Number(inp.value);
-      state.holdings.cash_accounts[0].amount_cny = isNaN(v) ? 0 : Math.max(0, v);
-      markDirty();
-      renderCash();
-    });
+    if (inp) {
+      inp.addEventListener("input", function () {
+        var v = Number(inp.value);
+        cashBy("alipay").amount_cny = isNaN(v) ? 0 : Math.max(0, v);
+        markDirty();
+        renderCash();
+      });
+    }
+    var uinp = $("us-stock-amount");
+    if (uinp) {
+      uinp.addEventListener("input", function () {
+        var v = Number(uinp.value);
+        var u = cashBy("us_stock");
+        u.amount_usd = isNaN(v) ? 0 : Math.max(0, v);
+        var now = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 19) + "+08:00";
+        u.updated_at = now;
+        markDirty();
+        renderCash();
+      });
+    }
   }
 
   // ---------- PoolX 持仓（官方 API 读不到，手工登记） ----------

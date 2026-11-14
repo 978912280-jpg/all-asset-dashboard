@@ -524,10 +524,92 @@ def main():
             crypto_meta.get("snapshot_date"), crypto_meta.get("coin_count"),
             crypto_meta.get("total_usdt") or 0))
 
+    # ---- 传统已实现：美股账户「份额减少 + 美元现金增加」自动反推成交 ----
+    def sync_traditional_realized(holdings, rate, cash_now_usd):
+        """方案 B：按构建间隔的净差额推断卖出，累计传统已实现盈亏（CNY）。
+
+        规则：
+        - 份额减少 n 股 → 卖出：卖出所得 ≈ 美元现金净增加额，已实现 = 所得 − n×上一版成本价
+        - 份额增加 → 买入，不产生已实现
+        - 份额不变、现金增加 → 分红/划转，只在现金里体现，不计盈亏
+        """
+        path = Path(ROOT) / "data" / "traditional_realized.json"
+        prev = {}
+        if path.exists():
+            try:
+                prev = json.loads(path.read_text(encoding="utf-8"))
+            except (ValueError, OSError) as e:
+                print("      [warn] traditional_realized.json 读取失败：%s" % e)
+        prev_pos = prev.get("positions") or {}
+        prev_cash = prev.get("cash_usd")
+        realized_cny = float(prev.get("realized_cny") or 0)
+        entries = prev.get("entries") or []
+        total_usd = float(prev.get("realized_usd") or 0)
+        today = now_cst().strftime("%Y-%m-%d")
+        changed = False
+
+        positions, usd_rows = {}, []
+        for h in (holdings.get("traditional") or []):
+            hid = str(h.get("id") or "").upper()
+            if str(h.get("currency") or "").upper() != "USD":
+                continue
+            try:
+                positions[hid] = {"shares": float(h.get("shares") or 0),
+                                  "cost_price": float(h.get("cost_price") or 0)}
+            except (TypeError, ValueError):
+                continue
+            usd_rows.append(hid)
+
+        if prev_cash is None:
+            # 首次运行：只记基线，不推断
+            if positions:
+                data = {"updated_at": now_cst().strftime("%Y-%m-%dT%H:%M:%S+08:00"),
+                        "cash_usd": r2(cash_now_usd, 2), "positions": positions,
+                        "realized_cny": r2(realized_cny, 2), "realized_usd": r2(total_usd, 2),
+                        "entries": entries}
+                path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            return r2(realized_cny, 2), entries
+
+        d_cash = float(cash_now_usd) - float(prev_cash)
+        for hid in usd_rows:
+            p0 = prev_pos.get(hid)
+            if not p0:
+                continue
+            d_shares = positions[hid]["shares"] - float(p0.get("shares") or 0)
+            k_prev = float(p0.get("cost_price") or 0)
+            if d_shares < -1e-9 and d_cash > 0 and k_prev > 0:
+                n = abs(d_shares)
+                proceeds = d_cash
+                pnl_usd = proceeds - n * k_prev
+                realized_cny = r2(realized_cny + pnl_usd * rate, 2)
+                total_usd = r2(total_usd + pnl_usd, 2)
+                entries.append({"date": today, "id": hid, "shares": round(n, 8),
+                                "price_usd": r2(proceeds / n, 4) if n else 0,
+                                "cost_price_usd": r2(k_prev, 4),
+                                "realized_usd": r2(pnl_usd, 2),
+                                "realized_cny": r2(pnl_usd * rate, 2),
+                                "note": "份额减少 + 美元现金增加，按净差额推断"})
+                changed = True
+                print("      传统已实现：%s 卖出 %.6f 股 @ %.2f，已实现 %.2f USD" % (
+                    hid, n, proceeds / n if n else 0, pnl_usd))
+                d_cash = 0.0
+
+        if changed or positions != prev_pos or abs(float(prev_cash) - float(cash_now_usd)) > 1e-9:
+            data = {"updated_at": now_cst().strftime("%Y-%m-%dT%H:%M:%S+08:00"),
+                    "cash_usd": r2(cash_now_usd, 2), "positions": positions,
+                    "realized_cny": r2(realized_cny, 2), "realized_usd": r2(total_usd, 2),
+                    "entries": entries}
+            path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        return r2(realized_cny, 2), entries
+
     # 手工维护的现金账户（支付宝余额等），与稳定币一起计入「现金」组
     cash_rows = []
     for ca in (holdings.get("cash_accounts") or []):
-        amt = float(ca.get("amount_cny") or 0)
+        cur = str(ca.get("currency") or "CNY").upper()
+        if cur == "USD":
+            amt = float(ca.get("amount_usd") or 0) * rate
+        else:
+            amt = float(ca.get("amount_cny") or 0)
         if amt <= 0:
             continue
         cash_rows.append({
@@ -545,6 +627,7 @@ def main():
             "day_basis": "cash",
             "price_source": "手工录入",
             "pending": False,
+            "updated_at": ca.get("updated_at") or "",
             "note": "",
         })
 
@@ -586,6 +669,12 @@ def main():
 
     trad_cny = sum(r["value_cny"] or 0 for r in trad_rows)
     crypto_cny = sum(r["value_cny"] or 0 for r in crypto_rows if r["group"] == CRYPTO_GROUP)
+    # 美股账户美元现金（方案 B 推断卖出所需），并同步传统已实现盈亏
+    us_cash = next((ca for ca in (holdings.get("cash_accounts") or [])
+                    if str(ca.get("currency") or "CNY").upper() == "USD"), {}) or {}
+    cash_now_usd = float(us_cash.get("amount_usd") or 0)
+    trad_realized_cny, trad_realized_entries = sync_traditional_realized(holdings, rate, cash_now_usd)
+
     stable_cash_cny = sum(r["value_cny"] or 0 for r in crypto_rows if r["group"] == CASH_GROUP)
     fiat_cash_cny = sum(r["value_cny"] or 0 for r in cash_rows)
     cash_cny = stable_cash_cny + fiat_cash_cny
@@ -597,7 +686,8 @@ def main():
         sum(r["day_change_cny"] or 0 for r in crypto_rows if r["group"] == CASH_GROUP) + \
         sum(r["day_change_cny"] or 0 for r in cash_rows)
     trad_cost = sum(r["cost_cny"] or 0 for r in trad_rows)
-    trad_pnl = sum(r["pnl_cny"] or 0 for r in trad_rows)
+    trad_unrealized = sum(r["pnl_cny"] or 0 for r in trad_rows)
+    trad_pnl = r2(trad_unrealized + trad_realized_cny, 2)
     cost_pending = [r["id"] for r in trad_rows if r.get("cost_pending") and r["shares"]]
     if cost_map:
         crypto_pnl_cny = r2(sum(r["pnl_cny"] or 0 for r in crypto_rows if r["group"] == CRYPTO_GROUP), 2)
@@ -746,6 +836,9 @@ def main():
         "groups": [
             {"key": "traditional", "name": "传统股票 & 基金",
              "pnl_cny": r2(trad_pnl, 2),
+             "unrealized_cny": r2(trad_unrealized, 2),
+             "realized_cny": r2(trad_realized_cny, 2),
+             "realized_entries": trad_realized_entries,
              "pnl_pct": r2(trad_pnl / trad_cost * 100, 2) if trad_cost else None,
              "cost_cny": r2(trad_cost, 2),
              "day_cny": r2(trad_day, 2),
@@ -813,6 +906,9 @@ def main():
             "pending_ids": pending,
             "traditional_cost_cny": r2(trad_cost, 2),
             "traditional_pnl_cny": r2(trad_pnl, 2),
+            "traditional_unrealized_cny": r2(trad_unrealized, 2),
+            "traditional_realized_cny": r2(trad_realized_cny, 2),
+            "us_stock_cash_usd": r2(cash_now_usd, 2),
             "traditional_day_change_cny": r2(trad_day, 2),
             "traditional_day_change_pct": round(trad_day / (trad_cny - trad_day) * 100, 2)
             if (trad_cny - trad_day) else 0.0,
