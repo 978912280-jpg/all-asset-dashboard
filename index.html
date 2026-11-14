@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-version="1.6.0">
+<html lang="zh-CN" data-page-version="1.6.1">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -38,10 +38,10 @@
     window.__applyTheme = apply;
   })();
   </script>
-  <link rel="stylesheet" href="css/style.css?v=1.6.0">
+  <link rel="stylesheet" href="css/style.css?v=1.6.1">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231f2329'/%3E%3Cpath d='M5 17 L10 11 L13 14 L18 7' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <script src="https://fastly.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" defer></script>
-  <script src="js/app.js?v=1.6.0" defer></script>
+  <script src="js/app.js?v=1.6.1" defer></script>
 </head>
 <body class="locked">
   <div class="pin-lock" id="pin-lock" hidden>
@@ -79,6 +79,7 @@
           <a class="link-btn" href="admin.html">份额维护后台</a>
           <button class="link-btn" id="toggle-disclaimer" type="button">口径与说明</button>
           <button class="theme-btn" id="btn-theme" type="button" title="切换主题（跟随系统 / 浅色 / 深色）"><span class="t-ico">◐</span><span id="theme-label">跟随系统</span></button>
+          <button class="theme-btn" id="btn-currency" type="button" title="切换货币单位（人民币 / 美元）"><span class="t-ico" id="cur-ico">¥</span><span id="cur-label">人民币</span></button>
         </span>
       </div>
     </div>
@@ -122,7 +123,7 @@
         <h2>持仓明细</h2>
         <div class="sort-box" id="sort-box" aria-label="持仓排序">
           <span class="sort-label">排序</span>
-          <button class="sort-btn active" data-sort="value_cny" type="button">市值</button>
+          <button class="sort-btn active" data-sort="value_cny" type="button" id="sort-value">市值</button>
           <button class="sort-btn" data-sort="pnl_cny" type="button">净收益</button>
           <button class="sort-dir" id="sort-dir" data-dir="desc" type="button">降序 ↓</button>
         </div>
@@ -142,7 +143,7 @@
               <th class="num">份额</th>
               <th class="num">成本价</th>
               <th class="num">现价</th>
-              <th class="num">市值 (CNY)</th>
+              <th class="num" id="th-value">市值 (CNY)</th>
               <th class="num">净收益</th>
               <th class="num">占比</th>
             </tr>

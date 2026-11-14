@@ -10,6 +10,7 @@
     donut: null,
     trend: null,
     groupColors: { traditional: "#1d4ed8", crypto: "#b45309", cash: "#0f766e" },
+    currency: "CNY",
   };
 
   function $(id) { return document.getElementById(id); }
@@ -87,6 +88,31 @@
     if (x === null || x === undefined || isNaN(x)) return "—";
     var v = Number(x);
     return (v >= 0 ? "+" : "") + v.toFixed(digits === undefined ? 2 : digits) + "%";
+  }
+
+  // ---------- 货币单位 ----------
+  var CUR_KEY = "aad-currency";
+  function curCode() { return state.currency === "USD" ? "USD" : "CNY"; }
+  function fxRate() {
+    var m = (state.data && state.data.meta) || {};
+    var f = (m.fx || {}).usdcny;
+    return f ? Number(f) : 1;
+  }
+  // 数据里的金额都是 CNY，切到美元时按当日汇率折算
+  function convCny(v) {
+    if (v === null || v === undefined || isNaN(v)) return null;
+    return curCode() === "USD" ? Number(v) / fxRate() : Number(v);
+  }
+  function curSym() { return curCode() === "USD" ? "$" : "¥"; }
+  function money(cny, digits) {
+    var v = convCny(cny);
+    if (v === null) return "—";
+    return curSym() + num(v, digits);
+  }
+  function signedMoney(cny, digits) {
+    var v = convCny(cny);
+    if (v === null) return "—";
+    return (v >= 0 ? "+" : "−") + curSym() + num(Math.abs(v), digits);
   }
 
   // 中国市场习惯：红涨绿跌
@@ -223,10 +249,31 @@
     }
   }
 
+  function syncCurrencyButton() {
+    if ($("cur-label")) $("cur-label").textContent = curCode() === "USD" ? "美元" : "人民币";
+    if ($("cur-ico")) $("cur-ico").textContent = curSym();
+    if ($("th-value")) $("th-value").textContent = "市值 (" + curCode() + ")";
+    if ($("sort-value")) $("sort-value").textContent = curCode() === "USD" ? "市值 ($)" : "市值";
+  }
+
+  function bindCurrency() {
+    try {
+      var saved = localStorage.getItem(CUR_KEY);
+      if (saved === "USD" || saved === "CNY") state.currency = saved;
+    } catch (e) { /* 忽略隐私模式 */ }
+    syncCurrencyButton();
+    if (!$("btn-currency")) return;
+    $("btn-currency").addEventListener("click", function () {
+      state.currency = curCode() === "USD" ? "CNY" : "USD";
+      try { localStorage.setItem(CUR_KEY, state.currency); } catch (e) { /* 忽略 */ }
+      syncCurrencyButton();
+      if (state.data) renderAll();
+    });
+  }
+
   function moneyLine(prefix, val, pctVal) {
     if (val === null || val === undefined) return '<span class="muted">' + prefix + '—</span>';
-    return '<span class="' + cls(val) + '">' + prefix + (val >= 0 ? "+" : "−") +
-      "¥" + num(Math.abs(val)) + (pctVal === null || pctVal === undefined ? "" :
+    return '<span class="' + cls(val) + '">' + prefix + signedMoney(val) + (pctVal === null || pctVal === undefined ? "" :
         ' <span class="nowrap">（' + pct(pctVal) + "）</span>") + "</span>";
   }
 
@@ -241,8 +288,8 @@
     var fxRate = (((state.data || {}).meta || {}).fx || {}).usdcny || 0;
     var cards = [
       {
-        label: "总资产 (CNY)",
-        value: "¥" + num(s.total_cny),
+        label: "总资产 (" + curCode() + ")",
+        value: money(s.total_cny),
         small: false,
         delta: moneyLine(state.replay ? "当日浮动收益 " : "今日浮动收益 ", day, s.day_change_pct) +
           (totalPnl === null || totalPnl === undefined ? "" :
@@ -250,7 +297,7 @@
       },
       {
         label: '<i class="dot trad"></i>传统股票 & 基金',
-        value: "¥" + num(s.traditional_cny),
+        value: money(s.traditional_cny),
         small: true,
         delta: moneyLine("今日浮动收益 ", s.traditional_day_change_cny, s.traditional_day_change_pct) +
           "<br>" + (!hasTradCost
@@ -259,14 +306,14 @@
       },
       {
         label: '<i class="dot crypto"></i>加密货币',
-        value: "¥" + num(s.crypto_cny),
+        value: money(s.crypto_cny),
         small: true,
         delta: moneyLine(state.replay ? "当日浮动收益 " : "今日浮动收益 ", s.crypto_day_change_cny, s.crypto_day_change_pct) +
           "<br>" + moneyLine("总盈亏 ", cryptoPnl, s.crypto_pnl_pct),
       },
       {
         label: '<i class="dot cash"></i>现金',
-        value: "¥" + num(s.cash_cny || 0),
+        value: money(s.cash_cny || 0),
         small: true,
         delta: '<span class="muted">稳定币 ≈ $' + num((s.stable_cash_cny || 0) / (fxRate || 1), 2) + " USDT</span>" +
           ((s.fiat_cash_cny ? '<br><span class="muted">支付宝现金 ¥' + num(s.fiat_cash_cny, 2) + "</span>" : "")),
@@ -323,13 +370,13 @@
         var v = byClass[k];
         var p = (v / (g.cny || 1)) * 100;
         return '<div class="legend-sub"><span>' + escapeHtml(k) + "</span><span>" +
-          "¥" + num(v) + " · " + p.toFixed(1) + "%</span></div>";
+          money(v) + " · " + p.toFixed(1) + "%</span></div>";
       }).join("");
       return '<div class="legend-row">' +
         '<div class="legend-top">' +
         '<span class="name"><i class="dot" style="background:' + color + '"></i>' +
         escapeHtml(g.name) + "</span>" +
-        '<span class="legend-num">¥' + num(g.cny) + " · " + num(g.weight) + "%</span>" +
+        '<span class="legend-num">' + money(g.cny) + " · " + num(g.weight) + "%</span>" +
         "</div>" +
         '<div class="bar"><i style="width:' + Math.max(0, Math.min(100, g.weight || 0)) +
         "%;background:" + color + '"></i></div>' +
@@ -424,7 +471,7 @@
         z: 10,
         silent: true,
         style: {
-          text: "{a|总资产}\n{b|¥" + num(total) + "}",
+          text: "{a|总资产}\n{b|" + curSym() + num(convCny(total)) + "}",
           textAlign: "center",
           rich: {
             a: { fontSize: compact ? 9 : 10, fill: cssVar("--muted", "#6b7280"), lineHeight: compact ? 15 : 16 },
@@ -550,7 +597,7 @@
         var sub = (i.pnl_pct === null || i.pnl_pct === undefined)
           ? '<div class="sub muted">—</div>'
           : '<div class="sub ' + cls(i.pnl_pct) + '">' + pct(i.pnl_pct) + "</div>";
-        pnlTxt = '<span class="' + cls(pv) + '"><span class="amt">' + (pv >= 0 ? "+" : "−") + "¥" + num(Math.abs(pv)) +
+        pnlTxt = '<span class="' + cls(pv) + '"><span class="amt">' + signedMoney(pv) +
           "</span>" + sub + "</span>";
       }
       return "<tr>" +
@@ -562,7 +609,7 @@
         '<td class="num">' + sharesTxt + "</td>" +
         '<td class="num">' + costTxt + "</td>" +
         '<td class="num">' + priceTxt + "</td>" +
-        '<td class="num">' + (i.value_cny === null ? "—" : "¥" + num(i.value_cny)) + "</td>" +
+        '<td class="num">' + (i.value_cny === null ? "—" : money(i.value_cny)) + "</td>" +
         '<td class="num">' + pnlTxt + "</td>" +
         '<td class="num">' + num(scopeWeight(i)) + "%</td>" +
         "</tr>";
@@ -577,8 +624,8 @@
     var sumWTxt = Math.abs(sumW - 100) < 0.05 ? "100.00%" : num(sumW, 2) + "%";
     $("table-foot").innerHTML = "<tr>" +
       '<td class="name-cell">合计</td><td></td><td></td><td></td><td></td>' +
-      '<td class="num">¥' + num(sumVal) + "</td>" +
-      '<td class="num ' + cls(sumPnl) + '"><span class="amt">' + (sumPnl >= 0 ? "+" : "−") + "¥" + num(Math.abs(sumPnl)) + "</span></td>" +
+      '<td class="num">' + money(sumVal) + "</td>" +
+      '<td class="num ' + cls(sumPnl) + '"><span class="amt">' + signedMoney(sumPnl) + "</span></td>" +
       '<td class="num">' + sumWTxt + "</td></tr>";
   }
 
@@ -778,39 +825,38 @@
           "<td>" + prevSymTxt + "</td>" +
           "<td>" + (diff === null ? "—" :
             '<span class="' + cls(diff) + '">' + (diff >= 0 ? "+" : "−") + sym + num(Math.abs(diff), 4) + "</span>") + "</td>" +
-          "<td>" + (i.value_cny === null || i.value_cny === undefined ? "—" : "¥" + num(i.value_cny, 2)) + "</td>" +
-          "<td>" + (i.cost_cny === null || i.cost_cny === undefined ? "—" : "¥" + num(i.cost_cny, 2)) + "</td>" +
+          "<td>" + (i.value_cny === null || i.value_cny === undefined ? "—" : money(i.value_cny, 2)) + "</td>" +
+          "<td>" + (i.cost_cny === null || i.cost_cny === undefined ? "—" : money(i.cost_cny, 2)) + "</td>" +
           "<td>" + (i.day_change_cny === null || i.day_change_cny === undefined ? "—" :
-            '<span class="' + cls(i.day_change_cny) + '">' + (i.day_change_cny >= 0 ? "+" : "−") + "¥" + num(Math.abs(i.day_change_cny), 2) + "</span>") + "</td>" +
+            '<span class="' + cls(i.day_change_cny) + '">' + signedMoney(i.day_change_cny, 2) + "</span>") + "</td>" +
           "<td>" + (i.pnl_cny === null || i.pnl_cny === undefined ? "—" :
-            '<span class="' + cls(i.pnl_cny) + '">' + (i.pnl_cny >= 0 ? "+" : "−") + "¥" + num(Math.abs(i.pnl_cny), 2) + "</span>") + "</td>" +
+            '<span class="' + cls(i.pnl_cny) + '">' + signedMoney(i.pnl_cny, 2) + "</span>") + "</td>" +
           "</tr>";
       }).join("");
       return '<div class="pa-group">' +
         '<div class="pa-head"><span class="pa-name">' + escapeHtml(g.name) + "</span>" +
         '<span class="pa-metric">净盈亏 ' +
         (g.pnl_cny === null || g.pnl_cny === undefined ? "—" :
-          '<b class="' + cls(g.pnl_cny) + '">' + (g.pnl_cny >= 0 ? "+" : "−") + "¥" + num(Math.abs(g.pnl_cny), 2) + "</b>" +
+          '<b class="' + cls(g.pnl_cny) + '">' + signedMoney(g.pnl_cny, 2) + "</b>" +
           (g.pnl_pct === null || g.pnl_pct === undefined ? "" : "（" + pct(g.pnl_pct) + "）")) +
         '</span><span class="pa-metric">当日浮动收益 ' +
         (g.day_cny === null || g.day_cny === undefined ? "—" :
-          '<b class="' + cls(g.day_cny) + '">' + (g.day_cny >= 0 ? "+" : "−") + "¥" + num(Math.abs(g.day_cny), 2) + "</b>" +
+          '<b class="' + cls(g.day_cny) + '">' + signedMoney(g.day_cny, 2) + "</b>" +
           (g.day_pct === null || g.day_pct === undefined ? "" : "（" + pct(g.day_pct) + "）")) +
         '</span>' +
         (g.realized_cny
-          ? '<span class="pa-metric">已实现 ' + (g.realized_cny >= 0 ? "+" : "−") + "¥" +
-            num(Math.abs(g.realized_cny), 2) + "</span>"
+          ? '<span class="pa-metric">已实现 ' + signedMoney(g.realized_cny, 2) + "</span>"
           : "") +
-        '<span class="pa-metric pa-dim">成本 ¥' + num(g.cost_cny || 0, 2) + "</span></div>" +
+        '<span class="pa-metric pa-dim">成本 ' + money(g.cost_cny || 0, 2) + "</span></div>" +
         '<table class="pa-table"><thead><tr>' +
         "<th>标的</th><th>份额</th><th>成本价</th><th>现价</th><th>上一快照价</th><th>价差</th>" +
         "<th>市值</th><th>成本</th><th>当日浮动收益</th><th>净盈亏</th></tr></thead><tbody>" +
         (rows || '<tr><td colspan="10" class="pa-empty">无持仓</td></tr>') +
         "</tbody></table></div>";
     }).join("") + '<div class="pa-total">合计：净盈亏 <b class="' + cls(totalPnlOf(pb)) + '">' +
-      (totalPnlOf(pb) >= 0 ? "+" : "−") + "¥" + num(Math.abs(totalPnlOf(pb)), 2) +
+      signedMoney(totalPnlOf(pb), 2) +
       "</b> · 当日浮动收益 <b class=\"" + cls(totalDayOf(pb)) + "\">" +
-      (totalDayOf(pb) >= 0 ? "+" : "−") + "¥" + num(Math.abs(totalDayOf(pb)), 2) + "</b></div>";
+      signedMoney(totalDayOf(pb), 2) + "</b></div>";
     box.innerHTML = html;
   }
 
@@ -852,7 +898,7 @@
       if (ds > cutoff && v === null) cls += " future";
       if (rec) cls += " has";
       if (ds === state.calSel) cls += " sel";
-      var vStr = v !== null ? (v >= 0 ? "+" : "−") + "¥" + num(Math.abs(v), 0) : "—";
+      var vStr = v !== null ? (v >= 0 ? "+" : "−") + curSym() + num(Math.abs(convCny(v)), 0) : "—";
       var colStyle = day === 1 ? ' style="grid-column-start:' + (startDow + 1) + '"' : "";
       var dataAttr = rec ? ' data-date="' + ds + '"' : "";
       var titleAttr = rec ? ' title="点击查看 ' + ds + " 的当日快照\"" : "";
@@ -965,7 +1011,7 @@
       var key = it[0], label = it[1], rec = it[2];
       var cls = "pnl-block " + (rec === null ? "zero" : (rec.value > 0 ? "pos" : (rec.value < 0 ? "neg" : "zero")));
       if (key === state.calKey) cls += " sel";
-      var vstr = rec === null ? "—" : (rec.value >= 0 ? "+" : "−") + "¥" + num(Math.abs(rec.value), 0);
+      var vstr = rec === null ? "—" : (rec.value >= 0 ? "+" : "−") + curSym() + num(Math.abs(convCny(rec.value)), 0);
       var blocked = rec === null ? "" :
         ' data-open="' + num(rec.start_total) + '" data-end="' + num(rec.end_total) +
         '" data-pnl="' + rec.value + '"';
@@ -1007,12 +1053,11 @@
     var rows = [
       ["周期", label + " " + key],
       ["数据区间", rec.from + " ~ " + rec.to],
-      ["期初资产", "¥" + num(rec.start_total)],
-      ["期末资产", "¥" + num(rec.end_total)],
+      ["期初资产", money(rec.start_total)],
+      ["期末资产", money(rec.end_total)],
       ["有数据天数", rec.count + " 天"],
-      ["累计浮动收益", '<span class="' + cls2 + '">' + (rec.value >= 0 ? "+" : "−") +
-        "¥" + num(Math.abs(rec.value)) + "</span>"],
-      ["日均浮动收益", (rec.value / rec.count >= 0 ? "+" : "−") + "¥" + num(Math.abs(rec.value / rec.count))],
+      ["累计浮动收益", '<span class="' + cls2 + '">' + signedMoney(rec.value) + "</span>"],
+      ["日均浮动收益", signedMoney(rec.value / rec.count)],
     ];
     var html = '<div class="snap-box"><div class="snap-head"><h3>' + label + "度汇总 · " + key + "</h3>" +
       '<button type="button" id="snap-close" aria-label="关闭">×</button></div>' +
@@ -1039,9 +1084,9 @@
       var pv = parseFloat(cell.getAttribute("data-pnl")) || 0;
       tip.innerHTML = '<div class="tip-label">' + label + "</div>" +
         '<div class="tip-row"><span>累计浮动收益</span><span class="' + (pv >= 0 ? "pos" : "neg") +
-        '">' + (pv >= 0 ? "+" : "−") + "¥" + num(Math.abs(pv)) + "</span></div>" +
-        '<div class="tip-row"><span>期初资产</span><span>¥' + cell.getAttribute("data-open") + "</span></div>" +
-        '<div class="tip-row"><span>期末资产</span><span>¥' + cell.getAttribute("data-end") + "</span></div>";
+        '">' + signedMoney(pv) + "</span></div>" +
+        '<div class="tip-row"><span>期初资产</span><span>' + money(parseFloat(cell.getAttribute("data-open"))) + "</span></div>" +
+        '<div class="tip-row"><span>期末资产</span><span>' + money(parseFloat(cell.getAttribute("data-end"))) + "</span></div>";
       tip.hidden = false;
       var x = e.clientX + 12, y = e.clientY - 10;
       tip.style.left = Math.min(x, document.documentElement.clientWidth - tip.offsetWidth - 8) + "px";
@@ -1087,14 +1132,14 @@
     var chg = rec.day_change_cny;
     var chgCls = chg === null || chg === undefined ? "" : cls(chg);
     var chgTxt = chg === null || chg === undefined ? "—" :
-      (chg >= 0 ? "+" : "−") + "¥" + num(Math.abs(chg)) +
+      signedMoney(chg) +
       (rec.day_change_pct !== null && rec.day_change_pct !== undefined ? "（" + pct(rec.day_change_pct) + "）" : "");
     var cash = rec.cash_cny;
     var rows = [
-      ["总资产", "¥" + num(rec.total_cny)],
-      ["传统股票 & 基金", "¥" + num(rec.traditional_cny)],
-      ["加密货币账户合计", "¥" + num(rec.crypto_cny)],
-      ["其中 现金（稳定币）", cash === null || cash === undefined ? "—" : "¥" + num(cash)],
+      ["总资产", money(rec.total_cny)],
+      ["传统股票 & 基金", money(rec.traditional_cny)],
+      ["加密货币账户合计", money(rec.crypto_cny)],
+      ["其中 现金（稳定币）", cash === null || cash === undefined ? "—" : money(cash)],
       ["当日浮动收益", '<span class="' + chgCls + '">' + chgTxt + "</span>"],
       ["USD→CNY 汇率", rec.fx_usdcny ? num(rec.fx_usdcny, 4) : "—"],
       ["加密账户 USDT 总额", rec.crypto_usdt ? "$" + num(rec.crypto_usdt, 2) : "—"],
@@ -1129,10 +1174,10 @@
   function trUp() { return isDark() ? "#34d399" : "#16a34a"; }
   function trDown() { return isDark() ? "#f87171" : "#dc2626"; }
   function trTip(rec) {
-    function cny(v) { return (v === null || v === undefined) ? '<span class="pa-dim">—</span>' : "¥" + num(v); }
+    function cny(v) { return (v === null || v === undefined) ? '<span class="pa-dim">—</span>' : money(v); }
     function signed(v) {
       if (v === null || v === undefined) return '<span class="pa-dim">—</span>';
-      return '<span class="' + (v >= 0 ? "pos" : "neg") + '">' + (v >= 0 ? "+" : "−") + "¥" + num(Math.abs(v)) + "</span>";
+      return '<span class="' + (v >= 0 ? "pos" : "neg") + '">' + signedMoney(v) + "</span>";
     }
     return '<div class="tr-tip"><div class="tr-tip-h">' + rec.date + '</div>' +
       '<div>总资产&nbsp;&nbsp;' + cny(rec.total_cny) + "</div>" +
@@ -1156,10 +1201,10 @@
     var byDate = {};
     h.forEach(function (x) { byDate[x.date] = x; });
     var total = h.map(function (x) {
-      return (x.total_cny === null || x.total_cny === undefined) ? "-" : Math.round(x.total_cny);
+      return (x.total_cny === null || x.total_cny === undefined) ? "-" : Math.round(convCny(x.total_cny));
     });
     var pnl = h.map(function (x) {
-      return (x.total_pnl_cny === null || x.total_pnl_cny === undefined) ? null : Math.round(x.total_pnl_cny);
+      return (x.total_pnl_cny === null || x.total_pnl_cny === undefined) ? null : Math.round(convCny(x.total_pnl_cny));
     });
     function pnlColor(v) { return v >= 0 ? trUp() : trDown(); }
 
@@ -1189,6 +1234,10 @@
           axisLabel: {
             color: isDark() ? "#c9a227" : "#9a7b1f", fontSize: 11,
             formatter: function (v) {
+              if (curCode() === "USD") {
+                var a = Math.abs(v);
+                return (v < 0 ? "−" : "") + "$" + (a >= 1000 ? (a / 1000).toFixed(1) + "k" : Math.round(a));
+              }
               return v >= 10000 ? "¥" + (v / 10000).toFixed(1) + "万" : "¥" + Math.round(v);
             },
           },
@@ -1201,7 +1250,7 @@
             formatter: function (v) {
               var a = Math.abs(v);
               if (a < 1) return "0";
-              return (v > 0 ? "+" : "−") + "¥" + (a >= 1000 ? (a / 1000).toFixed(1) + "k" : Math.round(a));
+              return (v > 0 ? "+" : "−") + curSym() + (a >= 1000 ? (a / 1000).toFixed(1) + "k" : Math.round(a));
             },
           },
           splitLine: { show: false },
@@ -1329,6 +1378,7 @@
   function init() {
     if ($("btn-back-today")) $("btn-back-today").addEventListener("click", exitReplay);
     bindTheme();
+    bindCurrency();
     bindTabs();
     bindRefreshPrice();
     bindSort();
