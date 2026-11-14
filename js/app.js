@@ -1210,18 +1210,22 @@
       }).join("");
       return '<div class="pa-group">' +
         '<div class="pa-head"><span class="pa-name">' + escapeHtml(g.name) + "</span>" +
-        '<span class="pa-metric">未实现盈亏 ' +
-        (g.pnl_cny === null || g.pnl_cny === undefined ? "—" :
-          '<b class="' + cls(g.pnl_cny) + '">' + signedMoney(g.pnl_cny, 2) + "</b>" +
-          (g.pnl_pct === null || g.pnl_pct === undefined ? "" : "（" + pct(g.pnl_pct) + "）")) +
-        '</span><span class="pa-metric">当日浮动收益 ' +
+        (function () {
+          var un = Number(g.pnl_cny || 0), re = Number(g.realized_cny || 0), tot = un + re;
+          var den = Number(g.cost_cny || 0);
+          var p = den ? Math.round(tot / den * 10000) / 100 : null;
+          return '<span class="pa-metric">总盈亏 ' +
+            (g.pnl_cny === null || g.pnl_cny === undefined ? "—" :
+              '<b class="' + cls(tot) + '">' + signedMoney(tot, 2) + "</b>" +
+              (p === null ? "" : "（" + pct(p) + "）")) +
+            '</span><span class="pa-metric pa-dim">未实现 ' + signedMoney(un, 2) +
+            " · 已实现 " + signedMoney(re, 2) + "</span>";
+        })() +
+        '<span class="pa-metric">当日浮动收益 ' +
         (g.day_cny === null || g.day_cny === undefined ? "—" :
           '<b class="' + cls(g.day_cny) + '">' + signedMoney(g.day_cny, 2) + "</b>" +
           (g.day_pct === null || g.day_pct === undefined ? "" : "（" + pct(g.day_pct) + "）")) +
         '</span>' +
-        (g.realized_cny
-          ? '<span class="pa-metric">已实现 ' + signedMoney(g.realized_cny, 2) + "</span>"
-          : "") +
         '<span class="pa-metric pa-dim">成本 ' + money(g.cost_cny || 0, 2) + "</span></div>" +
         '<table class="pa-table"><thead><tr>' +
         "<th>标的</th><th>份额</th><th>成本价</th><th>现价</th><th>上一快照价</th><th>价差</th>" +
