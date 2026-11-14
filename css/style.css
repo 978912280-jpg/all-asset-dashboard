@@ -802,3 +802,5 @@ body.panel-open { overflow: hidden; }
 @media (max-width: 560px) {
   .container { padding: 14px 46px 4px 12px; }
 }
+
+.foot-split { font-size: 11.5px; text-align: left; white-space: normal; }

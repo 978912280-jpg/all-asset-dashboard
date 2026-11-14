@@ -995,12 +995,13 @@
         .reduce(function (a, f) { return a + (f.value_usdt || 0); }, 0);
       var mOut = (ev.flows || []).filter(function (f) { return f.direction === "出金"; })
         .reduce(function (a, f) { return a + (f.value_usdt || 0); }, 0);
+      var netTotal = nd.computed_total_usdt != null ? nd.computed_total_usdt : nd.computed_usdt;
       footCells = narrow
         ? [{ t: "当月入 " + flowMoney(mIn) + " / 出 " + flowMoney(mOut), c: "", s: 2 },
-           { t: "净入金 " + flowMoney(nd.computed_usdt), c: "num total-gold", s: 2 }]
-        : [{ t: "当月累计入金 " + flowMoney(mIn) + " · 出金 " + flowMoney(mOut), c: "", s: 3 },
-           { t: "净入金 " + flowMoney(nd.computed_usdt), c: "num total-gold", s: 2 },
-           { t: "基准 " + num(nd.baseline_usdt, 0), c: "num muted", s: 1 }];
+           { t: "净入金 " + flowMoney(netTotal), c: "num total-gold", s: 2 }]
+        : [{ t: "当月累计入金 " + flowMoney(mIn) + " · 出金 " + flowMoney(mOut), c: "", s: 2 },
+           { t: "净入金 " + flowMoney(netTotal), c: "num total-gold", s: 2 },
+           { t: "其中美股 " + flowMoney(nd.stock_part_usdt), c: "num muted", s: 2 }];
       empty.hidden = !!(ev.flows || []).length;
       if (!(ev.flows || []).length) empty.textContent = "近 90 天没有链上充提记录。";
     } else {
@@ -1042,7 +1043,16 @@
     body.innerHTML = rows.map(function (cells) {
       return "<tr>" + cells.map(td).join("") + "</tr>";
     }).join("");
-    foot.innerHTML = "<tr>" + footCells.map(td).join("") + "</tr>";
+    var footHtml = "<tr>" + footCells.map(td).join("") + "</tr>";
+    if (tab === "flows") {
+      var ndx = ev.net_deposit || {};
+      if (ndx.computed_total_usdt != null) {
+        footHtml += '<tr><td colspan="' + cols.length + '" class="num muted foot-split">' +
+          "净入金含已划入美股账户部分；加密账户口径 " + flowMoney(ndx.computed_usdt) +
+          "（收益率按此计算），美股账户批量约为 " + flowMoney(ndx.stock_part_usdt) + "</td></tr>";
+      }
+    }
+    foot.innerHTML = footHtml;
 
     var desc = {
       trades: "Bitget 成交明细 · 按时间倒序",

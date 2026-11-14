@@ -29,7 +29,8 @@ DASH = DATA / "dashboard.json"
 
 WINDOW_DAYS = 88          # 与 Bitget 90 天查询上限保持余量
 SLICE_DAYS = 5            # 账单切片，避开「每页 20 条 + 翻页上限」
-BASELINE_USDT = 15065.0
+BASELINE_USDT = 15065.0        # 加密账户口径（已扣除划往美股账户的部分，用于收益率分母）
+BASELINE_TOTAL_USDT = 17296.0  # 转入 Bitget 总额口径（含已划入美股账户）
 BASELINE_DATE = "2026-11-13"
 
 STABLE = {"USDT", "USDC", "DAI", "FDUSD", "TUSD"}
@@ -324,11 +325,13 @@ def main():
     # ---- 净入金：基准 + 基准日之后的链上充提 ----
     base_date = BASELINE_DATE
     baseline = BASELINE_USDT
+    baseline_total = BASELINE_TOTAL_USDT
     cost = {}
     try:
         cost = json.loads(COST.read_text(encoding="utf-8"))
         nd = cost.get("net_deposit") or {}
         baseline = float(nd.get("baseline_usdt") or BASELINE_USDT)
+        baseline_total = float(nd.get("baseline_total_usdt") or BASELINE_TOTAL_USDT)
         base_date = nd.get("baseline_date") or BASELINE_DATE
     except (ValueError, OSError):
         pass
@@ -338,6 +341,8 @@ def main():
     wd_after = sum((f["value_usdt"] or 0) for f in flows
                    if f["direction"] == "出金" and f["day"] > base_date)
     net = round(baseline + dep_after - wd_after, 2)
+    net_total = round(baseline_total + dep_after - wd_after, 2)
+    stock_part = round(baseline_total - baseline, 2)
 
     payload = {
         "updated_at": datetime.now(CST).strftime("%Y-%m-%dT%H:%M:%S+08:00"),
@@ -348,11 +353,14 @@ def main():
         "transfers": transfers,
         "misc": misc_trades,
         "net_deposit": {
-            "baseline_usdt": baseline,
+            "baseline_usdt": baseline,              # 加密账户口径（收益率分母）
+            "baseline_total_usdt": baseline_total,  # 转入 Bitget 总额（含划去美股的部分）
+            "stock_part_usdt": stock_part,          # 已划入美股账户的金额
             "baseline_date": base_date,
             "deposit_after": round(dep_after, 2),
             "withdraw_after": round(wd_after, 2),
             "computed_usdt": net,
+            "computed_total_usdt": net_total,
         },
         "counts": {"trades": len(trades), "earn_daily": len(earn_daily),
                    "earn_raw": len(earn), "flows": len(flows), "transfers": len(transfers)},
