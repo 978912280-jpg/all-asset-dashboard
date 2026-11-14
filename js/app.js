@@ -491,9 +491,9 @@
     var sortKey = state.sortKey || "value_cny";
     var dir = state.sortDir === "asc" ? 1 : -1;
     items.sort(function (a, b) {
-      // 现金没有「浮动收益」口径，按浮动收益排序时视为空值排到最后
-      var av = (sortKey === "day_change_cny" && a.group === "cash") ? null : a[sortKey];
-      var bv = (sortKey === "day_change_cny" && b.group === "cash") ? null : b[sortKey];
+      // 现金没有「净收益」口径（成本=市值恒为 0），按净收益排序时视为空值排到最后
+      var av = (sortKey === "pnl_cny" && a.group === "cash") ? null : a[sortKey];
+      var bv = (sortKey === "pnl_cny" && b.group === "cash") ? null : b[sortKey];
       var an = (av === null || av === undefined || isNaN(av)) ? null : Number(av);
       var bn = (bv === null || bv === undefined || isNaN(bv)) ? null : Number(bv);
       if (an === null && bn === null) return 0;
@@ -540,17 +540,17 @@
           : (i.currency === "USD" ? "$" : "¥") + num(i.cost_price, i.cost_price < 10 ? 4 : 2);
       }
       var pnlTxt;
-      // 浮动盈亏列统一按「当日浮动收益」口径：份额 × 当日涨跌（按标的币种折算成 CNY）
-      var dc = i.day_change_cny;
-      if (i.group === "cash") {
+      // 净收益列 = 市值 − 成本（相对成本价的累计盈亏），并给出收益率
+      var pv = i.pnl_cny;
+      if (i.group === "cash" || i.cost_pending) {
         pnlTxt = '<span class="muted">—</span>';
-      } else if (dc === null || dc === undefined) {
+      } else if (pv === null || pv === undefined) {
         pnlTxt = '<span class="muted">—</span>';
       } else {
-        var sub = i.day_basis === "new"
-          ? '<div class="sub muted">当日买入</div>'
-          : '<div class="sub ' + cls(i.change_pct) + '">' + pct(i.change_pct) + "</div>";
-        pnlTxt = '<span class="' + cls(dc) + '">' + (dc >= 0 ? "+" : "−") + "¥" + num(Math.abs(dc)) + sub + "</span>";
+        var sub = (i.pnl_pct === null || i.pnl_pct === undefined)
+          ? '<div class="sub muted">—</div>'
+          : '<div class="sub ' + cls(i.pnl_pct) + '">' + pct(i.pnl_pct) + "</div>";
+        pnlTxt = '<span class="' + cls(pv) + '">' + (pv >= 0 ? "+" : "−") + "¥" + num(Math.abs(pv)) + sub + "</span>";
       }
       return "<tr>" +
         '<td class="name-cell"><div class="nm">' + escapeHtml(i.name) +
@@ -567,9 +567,11 @@
         "</tr>";
     }).join("");
 
-    // 合计行：市值与当日浮动收益按当前筛选求和
+    // 合计行：市值与净收益按当前筛选求和（现金的净收益恒为 0，不计入）
     var sumVal = items.reduce(function (a, i) { return a + (i.value_cny || 0); }, 0);
-    var sumPnl = items.reduce(function (a, i) { return a + (i.day_change_cny || 0); }, 0);
+    var sumPnl = items.reduce(function (a, i) {
+      return a + ((i.group === "cash" || i.cost_pending) ? 0 : (i.pnl_cny || 0));
+    }, 0);
     var sumW = items.reduce(function (a, i) { return a + scopeWeight(i); }, 0);
     var sumWTxt = Math.abs(sumW - 100) < 0.05 ? "100.00%" : num(sumW, 2) + "%";
     $("table-foot").innerHTML = "<tr>" +
