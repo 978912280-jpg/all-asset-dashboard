@@ -33,7 +33,7 @@ BASELINE_USDT = 15065.0        # 加密账户口径（已扣除划往美股账�
 BASELINE_TOTAL_USDT = 17296.0  # 转入 Bitget 总额口径（含已划入美股账户）
 BASELINE_DATE = "2026-11-13"
 
-STABLE = {"USDT", "USDC", "DAI", "FDUSD", "TUSD"}
+STABLE = {"USDT", "USDC", "DAI", "FDUSD", "TUSD", "USDG", "USDGO", "USDP", "PYUSD"}
 
 
 def ts(v):
@@ -83,7 +83,7 @@ def load_prices():
 
 
 def value_usdt(coin, qty, prices):
-    """按 USDT 估值；没有行情的站内奖励币返回 None，页面显示「—」。"""
+    """按 USDT 估值；稳定币/美元锚定奖励币按 1:1，其他无行情币返回 None（页面显示「—」）。"""
     c = str(coin or "").upper()
     if c in STABLE:
         return round(qty, 6)

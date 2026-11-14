@@ -274,8 +274,8 @@
   }
 
   function moneyLine(prefix, val, pctVal) {
-    if (val === null || val === undefined) return '<span class="muted">' + prefix + '—</span>';
-    return '<span class="' + cls(val) + '">' + prefix + signedMoney(val) + (pctVal === null || pctVal === undefined ? "" :
+    if (val === null || val === undefined) return '<span class="kpi-line muted">' + prefix + '—</span>';
+    return '<span class="kpi-line ' + cls(val) + '">' + prefix + signedMoney(val) + (pctVal === null || pctVal === undefined ? "" :
         ' <span class="nowrap">（' + pct(pctVal) + "）</span>") + "</span>";
   }
 
@@ -295,8 +295,7 @@
         small: false,
         delta: moneyLine(state.replay ? "当日浮动收益 " : "今日浮动收益 ", day, s.day_change_pct) +
           (totalPnl === null || totalPnl === undefined ? "" :
-            "<br>" + moneyLine("总盈亏 ", totalPnl, s.total_pnl_pct)) +
-          (s.total_cost_cny ? '<br><span class="muted">账户总成本 ' + money(s.total_cost_cny) + "</span>" : ""),
+            "<br>" + moneyLine("总盈亏 ", totalPnl, s.total_pnl_pct)),
       },
       {
         label: '<i class="dot trad"></i>传统股票 & 基金',
@@ -363,6 +362,12 @@
 
     function money0(v) { return money(v); }
 
+    function darken(hex, t) {
+      var r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+      function mix(c) { return Math.round(c * (1 - t)).toString(16).padStart(2, "0"); }
+      return "#" + mix(r) + mix(g) + mix(b);
+    }
+
     function shade(hex, t) {
       var r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
       function mix(c) { return Math.round(c + (255 - c) * t).toString(16).padStart(2, "0"); }
@@ -383,7 +388,7 @@
         '<div class="bar bar-stack">' +
         '<i style="width:' + wb + '%;background:' + color + '" title="BTC"></i>' +
         '<i style="width:' + ws + '%;background:' + shade(color, 0.28) + '" title="SOL"></i>' +
-        '<i style="width:' + wo + '%;background:' + shade(color, 0.55) + '" title="其他"></i>' +
+        '<i style="width:' + wo + '%;background:' + darken(color, 0.34) + '" title="其他"></i>' +
         '</div>' +
         '<div class="bar-sub"><span>BTC ' + money0(bv) + '</span><span>SOL ' + money0(sv) +
         '</span><span>小额币种合计 ' + money0(other) + "</span></div>" +
