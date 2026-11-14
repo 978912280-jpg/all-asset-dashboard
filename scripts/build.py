@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.9.2"
+PAGE_VERSION = "1.9.3"
 PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -620,20 +620,11 @@ def main():
     else:
         crypto_cost_cny = (crypto_meta.get("net_deposit_usdt") or 0) * rate
 
-    # 账户总成本：转入 Bitget 的总额（含已划入美股的部分）+ 支付宝现金 + 008163 成本
-    ev_total_usdt = ((events or {}).get("net_deposit") or {}).get("computed_total_usdt")
-    if ev_total_usdt is None:
-        ev_total_usdt = crypto_meta.get("net_deposit_usdt") or 0
-    fund_008163_cost = 0.0
-    for r in trad_rows:
-        if str(r.get("id")) == "008163":
-            fund_008163_cost = float(r.get("cost_cny") or 0)
-            break
-    total_cost_base = r2(float(ev_total_usdt) * rate + fiat_cash_cny + fund_008163_cost, 2)
-    total_pnl = r2(total_cny - total_cost_base, 2)
+    # 总盈亏 = 传统净盈亏 + 加密净盈亏（现金按面值不产生盈亏）
+    total_pnl = r2(trad_pnl + (crypto_pnl_cny or 0), 2)
+    # 收益率分母：传统成本 + 加密账户净入金（不含闲置现金，避免被现金稀释）
+    total_cost_base = r2(trad_cost + crypto_cost_cny, 2)
     total_pnl_pct = round(total_pnl / total_cost_base * 100, 2) if total_cost_base else None
-    print("      总成本口径：Bitget 转入 %.2f USDT（%.2f CNY）+ 支付宝现金 %.2f + 008163 成本 %.2f = %.2f CNY" % (
-        float(ev_total_usdt), float(ev_total_usdt) * rate, fiat_cash_cny, fund_008163_cost, total_cost_base))
     pending = [r["id"] for r in trad_rows if r["pending"]]
 
     def weight(v):
@@ -837,8 +828,6 @@ def main():
             "crypto_pnl_pct": crypto_pnl_pct_calc,
             "total_pnl_cny": r2(total_pnl, 2),
             "total_pnl_pct": total_pnl_pct,
-            "total_cost_cny": total_cost_base,
-            "total_cost_crypto_usdt": ev_total_usdt,
         },
         "groups": [
             {
