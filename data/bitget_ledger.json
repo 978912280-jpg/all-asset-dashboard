@@ -1,15 +1,15 @@
 {
-  "updated_at": "2026-11-14T16:02:05+08:00",
+  "updated_at": "2026-11-14T17:10:59+08:00",
   "since": "2026-11-13",
-  "fills": 2,
+  "fills": 3,
   "cost_total_usdt": {
-    "BTC": 5932.0493,
+    "BTC": 6095.9415,
     "SOL": 3578.96,
     "BGB": 0
   },
   "realized_usdt": {},
   "qty_net": {
-    "BTC": 0.000285
+    "BTC": 0.002726
   },
   "qty_mode": "delta",
   "realized_pnl_usdt": {},
