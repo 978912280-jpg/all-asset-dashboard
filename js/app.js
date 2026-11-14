@@ -1191,7 +1191,8 @@
   }
 
   function renderTrend() {
-    var h = state.data.history || [];
+    // 趋势图始终展示完整历史，切换历史快照复现时不回退
+    var h = (state.base || state.data).history || [];
     if (!window.echarts) {
       $("trend-chart").innerHTML = '<p class="empty-tip">图表库未加载，趋势暂不可用</p>';
       return;
@@ -1207,6 +1208,37 @@
       return (x.total_pnl_cny === null || x.total_pnl_cny === undefined) ? null : Math.round(convCny(x.total_pnl_cny));
     });
     function pnlColor(v) { return v >= 0 ? trUp() : trDown(); }
+
+    var pnlMin = null, pnlMax = null;
+    pnl.forEach(function (v) {
+      if (typeof v !== "number") return;
+      pnlMin = pnlMin === null ? v : Math.min(pnlMin, v);
+      pnlMax = pnlMax === null ? v : Math.max(pnlMax, v);
+    });
+    var margin = (pnlMax !== null && pnlMin !== null) ? Math.abs(pnlMax - pnlMin) * 0.06 : 0;
+    if (pnlMin !== null) { pnlMin -= margin; pnlMax += margin; }
+
+    // Catmull-Rom 平滑：把相邻两点拟合成 12 段折线，保留原始数据点作为锚点
+    function smoothSegment(i, api) {
+      if (i <= 0) return null;
+      var p0 = pnl[i - 2], p1 = pnl[i - 1], p2 = pnl[i], p3 = pnl[i + 1];
+      if (typeof p1 !== "number" || typeof p2 !== "number") return null;
+      var hasP0 = typeof p0 === "number", hasP3 = typeof p3 === "number";
+      var a = api.coord([i - 1, p1]), b = api.coord([i, p2]);
+      var c0 = hasP0 ? p0 : p1 - (p2 - p1), c3 = hasP3 ? p3 : p2 + (p2 - p1);
+      var steps = 12, pts = [];
+      for (var k = 0; k <= steps; k++) {
+        var t = k / steps;
+        var v = 0.5 * ((2 * p1) + (-c0 + p2) * t +
+          (2 * c0 - 5 * p1 + 4 * p2 - c3) * t * t +
+          (-c0 + 3 * p1 - 3 * p2 + c3) * t * t * t);
+        // 轻微限制过冲，避免曲线偏离真实数值太多
+        if (pnlMin !== null) v = Math.max(pnlMin, Math.min(pnlMax, v));
+        var y = api.coord([i, v])[1];
+        pts.push({ x: a[0] + (b[0] - a[0]) * t, y: y, v: v });
+      }
+      return pts;
+    }
 
     state.trend.setOption({
       grid: { left: 12, right: 56, top: 34, bottom: 26, containLabel: true },
@@ -1283,30 +1315,24 @@
           renderItem: function (params, api) {
             var i = params.dataIndex;
             var v1 = api.value(1, i);
-            var pi = i - 1;
-            var v0 = pi >= 0 ? api.value(1, pi) : null;
             var out = [];
-            if (v0 !== null && v0 !== "-" && typeof v0 === "number" && typeof v1 === "number") {
-              var a = api.coord([pi, v0]);
-              var b = api.coord([i, v1]);
-              function poly(pts, color) {
-                return { type: "polyline", shape: { points: pts },
-                  style: { stroke: color, fill: null, lineWidth: 2 } };
-              }
-              if ((v0 >= 0 && v1 >= 0) || (v0 < 0 && v1 < 0)) {
-                out.push(poly([a, b], pnlColor(v1)));
-              } else {
-                var t = v0 === v1 ? 0 : v0 / (v0 - v1);
-                var cx = a[0] + (b[0] - a[0]) * t, cy = a[1] + (b[1] - a[1]) * t;
-                out.push(poly([a, [cx, cy]], pnlColor(v0)));
-                out.push(poly([[cx, cy], b], pnlColor(v1)));
+            if (typeof v1 !== "number") return { type: "group", children: out };
+            var pts = smoothSegment(i, api);
+            if (pts && pts.length > 1) {
+              var run = [pts[0]];
+              for (var k = 1; k < pts.length; k++) {
+                run.push(pts[k]);
+                var crossed = (pts[k - 1].v >= 0 && pts[k].v < 0) || (pts[k - 1].v < 0 && pts[k].v >= 0);
+                if (crossed || k === pts.length - 1) {
+                  out.push({ type: "polyline", shape: { points: run.map(function (q) { return [q.x, q.y]; }) },
+                    style: { stroke: pnlColor((run[0].v + run[run.length - 1].v) / 2), fill: null, lineWidth: 2 } });
+                  run = [pts[k]];
+                }
               }
             }
-            if (typeof v1 === "number") {
-              var p1 = api.coord([i, v1]);
-              out.push({ type: "circle", shape: { cx: p1[0], cy: p1[1], r: 3.4 },
-                style: { fill: pnlColor(v1), stroke: "#fff", lineWidth: 1.2 } });
-            }
+            var p1 = api.coord([i, v1]);
+            out.push({ type: "circle", shape: { cx: p1[0], cy: p1[1], r: 3.4 },
+              style: { fill: pnlColor(v1), stroke: "#fff", lineWidth: 1.2 } });
             return { type: "group", children: out };
           },
         },
