@@ -525,11 +525,12 @@ def main():
             crypto_meta.get("total_usdt") or 0))
 
     # ---- 传统已实现：美股账户「份额减少 + 美元现金增加」自动反推成交 ----
-    def sync_traditional_realized(holdings, rate, cash_now_usd):
+    def sync_traditional_realized(holdings, rate, cash_now_usd, stock_dep_cum=0.0):
         """方案 B：按构建间隔的净差额推断卖出，累计传统已实现盈亏（CNY）。
 
         规则：
-        - 份额减少 n 股 → 卖出：卖出所得 ≈ 美元现金净增加额，已实现 = 所得 − n×上一版成本价
+        - 份额减少 n 股 → 卖出：卖出所得 = 美元现金净增加额 − 同期划入美股账户金额（后者来自 Bitget 流水），
+          已实现 = 所得 − n×上一版成本价。这样「既卖出又入金」不会被误算成更赚。
         - 份额增加 → 买入，不产生已实现
         - 份额不变、现金增加 → 分红/划转，只在现金里体现，不计盈亏
         """
@@ -542,6 +543,7 @@ def main():
                 print("      [warn] traditional_realized.json 读取失败：%s" % e)
         prev_pos = prev.get("positions") or {}
         prev_cash = prev.get("cash_usd")
+        prev_dep = prev.get("stock_deposit_usd")
         realized_cny = float(prev.get("realized_cny") or 0)
         entries = prev.get("entries") or []
         total_usd = float(prev.get("realized_usd") or 0)
@@ -564,20 +566,25 @@ def main():
             # 首次运行：只记基线，不推断
             if positions:
                 data = {"updated_at": now_cst().strftime("%Y-%m-%dT%H:%M:%S+08:00"),
-                        "cash_usd": r2(cash_now_usd, 2), "positions": positions,
+                        "cash_usd": r2(cash_now_usd, 2), "stock_deposit_usd": r2(stock_dep_cum, 2),
+                        "positions": positions,
                         "realized_cny": r2(realized_cny, 2), "realized_usd": r2(total_usd, 2),
                         "entries": entries}
                 path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             return r2(realized_cny, 2), entries
 
         d_cash = float(cash_now_usd) - float(prev_cash)
+        d_dep = float(stock_dep_cum) - float(prev_dep or 0)
+        if abs(d_dep) > 1e-9:
+            print("      同期划入美股账户 %.2f USD，已从现金增量中扣除" % d_dep)
+            d_cash -= d_dep
         for hid in usd_rows:
             p0 = prev_pos.get(hid)
             if not p0:
                 continue
             d_shares = positions[hid]["shares"] - float(p0.get("shares") or 0)
             k_prev = float(p0.get("cost_price") or 0)
-            if d_shares < -1e-9 and d_cash > 0 and k_prev > 0:
+            if d_shares < -1e-9 and d_cash > 1e-9 and k_prev > 0:
                 n = abs(d_shares)
                 proceeds = d_cash
                 pnl_usd = proceeds - n * k_prev
@@ -588,7 +595,7 @@ def main():
                                 "cost_price_usd": r2(k_prev, 4),
                                 "realized_usd": r2(pnl_usd, 2),
                                 "realized_cny": r2(pnl_usd * rate, 2),
-                                "note": "份额减少 + 美元现金增加，按净差额推断"})
+                                "note": "份额减少 + 美元现金净增，按净差额推断"})
                 changed = True
                 print("      传统已实现：%s 卖出 %.6f 股 @ %.2f，已实现 %.2f USD" % (
                     hid, n, proceeds / n if n else 0, pnl_usd))
@@ -596,7 +603,8 @@ def main():
 
         if changed or positions != prev_pos or abs(float(prev_cash) - float(cash_now_usd)) > 1e-9:
             data = {"updated_at": now_cst().strftime("%Y-%m-%dT%H:%M:%S+08:00"),
-                    "cash_usd": r2(cash_now_usd, 2), "positions": positions,
+                    "cash_usd": r2(cash_now_usd, 2), "stock_deposit_usd": r2(stock_dep_cum, 2),
+                    "positions": positions,
                     "realized_cny": r2(realized_cny, 2), "realized_usd": r2(total_usd, 2),
                     "entries": entries}
             path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -673,7 +681,15 @@ def main():
     us_cash = next((ca for ca in (holdings.get("cash_accounts") or [])
                     if str(ca.get("currency") or "CNY").upper() == "USD"), {}) or {}
     cash_now_usd = float(us_cash.get("amount_usd") or 0)
-    trad_realized_cny, trad_realized_entries = sync_traditional_realized(holdings, rate, cash_now_usd)
+    stock_dep_cum = 0.0
+    for t in ((events or {}).get("transfers") or []):
+        k = str(t.get("kind") or "")
+        if "美股" not in k:
+            continue
+        v = float(t.get("value_usdt") or 0)
+        stock_dep_cum += v if k.startswith("划入") else -v
+    trad_realized_cny, trad_realized_entries = sync_traditional_realized(
+        holdings, rate, cash_now_usd, stock_dep_cum)
 
     stable_cash_cny = sum(r["value_cny"] or 0 for r in crypto_rows if r["group"] == CASH_GROUP)
     fiat_cash_cny = sum(r["value_cny"] or 0 for r in cash_rows)

@@ -1,6 +1,7 @@
 {
-  "updated_at": "2026-11-15T02:58:06+08:00",
+  "updated_at": "2026-11-15T03:01:21+08:00",
   "cash_usd": 0.0,
+  "stock_deposit_usd": 2233.23,
   "positions": {
     "QQQM": {
       "shares": 2.5382,
