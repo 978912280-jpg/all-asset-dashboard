@@ -382,16 +382,10 @@
       var sol = items.filter(function (i) { return i.group === g.key && i.id === "SOL"; })[0] || {};
       var bv = btc.value_cny || 0, sv = sol.value_cny || 0;
       var other = Math.max(0, (g.cny || 0) - bv - sv);
-      var tot = g.cny || 1;
-      var wb = bv / tot * 100, ws = sv / tot * 100, wo = Math.max(0, 100 - wb - ws);
       return '<div class="bar-item">' +
         '<div class="bar-line"><span class="name"><i class="dot" style="background:' + color + '"></i>' +
         escapeHtml(g.name) + '</span><span class="bar-num">' + money0(g.cny) + " · " + num(g.weight) + "%</span></div>" +
-        '<div class="bar bar-stack">' +
-        '<i style="width:' + wb + '%;background:' + color + '" title="BTC"></i>' +
-        '<i style="width:' + ws + '%;background:' + shade(color, 0.28) + '" title="SOL"></i>' +
-        '<i style="width:' + wo + '%;background:' + darken(color, 0.34) + '" title="其他"></i>' +
-        '</div>' +
+        '<div class="bar"><i style="width:' + Math.max(0, Math.min(100, g.weight || 0)) + "%;background:" + color + '"></i></div>' +
         '<div class="bar-sub"><span>BTC ' + money0(bv) + '</span><span>SOL ' + money0(sv) +
         '</span><span>小额币种合计 ' + money0(other) + "</span></div>" +
         "</div>";
