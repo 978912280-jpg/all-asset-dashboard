@@ -956,3 +956,7 @@ drawer-title, .rail .drawer-title { margin: 0 0 6px; padding: 0 8px; font-size: 
 .brand { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .brand > .title { margin: 0; }
 .brand > .subtitle { flex-basis: 100%; margin: 2px 0 0; }
+
+@media (min-width: 900px) {
+  .home-grid .donut-box .chart { height: 440px; }
+}
