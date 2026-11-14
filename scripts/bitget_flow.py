@@ -82,10 +82,14 @@ def load_prices():
 
 
 def value_usdt(coin, qty, prices):
+    """按 USDT 估值；没有行情的站内奖励币返回 None，页面显示「—」。"""
     c = str(coin or "").upper()
     if c in STABLE:
         return round(qty, 6)
-    return round(qty * prices.get(c, 0.0), 6)
+    p = prices.get(c)
+    if not p:
+        return None
+    return round(qty * p, 6)
 
 
 def pull_bills(key, secret, passphrase, start_ms, end_ms, log=print):
@@ -251,9 +255,10 @@ def main():
             earn.append({"day": day(r.get("cTime")), "coin": coin,
                          "qty": qty, "value_usdt": value_usdt(coin, qty, prices)})
         elif board == "transfer":
+            _v = value_usdt(coin, qty, prices)
             transfers.append({
                 "date": dstr(r.get("cTime")), "day": day(r.get("cTime")),
-                "coin": coin, "qty": abs(qty), "value_usdt": abs(value_usdt(coin, qty, prices)),
+                "coin": coin, "qty": abs(qty), "value_usdt": None if _v is None else abs(_v),
                 "kind": sub, "ref": r.get("bizOrderId") or r.get("billId"),
             })
         elif board == "trade_bill" and sub == "闪兑":
@@ -268,9 +273,10 @@ def main():
     for e in earn:
         k = (e["day"], e["coin"])
         a = agg.setdefault(k, {"day": e["day"], "coin": e["coin"], "qty": 0.0,
-                               "value_usdt": 0.0, "count": 0})
+                               "value_usdt": None, "count": 0})
         a["qty"] += e["qty"]
-        a["value_usdt"] += e["value_usdt"]
+        if e["value_usdt"] is not None:
+            a["value_usdt"] = (a["value_usdt"] or 0.0) + e["value_usdt"]
         a["count"] += 1
     earn_daily = sorted(agg.values(), key=lambda x: (x["day"], x["coin"]), reverse=True)
 
@@ -301,8 +307,9 @@ def main():
         ft, tt = str(r.get("fromType")), str(r.get("toType"))
         coin = str(r.get("coin") or "").upper()
         qty = num(r.get("size"))
+        _v = value_usdt(coin, qty, prices)
         transfers.append({"date": dstr(r.get("ts")), "day": day(r.get("ts")), "coin": coin,
-                          "qty": abs(qty), "value_usdt": abs(value_usdt(coin, qty, prices)),
+                          "qty": abs(qty), "value_usdt": None if _v is None else abs(_v),
                           "kind": "%s → %s" % (ft, tt), "ref": r.get("transferId")})
 
     # 去重：同一 ref 只留一条
@@ -326,9 +333,9 @@ def main():
     except (ValueError, OSError):
         pass
 
-    dep_after = sum(f["value_usdt"] for f in flows
+    dep_after = sum((f["value_usdt"] or 0) for f in flows
                     if f["direction"] == "入金" and f["day"] > base_date)
-    wd_after = sum(f["value_usdt"] for f in flows
+    wd_after = sum((f["value_usdt"] or 0) for f in flows
                    if f["direction"] == "出金" and f["day"] > base_date)
     net = round(baseline + dep_after - wd_after, 2)
 

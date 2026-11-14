@@ -793,8 +793,8 @@
 
   // ---------- 资金流水 ----------
   function flowMoney(usdt) {
-    var v = Number(usdt || 0);
-    return money(v * fxRate());
+    if (usdt === null || usdt === undefined) return "—";
+    return money(Number(usdt) * fxRate());
   }
 
   function qtyText(v) {
