@@ -93,8 +93,8 @@
       "id": "us_stock",
       "name": "美股账户现金",
       "currency": "USD",
-      "amount_usd": 0,
-      "updated_at": ""
+      "amount_usd": 0.27,
+      "updated_at": "2026-11-15T03:05:39+08:00"
     }
   ],
   "poolx": []
