@@ -209,7 +209,7 @@ def main():
     start = now - WINDOW_DAYS * 86400 * 1000
     prices = load_prices()
 
-    print("Bitget 流水归档：%s ~ %s" % (dstr(start, "%Y-%m-%d"), dstr(now, "%Y-%m-%d"))
+    print("Bitget 流水归档：%s ~ %s" % (dstr(start, "%Y-%m-%d"), dstr(now, "%Y-%m-%d")))
 
     # ---- 成交（交易记录） ----
     try:
@@ -292,7 +292,7 @@ def main():
                       "ref": r.get("orderId") or r.get("tradeId")})
     flows.sort(key=lambda x: x["date"], reverse=True)
     print("      出入金：%d 笔（入 %d / 出 %d）" % (
-        len(flows), len(deps), len(wds))
+        len(flows), len(deps), len(wds)))
 
     # ---- 内部划转（账户间，按币种查） ----
     coins = ["USDC", "USDT", "BTC", "SOL", "BGB"]

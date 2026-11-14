@@ -867,9 +867,9 @@
           '</td><td class="muted">' + escapeHtml(f.channel || "—") + "</td></tr>");
       });
       var nd = ev.net_deposit || {};
-      foot.innerHTML = '<tr><td colspan="3">基准 ' + num(nd.baseline_usdt, 0) + " USDT（" +
-        escapeHtml(nd.baseline_date || "") + "）</td><td class="num muted">之后入 ' +
-        flowMoney(nd.deposit_after) + "</td>" + '<td class="num muted">出 ' + flowMoney(nd.withdraw_after) +
+      foot.innerHTML = '<tr><td colspan="3">基准 ' + num(nd.baseline_usdt, 0) + ' USDT（' +
+        escapeHtml(nd.baseline_date || "") + '）</td><td class="num muted">之后入 ' +
+        flowMoney(nd.deposit_after) + '</td><td class="num muted">出 ' + flowMoney(nd.withdraw_after) +
         '</td><td class="num total-gold">净入金 ' + flowMoney(nd.computed_usdt) + "</td></tr>";
       empty.hidden = !!(ev.flows || []).length;
       if (!(ev.flows || []).length) empty.textContent = "近 90 天没有链上充提记录。";

@@ -25,17 +25,4 @@ jobs:
       - name: 构建仪表台
         run: python3 scripts/build.py
       - name: 校验产物
-        run: |
-          python3 - <<'PY'
-          import json
-          ev = json.load(open("data/crypto_events.json"))
-          print("counts:", ev["counts"])
-          print("net_deposit:", ev["net_deposit"])
-          print("trades[0]:", json.dumps(ev["trades"][:2], ensure_ascii=False))
-          print("earn_daily[0]:", json.dumps(ev["earn_daily"][:3], ensure_ascii=False))
-          print("flows[0]:", json.dumps(ev["flows"][:2], ensure_ascii=False))
-          print("transfers[0]:", json.dumps(ev["transfers"][:2], ensure_ascii=False))
-          d = json.load(open("data/dashboard.json"))
-          print("version:", d["meta"]["page_version"], "net_deposit_usdt:", d["crypto_meta"].get("net_deposit_usdt"))
-          print("events_in_dashboard:", bool(d.get("events")), "total:", d["summary"]["total_cny"])
-          PY
+        run: python3 scripts/_probe_check.py
