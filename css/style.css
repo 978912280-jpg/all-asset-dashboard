@@ -527,3 +527,136 @@ body.locked > header, body.locked > main { display: none; }
 .tr-tip-h { font-weight: 700; margin-bottom: 2px; }
 .tr-tip .pos { color: #16a34a; }
 .tr-tip .neg { color: #dc2626; }
+
+/* ---------- 主题：暗黑 ---------- */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #080c14;
+  --card: #101725;
+  --text: #e6eaf2;
+  --muted: #8b93a7;
+  --line: #1d2635;
+  --line-strong: #2b3648;
+  --accent: #f5b301;
+  --accent-soft: rgba(245, 179, 1, .12);
+  --gold: #f5b301;
+  --up: #f87171;
+  --down: #34d399;
+  --trad: #60a5fa;
+  --crypto: #fbbf24;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .45), 0 10px 26px rgba(0, 0, 0, .4);
+}
+html[data-theme="dark"] code { background: #0e1826; color: #cbd5e1; }
+html[data-theme="dark"] .disclaimer,
+html[data-theme="dark"] .source-list,
+html[data-theme="dark"] .pa-total { color: var(--text); }
+html[data-theme="dark"] .alert-card {
+  background: rgba(245, 179, 1, .1); border-color: rgba(245, 179, 1, .34);
+}
+html[data-theme="dark"] .alert-text,
+html[data-theme="dark"] .alert-action { color: #f6c453; }
+html[data-theme="dark"] .bar,
+html[data-theme="dark"] .mini-bar { background: #18212f; }
+html[data-theme="dark"] .seg { background: #0d1420; }
+html[data-theme="dark"] .seg-btn.active { background: #1a2434; box-shadow: 0 1px 3px rgba(0, 0, 0, .5); }
+html[data-theme="dark"] .main-table thead th { background: #0d1420; }
+html[data-theme="dark"] .main-table td { border-bottom-color: #17202e; }
+html[data-theme="dark"] .main-table tbody tr:hover { background: #0d1420; }
+html[data-theme="dark"] .main-table tfoot td {
+  background: #0d1420; border-top-color: var(--line); color: var(--text);
+}
+html[data-theme="dark"] .tag.pending {
+  color: #f6c453; border-color: rgba(246, 196, 83, .4); background: rgba(246, 196, 83, .12);
+}
+/* 日历 */
+html[data-theme="dark"] .cal-nav button {
+  background: #101725; color: var(--text); border-color: var(--line);
+}
+html[data-theme="dark"] .cal-nav button:hover { border-color: var(--line-strong); }
+html[data-theme="dark"] .cal-cell { background: #0f1622; }
+html[data-theme="dark"] .cal-cell .d { color: #8b93a7; }
+html[data-theme="dark"] .cal-cell.pos { background: rgba(52, 211, 153, .12); }
+html[data-theme="dark"] .cal-cell.pos .v { color: #34d399; }
+html[data-theme="dark"] .cal-cell.neg { background: rgba(248, 113, 113, .13); }
+html[data-theme="dark"] .cal-cell.neg .v { color: #f87171; }
+html[data-theme="dark"] .cal-cell.today,
+html[data-theme="dark"] .cal-cell.sel { border-color: #f5b301; outline-color: #f5b301; }
+html[data-theme="dark"] .pnl-block { background: #0f1622; }
+html[data-theme="dark"] .pnl-block .pb-label { color: #8b93a7; }
+html[data-theme="dark"] .pnl-block.pos { background: rgba(52, 211, 153, .12); }
+html[data-theme="dark"] .pnl-block.pos .pb-val { color: #34d399; }
+html[data-theme="dark"] .pnl-block.neg { background: rgba(248, 113, 113, .13); }
+html[data-theme="dark"] .pnl-block.neg .pb-val { color: #f87171; }
+html[data-theme="dark"] .pnl-block.zero .pb-val { color: #64748b; }
+html[data-theme="dark"] .pnl-block.sel { outline-color: #f5b301; }
+/* 悬浮提示 / 弹窗 */
+html[data-theme="dark"] .cal-tip {
+  background: #141d2c; border-color: var(--line);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .55); color: var(--text);
+}
+html[data-theme="dark"] .cal-tip .tip-label { color: #cbd5e1; }
+html[data-theme="dark"] .cal-tip .pos { color: #34d399; }
+html[data-theme="dark"] .cal-tip .neg { color: #f87171; }
+html[data-theme="dark"] .snap-mask { background: rgba(0, 0, 0, .62); }
+html[data-theme="dark"] .snap-box { background: #101725; color: var(--text); }
+html[data-theme="dark"] .snap-head button,
+html[data-theme="dark"] .snap-row span:first-child,
+html[data-theme="dark"] .snap-note { color: var(--muted); }
+html[data-theme="dark"] .snap-row { border-bottom-color: #18212f; }
+html[data-theme="dark"] .snap-banner {
+  background: rgba(245, 179, 1, .1); border-color: rgba(245, 179, 1, .36);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .4);
+}
+html[data-theme="dark"] .snap-banner .sb-text { color: #f6c453; }
+html[data-theme="dark"] .snap-banner strong { color: #fbbf24; }
+html[data-theme="dark"] .snap-banner .sb-note { color: #d5a53a; }
+html[data-theme="dark"] .toast-tip { background: rgba(23, 32, 46, .96); color: #e6eaf2; border: 1px solid var(--line); }
+/* 盈亏分析 */
+html[data-theme="dark"] .pa-table td { border-bottom-color: #17202e; }
+html[data-theme="dark"] .pa-dim { color: #64748b; }
+/* 排序控件 */
+html[data-theme="dark"] .sort-btn,
+html[data-theme="dark"] .sort-dir { background: #131b28; border-color: var(--line-strong); color: var(--text); }
+html[data-theme="dark"] .sort-btn:hover,
+html[data-theme="dark"] .sort-dir:hover { border-color: #3b4a60; }
+html[data-theme="dark"] .sort-btn.active { background: #f5b301; border-color: #f5b301; color: #0a0e17; }
+/* 趋势悬浮明细 */
+html[data-theme="dark"] .tr-tip { color: var(--text); }
+html[data-theme="dark"] .tr-tip .pos { color: #34d399; }
+html[data-theme="dark"] .tr-tip .neg { color: #f87171; }
+html[data-theme="dark"] .tr-tip .pa-dim { color: #64748b; }
+/* 密码锁：暗色卡片 */
+html[data-theme="dark"] .pin-lock {
+  background: radial-gradient(120% 90% at 50% -10%, #0a1a2a 0%, #06090f 55%, #04060a 100%);
+}
+html[data-theme="dark"] .pin-card {
+  background: linear-gradient(180deg, #141d2c 0%, #0f1622 100%);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .6), 0 1px 0 rgba(255, 255, 255, .04) inset;
+}
+html[data-theme="dark"] .pin-mark {
+  color: #f5b301; background: linear-gradient(150deg, rgba(245, 179, 1, .2), rgba(245, 179, 1, .08));
+  box-shadow: 0 6px 16px rgba(245, 179, 1, .18);
+}
+html[data-theme="dark"] .pin-brand { color: var(--text); }
+html[data-theme="dark"] .pin-sub,
+html[data-theme="dark"] .pin-foot { color: #6b7688; }
+html[data-theme="dark"] .pin-tip { color: var(--muted); }
+html[data-theme="dark"] .pin-dots i { background: #16202f; border-color: #33415a; }
+html[data-theme="dark"] .pin-dots i.on { background: #f5b301; border-color: #f5b301; }
+html[data-theme="dark"] .pin-pad button {
+  background: linear-gradient(180deg, #1a2434, #131c29);
+  border-color: #263244; color: var(--text);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .45);
+}
+html[data-theme="dark"] .pin-pad button:active { background: #223046; }
+html[data-theme="dark"] .pin-pad .pin-fn { color: #6b7688; background: transparent; border-color: transparent; }
+
+/* 主题切换按钮 */
+.theme-btn {
+  border: 1px solid var(--line-strong); background: var(--card); color: var(--muted);
+  border-radius: 999px; padding: 4px 10px; font-size: 12px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: color .15s, border-color .15s;
+}
+.theme-btn:hover { color: var(--text); border-color: var(--accent); }
+.theme-btn .t-ico { font-size: 12.5px; line-height: 1; }

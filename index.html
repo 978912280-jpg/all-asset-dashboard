@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-version="1.5.4">
+<html lang="zh-CN" data-page-version="1.5.5">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -18,10 +18,30 @@
       .catch(function () {});
   })();
   </script>
-  <link rel="stylesheet" href="css/style.css?v=1.5.4">
+  <script>
+  /* 主题：默认跟随系统，手动可切浅色/深色（localStorage: aad-theme） */
+  (function () {
+    var K = "aad-theme";
+    function mode() { try { return localStorage.getItem(K) || "auto"; } catch (e) { return "auto"; } }
+    function apply() {
+      var m = mode();
+      var dark = m === "dark" || (m === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    }
+    apply();
+    try {
+      var mq = window.matchMedia("(prefers-color-scheme: dark)");
+      var onChange = function () { if (mode() === "auto") apply(); };
+      if (mq.addEventListener) mq.addEventListener("change", onChange);
+      else if (mq.addListener) mq.addListener(onChange);
+    } catch (e) {}
+    window.__applyTheme = apply;
+  })();
+  </script>
+  <link rel="stylesheet" href="css/style.css?v=1.5.5">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231f2329'/%3E%3Cpath d='M5 17 L10 11 L13 14 L18 7' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <script src="https://fastly.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" defer></script>
-  <script src="js/app.js?v=1.5.4" defer></script>
+  <script src="js/app.js?v=1.5.5" defer></script>
 </head>
 <body class="locked">
   <div class="pin-lock" id="pin-lock" hidden>
@@ -58,6 +78,7 @@
           <button class="link-btn" id="btn-refresh-price" type="button">立即抓取最新价格</button>
           <a class="link-btn" href="admin.html">份额维护后台</a>
           <button class="link-btn" id="toggle-disclaimer" type="button">口径与说明</button>
+          <button class="theme-btn" id="btn-theme" type="button" title="切换主题（跟随系统 / 浅色 / 深色）"><span class="t-ico">◐</span><span id="theme-label">跟随系统</span></button>
         </span>
       </div>
     </div>

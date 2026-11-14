@@ -14,6 +14,57 @@
 
   function $(id) { return document.getElementById(id); }
 
+  // ---------- 主题 ----------
+  var THEME_KEY = "aad-theme";
+  var THEME_MODES = ["auto", "light", "dark"];
+  var THEME_LABEL = { auto: "跟随系统", light: "浅色", dark: "深色" };
+  function isDark() { return document.documentElement.getAttribute("data-theme") === "dark"; }
+  function cssVar(name, fallback) {
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name);
+    v = (v || "").trim();
+    return v || fallback;
+  }
+  function themeMode() {
+    try { return localStorage.getItem(THEME_KEY) || "auto"; } catch (e) { return "auto"; }
+  }
+  function repaintCharts() {
+    if (state.donut) renderSplit();
+    if (state.trend) renderTrend();
+  }
+  function syncThemeButton() {
+    var btn = $("btn-theme"), lab = $("theme-label");
+    if (!btn) return;
+    var m = themeMode();
+    if (lab) lab.textContent = THEME_LABEL[m] || "跟随系统";
+    btn.setAttribute("title", "当前：" + (THEME_LABEL[m] || "跟随系统") + "（点击切换）");
+    btn.style.color = isDark() ? cssVar("--accent", "#f5b301") : "";
+  }
+  function bindTheme() {
+    syncThemeButton();
+    var btn = $("btn-theme");
+    if (!btn) return;
+    btn.addEventListener("click", function () {
+      var m = themeMode();
+      var next = THEME_MODES[(THEME_MODES.indexOf(m) + 1) % THEME_MODES.length];
+      try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+      if (window.__applyTheme) window.__applyTheme();
+      syncThemeButton();
+      repaintCharts();
+      toastTip("主题：" + (THEME_LABEL[next] || next));
+    });
+    try {
+      var mq = window.matchMedia("(prefers-color-scheme: dark)");
+      var onChange = function () {
+        if (themeMode() !== "auto") return;
+        if (window.__applyTheme) window.__applyTheme();
+        syncThemeButton();
+        repaintCharts();
+      };
+      if (mq.addEventListener) mq.addEventListener("change", onChange);
+      else if (mq.addListener) mq.addListener(onChange);
+    } catch (e) {}
+  }
+
   function num(x, digits) {
     if (x === null || x === undefined || isNaN(x)) return "—";
     return Number(x).toLocaleString("zh-CN", {
@@ -391,7 +442,7 @@
           }
           return { moveOverlap: "shiftY" };
         },
-        itemStyle: { borderColor: "#fff", borderWidth: 1 },
+        itemStyle: { borderColor: cssVar("--card", "#fff"), borderWidth: 1 },
         label: {
           show: true,
           position: "outside",
@@ -400,7 +451,7 @@
             return p.data.label + "\n" + p.percent.toFixed(1) + "%";
           },
           fontSize: compact ? 8.5 : 9,
-          color: "#374151",
+          color: cssVar("--text", "#374151"),
           lineHeight: compact ? 11 : 12,
         },
         labelLine: {
@@ -408,9 +459,9 @@
           length: compact ? 6 : 8,
           length2: compact ? 8 : 12,
           smooth: true,
-          lineStyle: { width: 1, color: "#9ca3af" },
+          lineStyle: { width: 1, color: cssVar("--muted", "#9ca3af") },
         },
-        emphasis: { label: { fontWeight: "bold", color: "#1f2329" }, scaleSize: 3 },
+        emphasis: { label: { fontWeight: "bold", color: cssVar("--text", "#1f2329") }, scaleSize: 3 },
         data: slices.map(function (x) {
           return {
             name: x.label, full: x.full, label: x.label, detail: x.detail,
@@ -1060,7 +1111,10 @@
   }
 
   // ---------- 趋势 ----------
+  function trGold() { return isDark() ? "#f5b301" : "#d4a017"; }
   var TR_GOLD = "#d4a017", TR_UP = "#16a34a", TR_DOWN = "#dc2626";
+  function trUp() { return isDark() ? "#34d399" : "#16a34a"; }
+  function trDown() { return isDark() ? "#f87171" : "#dc2626"; }
   function trTip(rec) {
     function cny(v) { return (v === null || v === undefined) ? '<span class="pa-dim">—</span>' : "¥" + num(v); }
     function signed(v) {
@@ -1094,7 +1148,7 @@
     var pnl = h.map(function (x) {
       return (x.total_pnl_cny === null || x.total_pnl_cny === undefined) ? null : Math.round(x.total_pnl_cny);
     });
-    function pnlColor(v) { return v >= 0 ? TR_UP : TR_DOWN; }
+    function pnlColor(v) { return v >= 0 ? trUp() : trDown(); }
 
     state.trend.setOption({
       grid: { left: 12, right: 56, top: 34, bottom: 26, containLabel: true },
@@ -1112,24 +1166,24 @@
         type: "category",
         data: dates,
         boundaryGap: false,
-        axisLine: { lineStyle: { color: "#e5e7eb" } },
-        axisLabel: { color: "#6b7280", fontSize: 11, formatter: function (v) { return v.slice(5); } },
+        axisLine: { lineStyle: { color: cssVar("--line", "#e5e7eb") } },
+        axisLabel: { color: cssVar("--muted", "#6b7280"), fontSize: 11, formatter: function (v) { return v.slice(5); } },
       },
       yAxis: [
         {
           type: "value", scale: true,
           axisLabel: {
-            color: "#9a7b1f", fontSize: 11,
+            color: isDark() ? "#c9a227" : "#9a7b1f", fontSize: 11,
             formatter: function (v) {
               return v >= 10000 ? "¥" + (v / 10000).toFixed(1) + "万" : "¥" + Math.round(v);
             },
           },
-          splitLine: { lineStyle: { color: "#f1f3f5" } },
+          splitLine: { lineStyle: { color: isDark() ? "#16202e" : "#f1f3f5" } },
         },
         {
           type: "value", scale: true, position: "right",
           axisLabel: {
-            color: "#6b7280", fontSize: 11,
+            color: cssVar("--muted", "#6b7280"), fontSize: 11,
             formatter: function (v) {
               var a = Math.abs(v);
               if (a < 1) return "0";
@@ -1145,8 +1199,8 @@
           name: "总资产", type: "line", yAxisIndex: 0, smooth: true,
           data: total.map(function (v, i) { return [dates[i], v]; }),
           symbol: "circle", symbolSize: 7,
-          lineStyle: { width: 2.4, color: TR_GOLD },
-          itemStyle: { color: TR_GOLD, borderColor: "#fff", borderWidth: 1.5 },
+          lineStyle: { width: 2.4, color: trGold() },
+          itemStyle: { color: trGold(), borderColor: cssVar("--card", "#fff"), borderWidth: 1.5 },
           areaStyle: {
             color: {
               type: "linear", x: 0, y: 0, x2: 0, y2: 1,
@@ -1160,7 +1214,7 @@
         // 总盈亏：自定义绘制，逐段按 0 值水平线着色（0 上方绿、0 下方红）
         {
           name: "总盈亏", type: "custom", yAxisIndex: 1, z: 3,
-          itemStyle: { color: TR_UP },
+          itemStyle: { color: trUp() },
           data: pnl.map(function (v, i) { return [i, v]; }),
           encode: { x: 0, y: 1 },
           renderItem: function (params, api) {
@@ -1255,6 +1309,7 @@
 
   function init() {
     if ($("btn-back-today")) $("btn-back-today").addEventListener("click", exitReplay);
+    bindTheme();
     bindTabs();
     bindRefreshPrice();
     bindSort();
