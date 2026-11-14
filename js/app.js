@@ -295,7 +295,8 @@
         small: false,
         delta: moneyLine(state.replay ? "当日浮动收益 " : "今日浮动收益 ", day, s.day_change_pct) +
           (totalPnl === null || totalPnl === undefined ? "" :
-            "<br>" + moneyLine("总盈亏 ", totalPnl, s.total_pnl_pct)),
+            "<br>" + moneyLine("总盈亏 ", totalPnl, s.total_pnl_pct)) +
+          (s.total_cost_cny ? '<br><span class="muted">账户总成本 ' + money(s.total_cost_cny) + "</span>" : ""),
       },
       {
         label: '<i class="dot trad"></i>传统股票 & 基金',
@@ -353,38 +354,59 @@
   }
 
   // ---------- 占比 ----------
+  function renderBars() {
+    var host = $("split-bars");
+    if (!host) return;
+    var groups = state.data.groups || [];
+    var items = state.data.items || [];
+    var colors = state.groupColors || {};
+
+    function money0(v) { return money(v); }
+
+    function shade(hex, t) {
+      var r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+      function mix(c) { return Math.round(c + (255 - c) * t).toString(16).padStart(2, "0"); }
+      return "#" + mix(r) + mix(g) + mix(b);
+    }
+
+    function cryptoBar(g) {
+      var color = colors[g.key] || "#b45309";
+      var btc = items.filter(function (i) { return i.group === g.key && i.id === "BTC"; })[0] || {};
+      var sol = items.filter(function (i) { return i.group === g.key && i.id === "SOL"; })[0] || {};
+      var bv = btc.value_cny || 0, sv = sol.value_cny || 0;
+      var other = Math.max(0, (g.cny || 0) - bv - sv);
+      var tot = g.cny || 1;
+      var wb = bv / tot * 100, ws = sv / tot * 100, wo = Math.max(0, 100 - wb - ws);
+      return '<div class="bar-item">' +
+        '<div class="bar-line"><span class="name"><i class="dot" style="background:' + color + '"></i>' +
+        escapeHtml(g.name) + '</span><span class="bar-num">' + money0(g.cny) + " · " + num(g.weight) + "%</span></div>" +
+        '<div class="bar bar-stack">' +
+        '<i style="width:' + wb + '%;background:' + color + '" title="BTC"></i>' +
+        '<i style="width:' + ws + '%;background:' + shade(color, 0.28) + '" title="SOL"></i>' +
+        '<i style="width:' + wo + '%;background:' + shade(color, 0.55) + '" title="其他"></i>' +
+        '</div>' +
+        '<div class="bar-sub"><span>BTC ' + money0(bv) + '</span><span>SOL ' + money0(sv) +
+        '</span><span>小额币种合计 ' + money0(other) + "</span></div>" +
+        "</div>";
+    }
+
+    host.innerHTML = groups.map(function (g) {
+      if (g.key === "crypto") return cryptoBar(g);
+      var color = colors[g.key] || "#374151";
+      return '<div class="bar-item">' +
+        '<div class="bar-line"><span class="name"><i class="dot" style="background:' + color + '"></i>' +
+        escapeHtml(g.name) + '</span><span class="bar-num">' + money0(g.cny) + " · " + num(g.weight) + "%</span></div>" +
+        '<div class="bar"><i style="width:' + Math.max(0, Math.min(100, g.weight || 0)) + "%;background:" + color + '"></i></div>' +
+        '<div class="bar-sub"><span>' + (g.key === "cash" ? "稳定币 + 支付宝余额" : (g.key === "traditional" ? "美股基金 + 国内基金" : "分四类记账")) + "</span></div>" +
+        "</div>";
+    }).join("");
+  }
+
   function renderSplit() {
     var groups = state.data.groups || [];
     var colors = state.groupColors;
 
-    // 图例
-    $("split-legend").innerHTML = groups.map(function (g) {
-      var color = colors[g.key] || "#374151";
-      var items = (state.data.items || []).filter(function (i) { return i.group === g.key; });
-      // 按资产类别汇总
-      var byClass = {};
-      items.forEach(function (i) {
-        var k = i.asset_class || "其他";
-        byClass[k] = (byClass[k] || 0) + (i.value_cny || 0);
-      });
-      var clsKeys = Object.keys(byClass);
-      var subRows = (clsKeys.length < 2 ? [] : clsKeys).map(function (k) {
-        var v = byClass[k];
-        var p = (v / (g.cny || 1)) * 100;
-        return '<div class="legend-sub"><span>' + escapeHtml(k) + "</span><span>" +
-          money(v) + " · " + p.toFixed(1) + "%</span></div>";
-      }).join("");
-      return '<div class="legend-row">' +
-        '<div class="legend-top">' +
-        '<span class="name"><i class="dot" style="background:' + color + '"></i>' +
-        escapeHtml(g.name) + "</span>" +
-        '<span class="legend-num">' + money(g.cny) + " · " + num(g.weight) + "%</span>" +
-        "</div>" +
-        '<div class="bar"><i style="width:' + Math.max(0, Math.min(100, g.weight || 0)) +
-        "%;background:" + color + '"></i></div>' +
-        subRows +
-        "</div>";
-    }).join("");
+    renderBars();
 
     if (!window.echarts) {
       $("donut-chart").innerHTML = '<p class="empty-tip">图表库未加载，占比数据见右侧图例</p>';
@@ -768,53 +790,54 @@
   }
 
   function bindPanel() {
-    var rail = $("rail"), panel = $("panel"), mask = $("panel-mask"), close = $("panel-close");
-    if (!rail || !panel) return;
-    var titles = { flow: "资金流水", realized: "已实现盈亏", pnl: "盈亏分析", trend: "总资产趋势" };
-    function setActive(key) {
+    var rail = $("rail");
+    if (!rail) return;
+    var main = document.querySelector("main.container");
+    var views = Array.prototype.slice.call(document.querySelectorAll(".view-page"));
+
+    function show(key) {
+      var isHome = key === "home" || !key;
+      if (main) main.hidden = !isHome;
+      views.forEach(function (v) {
+        v.hidden = v.getAttribute("data-view") !== key || isHome;
+      });
       Array.prototype.forEach.call(rail.children, function (b) {
-        b.classList.toggle("active", b.getAttribute("data-panel") === key && !panel.hidden);
+        b.classList.toggle("active", b.getAttribute("data-view") === (isHome ? "home" : key));
       });
-    }
-    function openPanel(key) {
-      $("panel-title").textContent = titles[key] || "";
-      var secs = panel.querySelectorAll(".panel-body > section");
-      Array.prototype.forEach.call(secs, function (sec) {
-        sec.classList.toggle("active", sec.getAttribute("data-panel") === key);
-      });
-      panel.hidden = false;
-      panel.setAttribute("aria-hidden", "false");
-      if (mask) mask.hidden = false;
-      document.body.classList.add("panel-open");
-      setActive(key);
-      // 面板从隐藏变可见后图表需要重新量尺寸
+      document.body.classList.toggle("view-mode", !isHome);
+      window.scrollTo({ top: 0, behavior: "instant" });
+      state.view = isHome ? "home" : key;
       setTimeout(function () {
         if (key === "trend" && state.trend) { state.trend.resize(); }
         if (key === "flow") renderFlow();
-      }, 60);
+        if (key === "realized") renderRealized();
+      }, 50);
     }
-    function closePanel() {
-      panel.hidden = true;
-      panel.setAttribute("aria-hidden", "true");
-      if (mask) mask.hidden = true;
-      document.body.classList.remove("panel-open");
-      setActive(null);
+    var toggle = $("menu-toggle"), mask = $("drawer-mask");
+    function openMenu(open) {
+      document.body.classList.toggle("menu-open", !!open);
+      if (toggle) toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      if (mask) mask.hidden = !open;
     }
+    if (toggle) toggle.addEventListener("click", function () { openMenu(!document.body.classList.contains("menu-open")); });
+    if (mask) mask.addEventListener("click", function () { openMenu(false); });
     rail.addEventListener("click", function (e) {
-      var b = e.target.closest("[data-panel]");
+      var b = e.target.closest("[data-view]");
       if (!b) return;
-      if (!panel.hidden && $("panel-title").textContent === titles[b.getAttribute("data-panel")]) {
-        closePanel();
-        return;
-      }
-      openPanel(b.getAttribute("data-panel"));
+      show(b.getAttribute("data-view"));
+      openMenu(false);
     });
-    if (mask) mask.addEventListener("click", closePanel);
-    if (close) close.addEventListener("click", closePanel);
+    document.addEventListener("click", function (e) {
+      var b = e.target.closest(".back-home");
+      if (!b) return;
+      show("home");
+    });
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && !panel.hidden) closePanel();
+      if (e.key !== "Escape") return;
+      if (document.body.classList.contains("menu-open")) { openMenu(false); return; }
+      if (state.view && state.view !== "home") show("home");
     });
-    state.openPanel = openPanel;
+    state.showView = show;
   }
 
   function bindTabs() {
