@@ -880,7 +880,10 @@
     if (!body) return;
     var tab = state.flowTab || "trades";
     var head = $("flow-head"), foot = $("flow-foot"), empty = $("flow-empty");
-    var narrow = window.innerWidth < 560;
+    // 用卡片自身宽度判断（面板内约 700px，手机约 380px），避免面板里横向溢出
+    var host = body.closest(".flow-card");
+    var cw = host ? host.getBoundingClientRect().width : 0;
+    var narrow = (cw ? cw : window.innerWidth) < 860;
     if (!ev) {
       head.innerHTML = ""; body.innerHTML = ""; foot.innerHTML = "";
       if (empty) { empty.hidden = false; empty.textContent = "当前快照不含流水数据（历史复现时不可用）。"; }
