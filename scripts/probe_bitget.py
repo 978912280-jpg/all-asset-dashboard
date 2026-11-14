@@ -55,7 +55,7 @@ def main():
         print("      方向分布：%s" % types)
         for r in rows[:8]:
             import datetime as dt
-            t = dt.datetime.fromtimestamp(int(r.get("ts") or 0) / 1000, dt.timezone(dt.timedelta(hours=8))
+            t = dt.datetime.fromtimestamp(int(r.get("ts") or 0) / 1000, dt.timezone(dt.timedelta(hours=8)))
             print("      %s %s %s %s->%s %s" % (t.strftime("%Y-%m-%d %H:%M"), r.get("coin"), r.get("size"),
                                                r.get("fromType"), r.get("toType"), r.get("status")))
     except Exception as e:
