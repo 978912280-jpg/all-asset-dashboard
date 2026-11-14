@@ -275,8 +275,10 @@
 
   function moneyLine(prefix, val, pctVal) {
     if (val === null || val === undefined) return '<span class="kpi-line muted">' + prefix + '—</span>';
-    return '<span class="kpi-line ' + cls(val) + '">' + prefix + signedMoney(val) + (pctVal === null || pctVal === undefined ? "" :
-        ' <span class="nowrap">（' + pct(pctVal) + "）</span>") + "</span>";
+    // 数值与百分号必须同一行；前缀可单独换行（竖屏窄卡）
+    return '<span class="kpi-line ' + cls(val) + '">' + prefix +
+      '<span class="kpi-val">' + signedMoney(val) +
+      (pctVal === null || pctVal === undefined ? "" : "（" + pct(pctVal) + "）") + "</span></span>";
   }
 
   // ---------- KPI ----------

@@ -961,6 +961,7 @@ drawer-title, .rail .drawer-title { margin: 0 0 6px; padding: 0 8px; font-size: 
   .home-grid .donut-box .chart { height: 440px; }
 }
 
-.kpi-line { white-space: nowrap; }
+.kpi-line { white-space: normal; }
+.kpi-val { white-space: nowrap; font-variant-numeric: tabular-nums; }
 body.view-mode .subtitle,
 body.view-mode .topbar-meta { display: none !important; }
