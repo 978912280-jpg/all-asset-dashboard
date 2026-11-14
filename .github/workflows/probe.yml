@@ -2,6 +2,8 @@ name: Bitget 钱包接口探针（临时）
 
 on:
   workflow_dispatch:
+  push:
+    branches: [probe/bitget-wallet]
 
 permissions:
   contents: read
