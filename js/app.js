@@ -800,8 +800,10 @@
   function qtyText(v) {
     var n = Number(v || 0);
     if (!n) return "0";
-    if (Math.abs(n) >= 1000) return num(n, 2);
-    return num(n, Math.abs(n) >= 1 ? 6 : 8);
+    var d = Math.abs(n) >= 1000 ? 2 : (Math.abs(n) >= 1 ? 4 : 8);
+    var s = n.toFixed(d);
+    if (s.indexOf(".") >= 0) s = s.replace(/0+$/, "").replace(/\.$/, "");
+    return s;
   }
 
   function shortDate(s) {
