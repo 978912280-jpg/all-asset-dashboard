@@ -702,3 +702,18 @@ html[data-theme="dark"] .pin-pad .pin-fn { color: #6b7688; background: transpare
   .flow-table .col-fee { display: none; }
   .flow-table td.col-name { font-size: 12px; }
 }
+
+.flow-card .table-scroll { max-height: 480px; overflow: auto; }
+.flow-card .main-table { min-width: 100%; }
+.flow-card thead th { position: sticky; top: 0; z-index: 2; background: var(--card); }
+
+@media (max-width: 560px) {
+  .flow-card .main-table { font-size: 11px; table-layout: fixed; width: 100%; }
+  .flow-card .main-table th:nth-child(1), .flow-card .main-table td:nth-child(1) { width: 26%; }
+  .flow-card .main-table th:nth-child(2), .flow-card .main-table td:nth-child(2) { width: 22%; }
+  .flow-card .main-table th:nth-child(3), .flow-card .main-table td:nth-child(3) { width: 30%; }
+  .flow-card td, .flow-card th { padding: 6px 4px; }
+  .flow-card td.col-name { font-size: 11px; }
+  .flow-card td.num { white-space: normal; }
+  .flow-card td span { white-space: nowrap; }
+}

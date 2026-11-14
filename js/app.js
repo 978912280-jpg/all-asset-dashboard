@@ -816,80 +816,134 @@
     if (!body) return;
     var tab = state.flowTab || "trades";
     var head = $("flow-head"), foot = $("flow-foot"), empty = $("flow-empty");
+    var narrow = window.innerWidth < 560;
     if (!ev) {
-      head.innerHTML = "";
-      body.innerHTML = "";
-      foot.innerHTML = "";
+      head.innerHTML = ""; body.innerHTML = ""; foot.innerHTML = "";
       if (empty) { empty.hidden = false; empty.textContent = "当前快照不含流水数据（历史复现时不可用）。"; }
       return;
     }
 
-    var rows = [];
+    function T(t, c) { return { t: t, c: c || "" }; }
+    function S(subs) { return { sub: subs }; }        // 窄屏竖排合并列
+
+    var cols = [], rows = [], footCells = [];
+
     if (tab === "trades") {
-      head.innerHTML = '<tr><th class="col-name">时间</th><th>币种</th><th>方向</th>' +
-        '<th class="num">数量</th><th class="num">成交价</th><th class="num">金额</th><th class="num col-fee">手续费</th></tr>';
+      cols = narrow
+        ? [T("时间", "col-name"), T("币种 / 方向"), T("数量 / 价格", "num"), T("金额", "num")]
+        : [T("时间", "col-name"), T("币种"), T("方向"), T("数量", "num"),
+           T("成交价", "num"), T("金额", "num"), T("手续费", "num col-fee")];
       (ev.trades || []).forEach(function (t) {
-        rows.push('<tr><td class="col-name">' + escapeHtml(shortDate(t.date)) + "</td><td>" +
-          escapeHtml(t.coin) + '</td><td class="' + (t.side === "买入" ? "neg" : "pos") + '">' +
-          escapeHtml(t.side) + '</td><td class="num">' + qtyText(t.qty) +
-          '</td><td class="num">' + num(t.price, 2) + '</td><td class="num">' + flowMoney(t.quote_usdt) +
-          '</td><td class="num muted col-fee">' + escapeHtml(t.fee || "—") + "</td></tr>");
+        var sc = t.side === "买入" ? "neg" : "pos";
+        rows.push(narrow
+          ? [T(shortDate(t.date), "col-name"),
+             S([[escapeHtml(t.coin), ""], [escapeHtml(t.side), sc]]),
+             S([[qtyText(t.qty), ""], ["@" + Number(t.price || 0).toFixed(2), "muted"]]),
+             T(flowMoney(t.quote_usdt), "num")]
+          : [T(shortDate(t.date), "col-name"), T(escapeHtml(t.coin)),
+             T(escapeHtml(t.side), sc), T(qtyText(t.qty), "num"),
+             T(num(t.price, 2), "num"), T(flowMoney(t.quote_usdt), "num"),
+             T(escapeHtml(t.fee || "—"), "num muted col-fee")]);
       });
       var buys = (ev.trades || []).filter(function (t) { return t.side === "买入"; });
       var sells = (ev.trades || []).filter(function (t) { return t.side === "卖出"; });
       var buyAmt = buys.reduce(function (a, t) { return a + (t.quote_usdt || 0); }, 0);
       var sellAmt = sells.reduce(function (a, t) { return a + (t.quote_usdt || 0); }, 0);
-      foot.innerHTML = '<tr><td colspan="5">买入 ' + buys.length + " 笔 / 卖出 " + sells.length + " 笔</td>" +
-        '<td class="num total-gold">' + flowMoney(buyAmt) + " 买 · " + flowMoney(sellAmt) + " 卖</td><td></td></tr>";
+      footCells = narrow
+        ? [{ t: "买 " + buys.length + " / 卖 " + sells.length, c: "", s: 2 },
+           { t: flowMoney(buyAmt) + " · " + flowMoney(sellAmt), c: "num total-gold", s: 2 }]
+        : [{ t: "买入 " + buys.length + " 笔 / 卖出 " + sells.length + " 笔", c: "", s: 5 },
+           { t: flowMoney(buyAmt) + " 买 · " + flowMoney(sellAmt) + " 卖", c: "num total-gold", s: 1 },
+           { t: "", c: "", s: 1 }];
       empty.hidden = !!(ev.trades || []).length;
       if (!(ev.trades || []).length) empty.textContent = "近 90 天没有成交记录。";
     } else if (tab === "earn") {
-      head.innerHTML = '<tr><th class="col-name">日期</th><th>币种</th><th class="num">当日收益</th>' +
-        '<th class="num">估值</th><th class="num">笔数</th></tr>';
+      cols = narrow
+        ? [T("日期", "col-name"), T("币种"), T("当日收益", "num"), T("估值", "num")]
+        : [T("日期", "col-name"), T("币种"), T("当日收益", "num"), T("估值", "num"), T("笔数", "num")];
       (ev.earn_daily || []).forEach(function (e) {
-        rows.push('<tr><td class="col-name">' + escapeHtml(shortDate(e.day)) + "</td><td>" +
-          escapeHtml(e.coin) + '</td><td class="num pos">+' + qtyText(e.qty) +
-          '</td><td class="num">' + flowMoney(e.value_usdt) +
-          '</td><td class="num muted">' + (e.count || 1) + "</td></tr>");
+        rows.push(narrow
+          ? [T(shortDate(e.day), "col-name"), T(escapeHtml(e.coin)),
+             T("+" + qtyText(e.qty), "num pos"), T(flowMoney(e.value_usdt), "num")]
+          : [T(shortDate(e.day), "col-name"), T(escapeHtml(e.coin)),
+             T("+" + qtyText(e.qty), "num pos"), T(flowMoney(e.value_usdt), "num"),
+             T(String(e.count || 1), "num muted")]);
       });
       var earnTotal = (ev.earn_daily || []).reduce(function (a, e) { return a + (e.value_usdt || 0); }, 0);
       var earnCount = (ev.earn_daily || []).reduce(function (a, e) { return a + (e.count || 0); }, 0);
-      foot.innerHTML = '<tr><td colspan="3">累计理财收益</td><td class="num total-gold">' +
-        flowMoney(earnTotal) + '</td><td class="num muted">' + earnCount + " 笔</td></tr>";
+      footCells = narrow
+        ? [{ t: "累计 " + earnCount + " 笔", c: "", s: 2 },
+           { t: flowMoney(earnTotal), c: "num total-gold", s: 2 }]
+        : [{ t: "累计理财收益", c: "", s: 3 },
+           { t: flowMoney(earnTotal), c: "num total-gold", s: 1 },
+           { t: String(earnCount) + " 笔", c: "num muted", s: 1 }];
       empty.hidden = !!(ev.earn_daily || []).length;
       if (!(ev.earn_daily || []).length) empty.textContent = "近 90 天没有理财收益记录。";
     } else if (tab === "flows") {
-      head.innerHTML = '<tr><th class="col-name">日期</th><th>方向</th><th>币种</th>' +
-        '<th class="num">数量</th><th class="num">金额</th><th>通道</th></tr>';
+      cols = narrow
+        ? [T("日期", "col-name"), T("方向 / 币种"), T("数量", "num"), T("金额", "num")]
+        : [T("日期", "col-name"), T("方向"), T("币种"), T("数量", "num"),
+           T("金额", "num"), T("通道")];
       (ev.flows || []).forEach(function (f) {
-        rows.push('<tr><td class="col-name">' + escapeHtml(shortDate(f.date)) + '</td><td class="' +
-          (f.direction === "入金" ? "pos" : "neg") + '">' + escapeHtml(f.direction) + "</td><td>" +
-          escapeHtml(f.coin) + '</td><td class="num">' + qtyText(f.qty) +
-          '</td><td class="num">' + flowMoney(f.value_usdt) +
-          '</td><td class="muted">' + escapeHtml(f.channel || "—") + "</td></tr>");
+        var dc = f.direction === "入金" ? "pos" : "neg";
+        rows.push(narrow
+          ? [T(shortDate(f.date), "col-name"),
+             S([[escapeHtml(f.direction), dc], [escapeHtml(f.coin), ""]]),
+             T(qtyText(f.qty), "num"), T(flowMoney(f.value_usdt), "num")]
+          : [T(shortDate(f.date), "col-name"), T(escapeHtml(f.direction), dc),
+             T(escapeHtml(f.coin)), T(qtyText(f.qty), "num"),
+             T(flowMoney(f.value_usdt), "num"), T(escapeHtml(f.channel || "—"), "muted")]);
       });
       var nd = ev.net_deposit || {};
-      foot.innerHTML = '<tr><td colspan="3">基准 ' + num(nd.baseline_usdt, 0) + ' USDT（' +
-        escapeHtml(nd.baseline_date || "") + '）</td><td class="num muted">之后入 ' +
-        flowMoney(nd.deposit_after) + '</td><td class="num muted">出 ' + flowMoney(nd.withdraw_after) +
-        '</td><td class="num total-gold">净入金 ' + flowMoney(nd.computed_usdt) + "</td></tr>";
+      footCells = narrow
+        ? [{ t: "净入金（基准 " + num(nd.baseline_usdt, 0) + "）", c: "", s: 3 },
+           { t: flowMoney(nd.computed_usdt), c: "num total-gold", s: 1 }]
+        : [{ t: "基准 " + num(nd.baseline_usdt, 0) + " USDT（" + escapeHtml(nd.baseline_date || "") + "）", c: "", s: 3 },
+           { t: "之后入 " + flowMoney(nd.deposit_after) + " / 出 " + flowMoney(nd.withdraw_after), c: "num muted", s: 1 },
+           { t: "净入金 " + flowMoney(nd.computed_usdt), c: "num total-gold", s: 2 }];
       empty.hidden = !!(ev.flows || []).length;
       if (!(ev.flows || []).length) empty.textContent = "近 90 天没有链上充提记录。";
     } else {
-      head.innerHTML = '<tr><th class="col-name">日期</th><th>币种</th><th>类型</th>' +
-        '<th class="num">数量</th><th class="num">估值</th></tr>';
+      cols = narrow
+        ? [T("日期", "col-name"), T("币种 / 类型"), T("数量", "num"), T("估值", "num")]
+        : [T("日期", "col-name"), T("币种"), T("类型"), T("数量", "num"), T("估值", "num")];
       (ev.transfers || []).forEach(function (t) {
-        rows.push('<tr><td class="col-name">' + escapeHtml(shortDate(t.date)) + "</td><td>" +
-          escapeHtml(t.coin) + "</td><td>" + escapeHtml(t.kind) + '</td><td class="num">' +
-          qtyText(t.qty) + '</td><td class="num">' + flowMoney(t.value_usdt) + "</td></tr>");
+        rows.push(narrow
+          ? [T(shortDate(t.date), "col-name"),
+             S([[escapeHtml(t.coin), ""], [escapeHtml(t.kind), "muted"]]),
+             T(qtyText(t.qty), "num"), T(flowMoney(t.value_usdt), "num")]
+          : [T(shortDate(t.date), "col-name"), T(escapeHtml(t.coin)),
+             T(escapeHtml(t.kind)), T(qtyText(t.qty), "num"),
+             T(flowMoney(t.value_usdt), "num")]);
       });
       var trTotal = (ev.transfers || []).reduce(function (a, t) { return a + (t.value_usdt || 0); }, 0);
-      foot.innerHTML = '<tr><td colspan="4">划转合计（不计入净入金）</td><td class="num total-gold">' +
-        flowMoney(trTotal) + "</td></tr>";
+      footCells = narrow
+        ? [{ t: "划转合计", c: "", s: 3 }, { t: flowMoney(trTotal), c: "num total-gold", s: 1 }]
+        : [{ t: "划转合计（不计入净入金）", c: "", s: 4 },
+           { t: flowMoney(trTotal), c: "num total-gold", s: 1 }];
       empty.hidden = !!(ev.transfers || []).length;
       if (!(ev.transfers || []).length) empty.textContent = "近 90 天没有内部划转记录。";
     }
-    body.innerHTML = rows.join("");
+
+    function td(c) {
+      if (c.sub) {
+        return '<td class="' + (c.c || "") + '">' +
+          c.sub.map(function (x) {
+            return "<span" + (x[1] ? ' class="' + x[1] + '"' : "") + ">" + x[0] + "</span>";
+          }).join("<br>") + "</td>";
+      }
+      return "<td" + (c.c ? ' class="' + c.c + '"' : "") +
+        (c.s > 1 ? ' colspan="' + c.s + '"' : "") + ">" + c.t + "</td>";
+    }
+
+    head.innerHTML = "<tr>" + cols.map(function (c) {
+      return '<th class="' + (c.c || "") + '">' + c.t + "</th>";
+    }).join("") + "</tr>";
+    body.innerHTML = rows.map(function (cells) {
+      return "<tr>" + cells.map(td).join("") + "</tr>";
+    }).join("");
+    foot.innerHTML = "<tr>" + footCells.map(td).join("") + "</tr>";
+
     var desc = {
       trades: "Bitget 成交明细 · 按时间倒序",
       earn: "理财派息 / 锁仓收益 / 活动奖励 · 按日汇总",
@@ -1527,6 +1581,7 @@
       t = setTimeout(function () {
         if (state.donut) state.donut.resize();
         if (state.trend) state.trend.resize();
+        renderFlow();
       }, 120);
     });
   }
