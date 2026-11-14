@@ -614,14 +614,26 @@ def main():
     else:
         crypto_pnl_usdt = crypto_meta.get("real_pnl_usdt")
         crypto_pnl_cny = crypto_pnl_usdt * rate if crypto_pnl_usdt is not None else None
-    total_pnl = trad_pnl + (crypto_pnl_cny or 0) if (trad_cost or crypto_pnl_cny is not None) else None
-    # 总盈亏的基准成本：传统成本 + 加密账户净入金（折算人民币）
+    # 加密账户口径成本（收益率分母，剔除划往美股账户的部分）
     if cost_map:
         crypto_cost_cny = sum(r.get("cost_cny") or 0 for r in crypto_rows) + stable_cash_cny
     else:
         crypto_cost_cny = (crypto_meta.get("net_deposit_usdt") or 0) * rate
-    total_cost_base = trad_cost + crypto_cost_cny
-    total_pnl_pct = round(total_pnl / total_cost_base * 100, 2) if (total_pnl is not None and total_cost_base) else None
+
+    # 账户总成本：转入 Bitget 的总额（含已划入美股的部分）+ 支付宝现金 + 008163 成本
+    ev_total_usdt = ((events or {}).get("net_deposit") or {}).get("computed_total_usdt")
+    if ev_total_usdt is None:
+        ev_total_usdt = crypto_meta.get("net_deposit_usdt") or 0
+    fund_008163_cost = 0.0
+    for r in trad_rows:
+        if str(r.get("id")) == "008163":
+            fund_008163_cost = float(r.get("cost_cny") or 0)
+            break
+    total_cost_base = r2(float(ev_total_usdt) * rate + fiat_cash_cny + fund_008163_cost, 2)
+    total_pnl = r2(total_cny - total_cost_base, 2)
+    total_pnl_pct = round(total_pnl / total_cost_base * 100, 2) if total_cost_base else None
+    print("      总成本口径：Bitget 转入 %.2f USDT（%.2f CNY）+ 支付宝现金 %.2f + 008163 成本 %.2f = %.2f CNY" % (
+        float(ev_total_usdt), float(ev_total_usdt) * rate, fiat_cash_cny, fund_008163_cost, total_cost_base))
     pending = [r["id"] for r in trad_rows if r["pending"]]
 
     def weight(v):
@@ -825,6 +837,8 @@ def main():
             "crypto_pnl_pct": crypto_pnl_pct_calc,
             "total_pnl_cny": r2(total_pnl, 2),
             "total_pnl_pct": total_pnl_pct,
+            "total_cost_cny": total_cost_base,
+            "total_cost_crypto_usdt": ev_total_usdt,
         },
         "groups": [
             {
