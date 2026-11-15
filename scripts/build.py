@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.10.14"
+PAGE_VERSION = "1.10.15"
 PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -758,7 +758,7 @@ def llm_polish(analysis):
     allowed = set((analysis.get("values") or {}).keys())
     prompt = (
         "你是个人资产仪表台的撰写者。下面是今天的真实数据，每一项都带有占位符。\n"
-        "请写一份「当日资产观察」：2~3 段自然叙述，全文 300~420 字，第一段给总判断，第二段讲今天的变化与原因，"
+        "请写一份「当日资产观察」：2~3 段自然叙述，全文控制在 320 字以内（超过会被作废），第一段给总判断，第二段讲今天的变化与原因，"
         "第三段点出一两个值得留意的结构事实。语言自然、克制，像人复盘，不要小标题、不要列表、不要客套。\n\n"
         "硬规则：\n"
         "1. 所有数字（金额、比例、笔数、日期、天数）必须原样写成给定的 {占位符}，禁止出现任何裸数字或中文数字金额（如「三成」「两笔」）。\n"
@@ -771,7 +771,7 @@ def llm_polish(analysis):
     payload = {"model": model,
                "messages": [{"role": "system", "content": "你只做中文资产观察写作，严格遵守占位符规则，输出 JSON。"},
                             {"role": "user", "content": prompt}],
-               "temperature": 0.6}
+               "temperature": 0.6, "max_tokens": 420}
     req = urllib.request.Request(url, data=_json.dumps(payload).encode("utf-8"),
         headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"})
     try:
