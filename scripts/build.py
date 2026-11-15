@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.10.12"
+PAGE_VERSION = "1.10.13"
 PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -637,6 +637,68 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
     else:
         bullets.append({"label": "待办", "text": "份额、成本价、币价均为最新，无需处理。", "tone": "muted"})
 
+    # ---- 供「自由叙述」使用的额外占位符与事实清单（前端同日按币种渲染） ----
+    def raw(key, v, kind="usdt", text=None):
+        values[key] = {"v": v, "kind": kind}
+        if text is not None:
+            values[key]["text"] = text
+        return "{" + key + "}"
+
+    flow_date_tok = raw("flow_date", 0, "date", last_flow_day[5:] if last_flow_day else "—")
+    dout_usdt = 0
+    if last_flow_day:
+        dout_usdt = sum(float(x.get("value_usdt") or 0) for x in flows
+                        if x.get("day") == last_flow_day and x.get("direction") == "出金")
+    dout_usdt_tok = raw("dout_usdt", dout_usdt, "usdt")
+    earn_today_tok = "{earn_today}"
+    earn30_usdt_tok = "{earn30_usdt}"
+    earn_cnt_tok = "{earn_cnt}"
+    coins_txt = "—"
+    val_today = 0.0
+    cnt_today = 0
+    val30 = 0.0
+    if earn_days:
+        le = earn_days[-1]
+        rows = [x for x in earn if x.get("day") == le]
+        val_today = sum(float(x.get("value_usdt") or 0) for x in rows)
+        cnt_today = sum(int(x.get("count") or 0) for x in rows)
+        coins_txt = "、".join(sorted({x.get("coin") for x in rows})) or "—"
+        val30 = sum(float(x.get("value_usdt") or 0) for x in earn
+                    if x.get("day") and datetime.fromisoformat(x["day"]).date() >= win_start)
+    raw("earn_today", val_today, "usdt")
+    raw("earn30_usdt", val30, "usdt")
+    raw("earn_cnt", cnt_today, "int")
+    raw("crypto_day_pct", summary.get("crypto_day_change_pct") or 0, "pct")
+    raw("pnl_crypto_pct", summary.get("crypto_pnl_pct") or 0, "pct")
+    raw("pnl_trad_pct", summary.get("traditional_pnl_pct") or 0, "pct")
+    raw("crypto_account", summary.get("crypto_account_cny") or 0, "money")
+    raw("stable_cash", summary.get("stable_cash_cny") or 0, "money")
+    raw("alipay", summary.get("fiat_cash_cny") or 0, "money")
+    raw("range_days", len(hist[-30:]) if hist else 1, "int")
+    raw("sold_cnt", len(realized_entries or []), "int")
+    raw("shares_age", shares_age or 0, "int")
+    for r in crypto_rows:
+        tok("val_%s" % r["id"].lower(), float(r.get("value_cny") or 0))
+
+    facts = [
+        "总资产 %s，今日 %s（%s）" % ("{total}", "{day}", "{pct}"),
+        "传统日变动 %s，加密日变动 %s，加密日涨幅 %s" % ("{trad_day}", "{crypto_day}", "{crypto_day_pct}"),
+        "累计总盈亏 %s（%s），其中加密 %s（%s）、传统 %s（%s）" % (
+            "{pnl_total}", "{pnl_pct}", "{pnl_crypto}", "{pnl_crypto_pct}", "{pnl_trad}", "{pnl_trad_pct}"),
+        "近 {range_days} 日累计 {range_chg}（{range_pct}）" + (
+            "，最佳 %s（{best_day}）、最差 %s（{worst_day}）" % (
+                (best.get("date") or "")[5:], (worst.get("date") or "")[5:]) if len(hist) >= 3 else ""),
+        "结构：加密 {w_crypto}、传统 {w_trad}、现金 {w_cash}；加密账户口径 {crypto_account}，其中稳定币 {stable_cash}",
+        "加密内部：BTC {val_btc}（{share_btc}）、SOL {val_sol}（{share_sol}）、BGB {val_bgb}",
+        "净入金总额 {net_total}，加密账户口径 {net_crypto}，划入美股 {stock_in}（内部划转）",
+        "最近一次链上出金 %s，%s USDT（约 %s）；本期新增链上充值/提现为 0" % (
+            flow_date_tok, dout_usdt_tok, "{dout}" if dout_usdt else "{dout}"),
+        "理财：今日派息 %s USDT（%s，%s 笔），近 30 日 %s USDT（约 %s），折年化 %s" % (
+            earn_today_tok, coins_txt or "—", earn_cnt_tok, earn30_usdt_tok, "{earn30}", "{earn_apr}"),
+        "已实现盈亏 %s，卖出 %s 笔" % ("{real_total}", "{sold_cnt}"),
+        "支付宝现金 {alipay}；持仓份额已 {shares_age} 天未更新",
+    ]
+
     if abs(day_change) < 0.5 or abs(day_pct) < 0.01:
         headline = "今日资产 {total}，与上一交易日基本持平"
     elif day_change > 0:
@@ -661,6 +723,7 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
         "day_change_cny": r2(day_change, 2),
         "day_change_pct": summary.get("day_change_pct"),
         "source": "rules",
+        "facts": facts,
     }
 
 
@@ -669,10 +732,15 @@ def decl(v, key, values, kind="money"):
 
 
 def llm_polish(analysis):
-    """用大模型润色摘要文案：只改措辞，不改数字，必须原样保留 {token} 占位符。"""
+    """让模型基于事实清单自由叙述当日观察：
+    - 内容/顺序/取舍自由，可归因、可对比、可点评中性事实；
+    - 但所有数字必须写成 {占位符}，不得出现裸数字，不得新增占位符，不得自行推算；
+    - 任何违规都整段弃用，退回规则文案。
+    """
     import json as _json
-    import socket
     import os
+    import re as _re
+    import socket
     import urllib.request
 
     key = os.environ.get("LLM_API_KEY") or os.environ.get("ARK_API_KEY") or os.environ.get("OPENAI_API_KEY")
@@ -680,43 +748,34 @@ def llm_polish(analysis):
         analysis["ai"] = {"used": False, "reason": "no_key"}
         return analysis
     base = (os.environ.get("LLM_BASE_URL") or "https://ark.cn-beijing.volces.com/api/v3").strip()
-    # 兼容两种填法：只填到 /api/v3，或直接填完整的 .../chat/completions
     if base.rstrip("/").endswith("/chat/completions"):
         url = base.rstrip("/")
     else:
         url = base.rstrip("/") + "/chat/completions"
     model = os.environ.get("LLM_MODEL") or "doubao-seed-1-6-250615"
-    allowed = set(analysis.get("values") or {})
-    body = {
-        "headline": analysis.get("headline"),
-        "bullets": [{"label": b.get("label"), "text": b.get("text")} for b in analysis.get("bullets", [])],
-    }
-    facts = {k: v.get("v") for k, v in (analysis.get("values") or {}).items()}
+
+    facts = analysis.get("facts") or []
+    allowed = set((analysis.get("values") or {}).keys())
     prompt = (
-        "你是个人资产仪表盘的文案助手。下面是当日资产的要点（数字是人民币口径）与事实数据。\n"
-        "请把 headline 和每条 bullet 的 text 改写得更自然、更像人话，保留专业和克制，不夸张、不建议买卖。\n"
-        "硬性规则：1) 只能改措辞，不得增删数字；2) 所有 {xxx} 占位符必须原样保留，不得翻译、不得改成具体数字；\n"
-        "3) 不要新增占位符；4) 每条 bullet 的 label 保持不变（盈亏/出入金/理财生息/已实现/待办）；\n"
-        "5) 中文输出，headline 一句话不超过 40 字，每条 bullet 不超过 90 字。\n"
-        "只输出 JSON，格式：{\"headline\":\"...\",\"bullets\":[{\"label\":\"...\",\"text\":\"...\"}]}\n\n"
-        "要点：%s\n事实（人民币）：%s"
-    ) % (_json.dumps(body, ensure_ascii=False), _json.dumps(facts, ensure_ascii=False))
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": "你只做文案润色，严格保留占位符，输出 JSON。"},
-            {"role": "user", "content": prompt},
-        ],
-        "temperature": 0.3,
-    }
-    req = urllib.request.Request(
-        url,
-        data=_json.dumps(payload).encode("utf-8"),
-        headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"},
+        "你是个人资产仪表台的撰写者。下面是今天的真实数据，每一项都带有占位符。\n"
+        "请写一份「当日资产观察」：3 段左右自然叙述，第一段给总判断，第二段讲今天的变化与原因，"
+        "第三段点出一两个值得留意的结构事实。语言自然、克制，像人复盘，不要小标题、不要列表、不要客套。\n\n"
+        "硬规则：\n"
+        "1. 所有数字（金额、比例、笔数、日期、天数）必须原样写成给定的 {占位符}，禁止出现任何裸数字或中文数字金额（如「三成」「两笔」）。\n"
+        "2. 只能使用下面出现过的占位符，不得新增、不得改写占位符名字。\n"
+        "3. 不得自行加减乘除推算新数字，不得加入数据里没有的事实。\n"
+        "4. 不做买卖建议、不预测价格、不做好坏评价。\n"
+        "5. 只输出 JSON：{\"paragraphs\": [\"第一段\", \"第二段\", \"第三段\"]}，不要解释。\n\n"
+        "数据：\n" + "\n".join("- " + f for f in facts)
     )
+    payload = {"model": model,
+               "messages": [{"role": "system", "content": "你只做中文资产观察写作，严格遵守占位符规则，输出 JSON。"},
+                            {"role": "user", "content": prompt}],
+               "temperature": 0.6}
+    req = urllib.request.Request(url, data=_json.dumps(payload).encode("utf-8"),
+        headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"})
     try:
         data = None
-        # 模型首字延迟偶发较长，超时重试一次再退回规则文案
         for attempt in range(2):
             try:
                 with urllib.request.urlopen(req, timeout=45) as resp:
@@ -731,26 +790,34 @@ def llm_polish(analysis):
             if text.startswith("json"):
                 text = text[4:]
         out = _json.loads(text)
-        import re as _re
-        bad = []
-        for b in out.get("bullets", []):
-            for t in _re.findall(r"\{([a-z0-9_]+)\}", b.get("text") or ""):
-                if t not in allowed:
-                    bad.append(t)
-        for t in _re.findall(r"\{([a-z0-9_]+)\}", out.get("headline") or ""):
-            if t not in allowed:
-                bad.append(t)
-        if bad or not out.get("headline") or not out.get("bullets"):
-            analysis["ai"] = {"used": False, "reason": "invalid_tokens:" + ",".join(bad[:5])}
+        paras = [str(x).strip() for x in (out.get("paragraphs") or []) if str(x).strip()]
+        if not (1 <= len(paras) <= 5):
+            analysis["ai"] = {"used": False, "reason": "bad_shape"}
             return analysis
-        analysis["headline"] = out["headline"]
-        by_label = {b.get("label"): b for b in out["bullets"]}
-        for b in analysis["bullets"]:
-            src = by_label.get(b["label"])
-            if src and src.get("text"):
-                b["text"] = src["text"]
-        analysis["ai"] = {"used": True, "model": model}
-    except Exception as exc:  # 网络、额度、解析失败都退回规则文案
+        used, bad, naked = [], [], []
+        for para in paras:
+            used += _re.findall(r"\{([a-z0-9_]+)\}", para)
+            naked += _re.findall(r"[0-9]", _re.sub(r"\{[a-z0-9_]+\}", "", para))
+        for name in used:
+            if name not in allowed:
+                bad.append(name)
+        if bad:
+            analysis["ai"] = {"used": False, "reason": "invalid_tokens:" + ",".join(sorted(set(bad))[:5])}
+            return analysis
+        if naked:
+            analysis["ai"] = {"used": False, "reason": "naked_digits:%d" % len(naked)}
+            return analysis
+        if len(set(used)) < 3:
+            analysis["ai"] = {"used": False, "reason": "too_few_facts"}
+            return analysis
+        total = sum(len(x) for x in paras)
+        if total > 700:
+            analysis["ai"] = {"used": False, "reason": "too_long:%d" % total}
+            return analysis
+        analysis["freeform"] = paras
+        analysis["ai"] = {"used": True, "model": model, "mode": "freeform", "chars": total,
+                          "facts_used": len(set(used))}
+    except Exception as exc:
         detail = ""
         body = getattr(exc, "read", None)
         if body:
@@ -758,12 +825,9 @@ def llm_polish(analysis):
                 detail = " | body=" + body().decode("utf-8", "ignore")[:200]
             except Exception:
                 detail = ""
-        analysis["ai"] = {
-            "used": False,
-            "reason": type(exc).__name__ + ": " + str(exc)[:100] + detail,
-            "url": url,
-            "model": model,
-        }
+        analysis["ai"] = {"used": False,
+                          "reason": type(exc).__name__ + ": " + str(exc)[:100] + detail,
+                          "url": url, "model": model}
     return analysis
 
 

@@ -414,16 +414,21 @@
     }).join("");
   }
 
-  function anaToken(v, kind) {
-    v = Number(v) || 0;
-    var signCls = kind === "abs" ? "neg"
-      : ((kind === "signed" || kind === "pct") ? (v > 0 ? "pos" : (v < 0 ? "neg" : "")) : "");
+  function anaToken(item) {
+    var kind = item && item.kind ? item.kind : "money";
+    if (kind === "date") return '<span class="ana-num">' + escapeHtml(String((item && item.text) || "")) + "</span>";
+    var v = Number(item && item.v) || 0;
+    var signCls = (kind === "date" || kind === "int" || kind === "usdt") ? ""
+      : (kind === "abs" ? "neg"
+      : ((kind === "signed" || kind === "pct") ? (v > 0 ? "pos" : (v < 0 ? "neg" : "")) : ""));
     var txt;
     if (kind === "ratio") txt = v.toFixed(1) + "%";
     else if (kind === "pct") txt = Math.abs(v) < 0.005 ? "0.00%" : ((v > 0 ? "+" : "−") + Math.abs(v).toFixed(2) + "%");
     else if (kind === "signed") txt = signedMoney(v, 0);
     else if (kind === "neg") txt = "−" + curSym() + num(convCny(Math.abs(v)), 0);
     else if (kind === "abs") txt = curSym() + num(convCny(Math.abs(v)), 0);
+    else if (kind === "usdt") txt = num(v, 2) + " USDT";
+    else if (kind === "int") txt = num(v, 0);
     else txt = curSym() + num(convCny(v), 0);
     return '<span class="ana-num ' + signCls + '">' + txt + "</span>";
   }
@@ -433,7 +438,7 @@
     return String(text || "").replace(/\{([a-z0-9_]+)\}/g, function (m, key) {
       var item = map[key];
       if (!item) return m;
-      return anaToken(item.v, item.kind || "money");
+      return anaToken(item);
     });
   }
 
@@ -455,7 +460,12 @@
     var vals = a.values || {};
     box.className = "analysis-head " + (a.tone === "neg" ? "neg" : "pos");
     box.innerHTML = anaFill(a.headline || "", vals);
-    list.innerHTML = (a.bullets || []).map(function (b) {
+    var paras = a.freeform && a.freeform.length ? a.freeform : null;
+    if (paras) {
+      list.innerHTML = paras.map(function (t) {
+        return '<p class="ana-p">' + anaFill(t, vals) + "</p>";
+      }).join("");
+    } else list.innerHTML = (a.bullets || []).map(function (b) {
       return '<li><span class="a-label">' + escapeHtml(b.label || "") + "</span>" +
         '<span class="a-text">' + anaFill(b.text || "", vals) + "</span></li>";
     }).join("");

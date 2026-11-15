@@ -1039,3 +1039,6 @@ body.view-mode .cur-chip { display: inline-flex !important; }
 .analysis-head .ana-num, .analysis-list .ana-num { font-weight: 600; }
 .ana-num.pos { color: var(--up, #0a8f5b); }
 .ana-num.neg { color: var(--down, #d33); }
+
+.analysis-list .ana-p { margin: 0 0 10px; line-height: 1.65; }
+.analysis-list .ana-p:last-child { margin-bottom: 0; }
