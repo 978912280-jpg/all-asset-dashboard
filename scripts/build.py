@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.10.24"
+PAGE_VERSION = "1.10.25"
 PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -825,7 +825,11 @@ def llm_polish(analysis):
         used, bad, naked = [], [], []
         for para in paras:
             used += _re.findall(r"\{([a-z0-9_]+)\}", para)
-            naked += _re.findall(r"[0-9]", _re.sub(r"\{[a-z0-9_]+\}", "", para))
+            rest = _re.sub(r"\{[a-z0-9_]+\}", "", para)
+            rest = _re.sub(r"\d{2}-\d{2}", "", rest)       # 日期 11-16 允许裸写
+            rest = _re.sub(r"\d+\s*[日天]", "", rest)      # “30 日”“5 天”允许裸写
+            rest = _re.sub(r"\d+\s*笔", "", rest)          # “8 笔”允许裸写
+            naked += _re.findall(r"[0-9]", rest)
         for name in used:
             if name not in allowed:
                 bad.append(name)
@@ -833,7 +837,7 @@ def llm_polish(analysis):
             analysis["ai"] = {"used": False, "reason": "invalid_tokens:" + ",".join(sorted(set(bad))[:5])}
             return analysis
         if naked:
-            analysis["ai"] = {"used": False, "reason": "naked_digits:%d" % len(naked)}
+            analysis["ai"] = {"used": False, "reason": "naked_digits:%d" % len(naked), "draft": paras}
             return analysis
         if len(set(used)) < 3:
             analysis["ai"] = {"used": False, "reason": "too_few_facts"}
