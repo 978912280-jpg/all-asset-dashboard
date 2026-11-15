@@ -416,7 +416,8 @@
 
   function anaToken(v, kind) {
     v = Number(v) || 0;
-    var signCls = kind === "abs" ? "neg" : (v > 0 ? "pos" : (v < 0 ? "neg" : ""));
+    var signCls = kind === "abs" ? "neg"
+      : ((kind === "signed" || kind === "pct") ? (v > 0 ? "pos" : (v < 0 ? "neg" : "")) : "");
     var txt;
     if (kind === "pct") txt = (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(2) + "%";
     else if (kind === "signed") txt = signedMoney(v, 0);
