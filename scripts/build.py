@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.10.17"
+PAGE_VERSION = "1.10.18"
 PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -688,7 +688,7 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
         "近 {range_days} 日累计 {range_chg}（{range_pct}）" + (
             "，最佳 %s（{best_day}）、最差 %s（{worst_day}）" % (
                 (best.get("date") or "")[5:], (worst.get("date") or "")[5:]) if len(hist) >= 3 else ""),
-        "结构：加密 {w_crypto}、传统 {w_trad}、现金 {w_cash}；加密账户口径 {crypto_account}，其中稳定币 {stable_cash}",
+        "结构：加密 {w_crypto}、传统 {w_trad}、现金 {w_cash}；加密账户口径合计 {crypto_account}，其中稳定币金额 {stable_cash}（不是比例，是金额）",
         "加密内部：BTC {val_btc}（{share_btc}）、SOL {val_sol}（{share_sol}）、BGB {val_bgb}",
         "净入金总额 {net_total}，加密账户口径 {net_crypto}，划入美股 {stock_in}（内部划转）",
         "最近一次链上出金 %s，%s USDT（约 %s）；本期新增链上充值/提现为 0" % (

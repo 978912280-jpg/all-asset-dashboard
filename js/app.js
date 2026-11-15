@@ -435,11 +435,13 @@
 
   function anaFill(text, values) {
     var map = values || {};
-    return String(text || "").replace(/\{([a-z0-9_]+)\}/g, function (m, key) {
+    var filled = String(text || "").replace(/\{([a-z0-9_]+)\}/g, function (m, key) {
       var item = map[key];
       if (!item) return m;
       return anaToken(item);
     });
+    // 模型偶尔在占位符后重复写一次单位，收敛掉
+    return filled.replace(/USDT\s*USDT/g, "USDT").replace(/\s{2,}/g, " ");
   }
 
   function renderAnalysis() {
