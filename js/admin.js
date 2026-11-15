@@ -88,6 +88,8 @@
         renderTable();
         renderCash();
         renderPoolx();
+        renderLedger();
+        bindLedger();
         syncGhUi();
         restoreDraftIfAny();
       });
@@ -215,9 +217,7 @@
     var list = state.holdings.cash_accounts;
     var hit = list.filter(function (c) { return c.id === id; })[0];
     if (!hit) {
-      hit = id === "us_stock"
-        ? { id: "us_stock", name: "美股账户现金", currency: "USD", amount_usd: 0, updated_at: "" }
-        : { id: "alipay", name: "支付宝现金", currency: "CNY", amount_cny: 0 };
+      hit = { id: "alipay", name: "支付宝现金", currency: "CNY", amount_cny: 0 };
       list.push(hit);
     }
     return hit;
@@ -230,40 +230,110 @@
     if (inp && document.activeElement !== inp) inp.value = av ? String(av) : "";
     var pill = $("alipay-pill");
     if (pill) pill.textContent = av > 0 ? "当前 ¥" + num(av, 2) : "未填写则不计入现金";
-
-    var u = cashBy("us_stock");
-    var uv = Number(u.amount_usd) || 0;
-    var uinp = $("us-stock-amount");
-    if (uinp && document.activeElement !== uinp) uinp.value = uv ? String(uv) : "";
-    var upill = $("us-stock-pill");
-    if (upill) {
-      var when = u.updated_at ? String(u.updated_at).replace("T", " ").slice(0, 16) : "从未更新";
-      upill.textContent = "当前 $" + num(uv, 2) + " · 更新于 " + when;
-    }
   }
 
   function bindCash() {
     var inp = $("alipay-amount");
-    if (inp) {
-      inp.addEventListener("input", function () {
-        var v = Number(inp.value);
-        cashBy("alipay").amount_cny = isNaN(v) ? 0 : Math.max(0, v);
-        markDirty();
-        renderCash();
-      });
+    if (!inp) return;
+    inp.addEventListener("input", function () {
+      var v = Number(inp.value);
+      cashBy("alipay").amount_cny = isNaN(v) ? 0 : Math.max(0, v);
+      markDirty();
+      renderCash();
+    });
+  }
+
+  // ---------- 传统交易台账（手工卖出记录） ----------
+  function ledgerRows() {
+    if (!Array.isArray(state.holdings.trade_ledger)) state.holdings.trade_ledger = [];
+    return state.holdings.trade_ledger;
+  }
+
+  function tradCost(id) {
+    var rows = state.holdings.traditional || [];
+    var hit = rows.filter(function (r) {
+      return String(r.id || "").toUpperCase() === String(id || "").toUpperCase();
+    })[0];
+    return hit ? Number(hit.cost_price) || 0 : 0;
+  }
+
+  function tradOptions(sel) {
+    var rows = state.holdings.traditional || [];
+    return rows.map(function (r) {
+      return '<option value="' + esc(r.id) + '"' + (String(r.id).toUpperCase() === String(sel || "").toUpperCase() ? " selected" : "") +
+        ">" + esc(r.id) + "</option>";
+    }).join("");
+  }
+
+  function renderLedger() {
+    var body = $("ledger-body");
+    if (!body) return;
+    var rows = ledgerRows();
+    body.innerHTML = rows.map(function (r, idx) {
+      var calc = (Number(r.shares) || 0) * (Number(r.price) || 0);
+      var cp = tradCost(r.id);
+      return '<div class="ledger-row">' +
+        '<label>时间<input type="date" data-lidx="' + idx + '" data-lfield="date" value="' + esc(r.date || "") + '"></label>' +
+        '<label>标的<select data-lidx="' + idx + '" data-lfield="id">' + tradOptions(r.id) + "</select></label>" +
+        '<label>卖出份额<input type="number" step="0.000001" min="0" data-lidx="' + idx + '" data-lfield="shares" value="' +
+        (Number(r.shares) || 0) + '"></label>' +
+        '<label>成交价<input type="number" step="0.0001" min="0" data-lidx="' + idx + '" data-lfield="price" value="' +
+        (Number(r.price) || 0) + '"></label>' +
+        '<label>卖出金额<input type="number" step="0.01" min="0" data-lidx="' + idx + '" data-lfield="amount" value="' +
+        (Number(r.amount) ? Number(r.amount) : "") + '" placeholder="' + (calc ? num(calc, 2) : "按份额×价自动") + '"></label>' +
+        '<label>成本价（自动取持仓）<span class="ldg-static">' + (cp ? num(cp, 4) : '<span class="muted">先填持仓成本价</span>') + "</span></label>" +
+        '<label>备注<input type="text" data-lidx="' + idx + '" data-lfield="note" value="' + esc(r.note || "") + '" placeholder="选填"></label>' +
+        '<div class="ldg-foot"><button class="row-del" data-ldel="' + idx + '" type="button">删除</button></div>' +
+        "</div>";
+    }).join("");
+    var hint = $("ledger-hint");
+    if (hint) {
+      var realized = rows.reduce(function (a, r) {
+        var amt2 = Number(r.amount) || (Number(r.shares) || 0) * (Number(r.price) || 0);
+        return a + (amt2 - (Number(r.shares) || 0) * tradCost(r.id));
+      }, 0);
+      hint.textContent = rows.length
+        ? rows.length + " 笔卖出 · 已实现合计 " + (realized >= 0 ? "+" : "−") + num(Math.abs(realized), 2) + "（原币）"
+        : "未登记时传统只算未实现盈亏";
     }
-    var uinp = $("us-stock-amount");
-    if (uinp) {
-      uinp.addEventListener("input", function () {
-        var v = Number(uinp.value);
-        var u = cashBy("us_stock");
-        u.amount_usd = isNaN(v) ? 0 : Math.max(0, v);
-        var now = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 19) + "+08:00";
-        u.updated_at = now;
-        markDirty();
-        renderCash();
-      });
-    }
+  }
+
+  function bindLedger() {
+    var body = $("ledger-body");
+    var add = $("ledger-add");
+    if (add) add.addEventListener("click", function () {
+      ledgerRows().push({ date: "", id: "", shares: 0, price: 0, amount: "", note: "" });
+      markDirty();
+      renderLedger();
+    });
+    if (!body) return;
+    body.addEventListener("input", function (e) {
+      var el = e.target;
+      var idx = Number(el.getAttribute("data-lidx"));
+      var field = el.getAttribute("data-lfield");
+      if (!field || isNaN(idx)) return;
+      var row = ledgerRows()[idx];
+      if (!row) return;
+      if (field === "shares" || field === "price" || field === "amount") {
+        row[field] = el.value === "" ? "" : Math.max(0, Number(el.value) || 0);
+      } else {
+        row[field] = el.value;
+      }
+      if (row.id && tradCost(row.id)) row.cost_price = tradCost(row.id);
+      markDirty();
+      renderLedger();
+    });
+    body.addEventListener("change", function (e) {
+      var el = e.target;
+      if (el.tagName === "SELECT") { markDirty(); renderLedger(); }
+    });
+    body.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-ldel]");
+      if (!btn) return;
+      ledgerRows().splice(Number(btn.getAttribute("data-ldel")), 1);
+      markDirty();
+      renderLedger();
+    });
   }
 
   // ---------- PoolX 持仓（官方 API 读不到，手工登记） ----------

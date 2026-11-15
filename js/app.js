@@ -1145,11 +1145,11 @@
             return "<tr><td class=\"col-name\">" + escapeHtml(r.date || "—") + "</td>" +
               "<td>" + escapeHtml(r.id || "") + "</td>" +
               '<td class="num">' + num(r.shares, 6) + "</td>" +
-              '<td class="num">' + curSym() + num(usdToCur(r.price), 2) + "</td>" +
-              '<td class="num">' + curSym() + num(usdToCur(r.cost_price), 2) + "</td>" +
+              '<td class="num">' + curSym() + num(convCny(r.price_cny !== undefined ? r.price_cny : usdToCur(r.price)), 2) + "</td>" +
+              '<td class="num">' + curSym() + num(convCny(r.cost_price_cny !== undefined ? r.cost_price_cny : usdToCur(r.cost_price)), 2) + "</td>" +
               '<td class="num ' + cls(r.pnl_cny) + '">' + signedMoney(r.pnl_cny, 2) + "</td></tr>";
           }).join("")
-        : '<tr><td colspan="6" class="pa-empty">还没有记录：卖出后更新份额与美股现金余额即可自动累计</td></tr>';
+        : '<tr><td colspan="6" class="pa-empty">还没有记录：在后台「传统交易台账」登记卖出即可累计</td></tr>';
     }
   }
 

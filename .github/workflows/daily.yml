@@ -81,7 +81,6 @@ jobs:
             if [ -f data/bitget_account.json ]; then git add data/bitget_account.json; fi
             if [ -f data/crypto_events.json ]; then git add data/crypto_events.json; fi
             if [ -f data/crypto_cost.json ]; then git add data/crypto_cost.json; fi
-            if [ -f data/traditional_realized.json ]; then git add data/traditional_realized.json; fi
             if git diff --cached --quiet; then
               echo "数据无变化，跳过提交"
               return 1
