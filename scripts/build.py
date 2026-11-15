@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.10.8"
+PAGE_VERSION = "1.10.9"
 PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -471,7 +471,7 @@ ANA_KINDS = {"money", "signed", "pct", "int"}
 
 def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items,
                          events, rate, realized_entries, price_mode, shares_age,
-                         pending, cost_pending, generated_at):
+                         pending, cost_pending, generated_at, history=None):
     """按当日数据生成摘要模板：数字用 {token} 占位，前端按当前币种填充后再展示。"""
     values = {}
 
@@ -482,31 +482,73 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
     def signed(key, v):
         return tok(key, v, "signed")
 
+    def ratio(key, v):
+        return tok(key, v, "ratio")
+
     day_pct = summary.get("day_change_pct") or 0
     bullets = []
 
-    # 1. 当日盈亏
+    # 1. 当日盈亏 + 累计 + 区间
     movers = [r for r in items if isinstance(r.get("day_change_cny"), (int, float))]
     movers.sort(key=lambda r: r["day_change_cny"] or 0, reverse=True)
     up = [r for r in movers if (r.get("day_change_cny") or 0) > 1][:2]
     down = [r for r in movers if (r.get("day_change_cny") or 0) < -1][-2:][::-1]
-    t1 = "总资产 %s，今日 %s（%s）。传统 %s，加密货币 %s。" % (
+    t1 = "总资产 %s，今日 %s（%s）；传统 %s，加密货币 %s。" % (
         tok("total", total_cny), signed("day", day_change), tok("pct", day_pct, "pct"),
         signed("trad_day", summary.get("traditional_day_change_cny") or 0),
         signed("crypto_day", summary.get("crypto_day_change_cny") or 0),
     )
     detail = []
     if up:
-        detail.append("贡献最大：" + "、".join(
+        detail.append("贡献 " + "、".join(
             "%s %s" % (r["id"], signed("up%d" % (i + 1), r["day_change_cny"])) for i, r in enumerate(up)))
     if down:
-        detail.append("拖累最大：" + "、".join(
+        detail.append("拖累 " + "、".join(
             "%s %s" % (r["id"], signed("down%d" % (i + 1), r["day_change_cny"])) for i, r in enumerate(down)))
     if detail:
-        t1 += " " + "；".join(detail) + "。"
+        t1 += " ".join(detail) + "。"
+    t1 += "累计总盈亏 %s（%s），其中加密 %s、传统 %s。" % (
+        signed("pnl_total", summary.get("total_pnl_cny") or 0),
+        tok("pnl_pct", summary.get("total_pnl_pct") or 0, "pct"),
+        signed("pnl_crypto", summary.get("crypto_pnl_cny") or 0),
+        signed("pnl_trad", summary.get("traditional_pnl_cny") or 0),
+    )
+    hist = [h for h in (history or []) if isinstance(h.get("day_change_cny"), (int, float))]
+    if len(hist) >= 3:
+        win = hist[-30:]
+        first_total = win[0].get("total_cny") or 0
+        chg = sum(h.get("day_change_cny") or 0 for h in win[1:]) if len(win) > 1 else 0
+        best = max(win, key=lambda h: h.get("day_change_cny") or 0)
+        worst = min(win, key=lambda h: h.get("day_change_cny") or 0)
+        t1 += "近 %d 日累计 %s（%s），最佳 %s（%s）、最差 %s（%s）。" % (
+            len(win), signed("range_chg", chg),
+            tok("range_pct", (chg / first_total * 100) if first_total else 0, "pct"),
+            (best.get("date") or "")[5:], signed("best_day", best.get("day_change_cny") or 0),
+            (worst.get("date") or "")[5:], signed("worst_day", worst.get("day_change_cny") or 0),
+        )
     bullets.append({"label": "盈亏", "text": t1, "tone": "pos" if day_change >= 0 else "neg"})
 
-    # 2. 出入金（取最近一个有记录的日子，避免当日无流水时误报为 0）
+    # 2. 结构（含加密集中度）
+    w_trad = summary.get("traditional_weight") or 0
+    w_crypto = summary.get("crypto_weight") or 0
+    w_cash = summary.get("cash_weight") or 0
+    crypto_rows = [r for r in items if r.get("group") == "crypto"]
+    crypto_val = sum(float(r.get("value_cny") or 0) for r in crypto_rows) or 0
+    t2 = "结构：加密 %s、传统 %s、现金 %s。" % (
+        ratio("w_crypto", w_crypto), ratio("w_trad", w_trad), ratio("w_cash", w_cash))
+    top = sorted(crypto_rows, key=lambda r: float(r.get("value_cny") or 0), reverse=True)[:2]
+    if crypto_val and len(top) >= 2:
+        parts = ["%s %s（%s）" % (
+            r["id"], tok("val_%s" % r["id"].lower(), float(r.get("value_cny") or 0)),
+            ratio("share_%s" % r["id"].lower(), float(r.get("value_cny") or 0) / crypto_val * 100))
+            for r in top]
+        t2 += "币值集中在 " + "与".join(parts) + "，合计 %s。" % ratio(
+            "share_top2", sum(float(r.get("value_cny") or 0) for r in top) / crypto_val * 100)
+    else:
+        t2 += "加密账户合计 %s。" % tok("crypto_val", crypto_val)
+    bullets.append({"label": "结构", "text": t2, "tone": "muted"})
+
+    # 3. 出入金（取最近一个有记录的日子，避免当日无流水时误报为 0）
     flows = events.get("flows") or []
     transfer_rows = events.get("transfers") or []
     flow_days = sorted({x.get("day") for x in flows if x.get("day")})
@@ -519,23 +561,26 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
                   if x.get("day") == last_flow_day and x.get("direction") == "入金")
         dout = sum(float(x.get("value_usdt") or 0) for x in flows
                    if x.get("day") == last_flow_day and x.get("direction") == "出金")
-        when = "今日" if last_flow_day == today else "最近一次（" + last_flow_day[5:] + "）"
+        when = "今日" if last_flow_day == today else "最近一笔（" + last_flow_day[5:] + "）"
         parts = []
         if din:
             parts.append("入金 %s USDT（约 %s）" % (format(din, ",.2f"), tok("din", din * rate)))
         if dout:
             parts.append("出金 %s USDT（约 %s）" % (format(dout, ",.2f"), tok("dout", dout * rate)))
         body = "，".join(parts) if parts else "无链上出入金"
-        t2 = "%s链上%s；净入金总额 %s，加密账户口径 %s。" % (when, body, net_total, net_crypto)
+        t3 = "%s链上%s；净入金总额 %s，加密账户口径 %s。" % (when, body, net_total, net_crypto)
     else:
-        t2 = "窗口内暂无链上出入金记录；净入金总额 %s。" % net_total
+        t3 = "窗口内暂无链上出入金记录；净入金总额 %s。" % net_total
     stock_in = sum(float(x.get("value_usdt") or 0) for x in transfer_rows
                    if "美股" in str(x.get("kind") or "") and str(x.get("kind") or "").startswith("划入"))
     if stock_in:
-        t2 += "累计划入美股账户 %s（内部划转，不计净入金）。" % tok("stock_in", stock_in * rate)
-    bullets.append({"label": "出入金", "text": t2, "tone": "muted"})
+        t3 += "划入美股账户 %s，属内部划转。" % tok("stock_in", stock_in * rate)
+    after = float(net.get("deposit_after") or 0) + float(net.get("withdraw_after") or 0)
+    if not after:
+        t3 += "本期无新增链上充值或提现，变动来自价格。"
+    bullets.append({"label": "出入金", "text": t3, "tone": "muted"})
 
-    # 3. 理财生息
+    # 4. 理财生息（含折年化）
     earn = events.get("earn_daily") or []
     earn_days = sorted({x.get("day") for x in earn if x.get("day")})
     if earn_days:
@@ -547,34 +592,39 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
         win_start = datetime.fromisoformat(today).date() - timedelta(days=29)
         val30 = sum(float(x.get("value_usdt") or 0) for x in earn
                     if x.get("day") and datetime.fromisoformat(x["day"]).date() >= win_start)
-        t3 = "%s派息约 %s USDT（%s，%d 笔）；近 30 日累计 %s USDT（约 %s）。" % (
+        base_usdt = summary.get("crypto_usdt") or 0
+        t4 = "%s派息 %s USDT（%s，%d 笔）；近 30 日 %s，约 %s" % (
             "今日" if last_earn_day == today else last_earn_day[5:],
             format(val, ",.2f"), "、".join(coins) or "—", cnt,
             format(val30, ",.2f"), tok("earn30", val30 * rate),
         )
+        if base_usdt and val30:
+            t4 += "，折年化约 %s。" % ratio("earn_apr", val30 * 365 / 30 / base_usdt * 100)
+        else:
+            t4 += "。"
     else:
-        t3 = "窗口内暂无理财派息记录。"
-    bullets.append({"label": "理财生息", "text": t3, "tone": "muted"})
+        t4 = "窗口内暂无理财派息记录。"
+    bullets.append({"label": "理财生息", "text": t4, "tone": "muted"})
 
-    # 4. 已实现
+    # 5. 已实现
     if realized_entries:
         today_n = sum(1 for x in realized_entries if str(x.get("date") or "")[:10] == today)
-        t4 = "已实现累计：加密 %s、传统 %s，共 %d 笔%s。" % (
+        t5 = "已实现累计：加密 %s、传统 %s，共 %d 笔%s；其余为未实现。" % (
             signed("real_crypto", summary.get("crypto_realized_cny") or 0),
             signed("real_trad", summary.get("traditional_realized_cny") or 0),
             len(realized_entries),
             "，其中今日 %d 笔" % today_n if today_n else "",
         )
     else:
-        t4 = "暂无卖出记录，已实现盈亏为 %s。" % signed("real_total", 0)
-    bullets.append({"label": "已实现", "text": t4, "tone": "muted"})
+        t5 = "暂无卖出记录，已实现 %s；账面盈亏均为未实现。" % signed("real_total", 0)
+    bullets.append({"label": "已实现", "text": t5, "tone": "muted"})
 
-    # 5. 待办
+    # 6. 待办
     notes = []
     if shares_age and shares_age >= 3:
-        notes.append("份额已 %d 天未更新，记得在后台核对持仓。" % shares_age)
+        notes.append("份额已 %d 天未更新，建议核对持仓。" % shares_age)
     if price_mode and price_mode != "live":
-        notes.append("本次币价使用快照回退，涨跌可能不准。")
+        notes.append("本次币价使用快照回退，涨跌仅供参考。")
     if pending:
         notes.append("%d 个标的待填份额：%s。" % (len(pending), "、".join(pending[:3])))
     if cost_pending:
@@ -607,7 +657,7 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
         "values": values,
         "day_change_cny": r2(day_change, 2),
         "day_change_pct": summary.get("day_change_pct"),
-            "source": "rules",
+        "source": "rules",
     }
 
 
@@ -1206,6 +1256,7 @@ def main():
         pending=pending,
         cost_pending=cost_pending,
         generated_at=dashboard["meta"].get("generated_at"),
+        history=hist,
     )
     dashboard["analysis"] = llm_polish(dashboard["analysis"])
     ai = dashboard["analysis"].get("ai") or {}

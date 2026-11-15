@@ -419,7 +419,8 @@
     var signCls = kind === "abs" ? "neg"
       : ((kind === "signed" || kind === "pct") ? (v > 0 ? "pos" : (v < 0 ? "neg" : "")) : "");
     var txt;
-    if (kind === "pct") txt = (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(2) + "%";
+    if (kind === "ratio") txt = v.toFixed(1) + "%";
+    else if (kind === "pct") txt = (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(2) + "%";
     else if (kind === "signed") txt = signedMoney(v, 0);
     else if (kind === "neg") txt = "−" + curSym() + num(convCny(Math.abs(v)), 0);
     else if (kind === "abs") txt = curSym() + num(convCny(Math.abs(v)), 0);
