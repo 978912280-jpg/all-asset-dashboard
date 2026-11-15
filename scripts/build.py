@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.10.3"
+PAGE_VERSION = "1.10.4"
 PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -489,8 +489,8 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
     # 1. 当日盈亏
     movers = [r for r in items if isinstance(r.get("day_change_cny"), (int, float))]
     movers.sort(key=lambda r: r["day_change_cny"] or 0, reverse=True)
-    up = [r for r in movers if (r.get("day_change_cny") or 0) > 0][:2]
-    down = [r for r in movers if (r.get("day_change_cny") or 0) < 0][-2:][::-1]
+    up = [r for r in movers if (r.get("day_change_cny") or 0) > 1][:2]
+    down = [r for r in movers if (r.get("day_change_cny") or 0) < -1][-2:][::-1]
     t1 = "总资产 %s，今日 %s（%s）。传统 %s，加密货币 %s。" % (
         money(total_cny), signed(day_change), pct(day_pct),
         signed(summary.get("traditional_day_change_cny") or 0),
@@ -547,7 +547,7 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
         win_start = datetime.fromisoformat(today).date() - timedelta(days=29)
         val30 = sum(float(x.get("value_usdt") or 0) for x in earn
                     if x.get("day") and datetime.fromisoformat(x["day"]).date() >= win_start)
-        t3 = "%s 派息约 %s USDT（%s，%d 笔）；近 30 日累计 %s USDT（约 %s）。" % (
+        t3 = "%s派息约 %s USDT（%s，%d 笔）；近 30 日累计 %s USDT（约 %s）。" % (
             "今日" if last_earn_day == today else last_earn_day[5:],
             format(val, ",.2f"), "、".join(coins) or "—", cnt,
             format(val30, ",.2f"), money(val30 * rate),
