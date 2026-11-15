@@ -441,7 +441,7 @@
       return anaToken(item);
     });
     // 模型偶尔在占位符后重复写一次单位，收敛掉
-    return filled.replace(/USDT\s*USDT/g, "USDT").replace(/\s{2,}/g, " ");
+    return filled.replace(/(USDT)<\/span>\s*USDT/g, "$1</span>").replace(/\s{2,}/g, " ");
   }
 
   function renderAnalysis() {
