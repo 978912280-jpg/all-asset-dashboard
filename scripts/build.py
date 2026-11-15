@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.10.11"
+PAGE_VERSION = "1.10.12"
 PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -520,12 +520,15 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
         chg = sum(h.get("day_change_cny") or 0 for h in win[1:]) if len(win) > 1 else 0
         best = max(win, key=lambda h: h.get("day_change_cny") or 0)
         worst = min(win, key=lambda h: h.get("day_change_cny") or 0)
-        t1 += "近 %d 日累计 %s（%s），最佳 %s（%s）、最差 %s（%s）。" % (
-            len(win), signed("range_chg", chg),
-            tok("range_pct", (chg / first_total * 100) if first_total else 0, "pct"),
-            (best.get("date") or "")[5:], signed("best_day", best.get("day_change_cny") or 0),
-            (worst.get("date") or "")[5:], signed("worst_day", worst.get("day_change_cny") or 0),
-        )
+        rng_pct = (chg / first_total * 100) if first_total else 0
+        if abs(best.get("day_change_cny") or 0) >= 30 or abs(worst.get("day_change_cny") or 0) >= 30:
+            t1 += "近 %d 日累计 %s（%s），最佳 %s（%s）、最差 %s（%s）。" % (
+                len(win), signed("range_chg", chg), tok("range_pct", rng_pct, "pct"),
+                (best.get("date") or "")[5:], signed("best_day", best.get("day_change_cny") or 0),
+                (worst.get("date") or "")[5:], signed("worst_day", worst.get("day_change_cny") or 0),
+            )
+        else:
+            t1 += "近 %d 日累计 %s（%s）。" % (len(win), signed("range_chg", chg), tok("range_pct", rng_pct, "pct"))
     bullets.append({"label": "盈亏", "text": t1, "tone": "pos" if day_change >= 0 else "neg"})
 
     # 2. 结构（含加密集中度）
@@ -634,7 +637,7 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
     else:
         bullets.append({"label": "待办", "text": "份额、成本价、币价均为最新，无需处理。", "tone": "muted"})
 
-    if abs(day_change) < 0.5:
+    if abs(day_change) < 0.5 or abs(day_pct) < 0.01:
         headline = "今日资产 {total}，与上一交易日基本持平"
     elif day_change > 0:
         headline = "今日资产 {total}，上涨 {day}（{pct}）"
