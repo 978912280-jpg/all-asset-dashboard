@@ -465,6 +465,156 @@ def load_crypto(cfg, rate, prev_items=None):
 # 主流程
 # --------------------------------------------------------------------------
 
+
+def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items,
+                         events, rate, realized_entries, price_mode, shares_age,
+                         pending, cost_pending, generated_at):
+    """按当日数据自动生成一段中文资产摘要（本地规则引擎，不依赖外部模型）。"""
+    def money(v):
+        v = float(v or 0)
+        sign = "−" if v < 0 else ""
+        return "%s¥%s" % (sign, format(abs(v), ",.0f"))
+
+    def signed(v, digits=0):
+        v = float(v or 0)
+        return ("+" if v >= 0 else "−") + "¥" + format(abs(v), ",.%df" % digits)
+
+    def pct(v):
+        v = float(v or 0)
+        return ("+" if v >= 0 else "−") + ("%.2f%%" % abs(v))
+
+    day_pct = summary.get("day_change_pct") or 0
+    bullets = []
+
+    # 1. 当日盈亏
+    movers = [r for r in items if isinstance(r.get("day_change_cny"), (int, float))]
+    movers.sort(key=lambda r: r["day_change_cny"] or 0, reverse=True)
+    up = [r for r in movers if (r.get("day_change_cny") or 0) > 0][:2]
+    down = [r for r in movers if (r.get("day_change_cny") or 0) < 0][-2:][::-1]
+    t1 = "总资产 %s，今日 %s（%s）。传统 %s，加密货币 %s。" % (
+        money(total_cny), signed(day_change), pct(day_pct),
+        signed(summary.get("traditional_day_change_cny") or 0),
+        signed(summary.get("crypto_day_change_cny") or 0),
+    )
+    detail = []
+    if up:
+        detail.append("贡献最大：" + "、".join("%s %s" % (r["id"], signed(r["day_change_cny"])) for r in up))
+    if down:
+        detail.append("拖累最大：" + "、".join("%s %s" % (r["id"], signed(r["day_change_cny"])) for r in down))
+    if detail:
+        t1 += " " + "；".join(detail) + "。"
+    bullets.append({"label": "盈亏", "text": t1, "tone": "pos" if day_change >= 0 else "neg"})
+
+    # 2. 出入金（取最近一个有记录的日子，避免当日无流水时误报为 0）
+    flows = events.get("flows") or []
+    transfer_rows = events.get("transfers") or []
+    flow_days = sorted({x.get("day") for x in flows if x.get("day")})
+    last_flow_day = flow_days[-1] if flow_days else None
+    net = events.get("net_deposit") or {}
+    if last_flow_day:
+        din = sum(float(x.get("value_usdt") or 0) for x in flows
+                  if x.get("day") == last_flow_day and x.get("direction") == "入金")
+        dout = sum(float(x.get("value_usdt") or 0) for x in flows
+                   if x.get("day") == last_flow_day and x.get("direction") == "出金")
+        when = "今日" if last_flow_day == today else "最近一次（" + last_flow_day[5:] + "）"
+        parts = []
+        if din:
+            parts.append("入金 %s USDT（约 %s）" % (format(din, ",.2f"), money(din * rate)))
+        if dout:
+            parts.append("出金 %s USDT（约 %s）" % (format(dout, ",.2f"), money(dout * rate)))
+        t2 = ("%s链上%s；" % (when, "，".join(parts)) if parts else "%s无链上出入金；") +             "净入金总额 %s，加密账户口径 %s。" % (
+                money((net.get("computed_total_usdt") or net.get("baseline_total_usdt") or 0) * rate),
+                money((net.get("computed_usdt") or net.get("baseline_usdt") or 0) * rate),
+            )
+    else:
+        t2 = "窗口内暂无链上出入金记录；净入金总额 %s。" % money(
+            (net.get("computed_total_usdt") or 0) * rate)
+    stock_in = sum(float(x.get("value_usdt") or 0) for x in transfer_rows
+                   if "美股" in str(x.get("kind") or "") and str(x.get("kind") or "").startswith("划入"))
+    if stock_in:
+        t2 += "累计划入美股账户 %s（内部划转，不计净入金）。" % money(stock_in * rate)
+    bullets.append({"label": "出入金", "text": t2, "tone": "muted"})
+
+    # 3. 理财生息
+    earn = events.get("earn_daily") or []
+    earn_days = sorted({x.get("day") for x in earn if x.get("day")})
+    if earn_days:
+        last_earn_day = earn_days[-1]
+        rows = [x for x in earn if x.get("day") == last_earn_day]
+        val = sum(float(x.get("value_usdt") or 0) for x in rows)
+        cnt = sum(int(x.get("count") or 0) for x in rows)
+        coins = sorted({x.get("coin") for x in rows})
+        win_start = datetime.fromisoformat(today).date() - timedelta(days=29)
+        val30 = sum(float(x.get("value_usdt") or 0) for x in earn
+                    if x.get("day") and datetime.fromisoformat(x["day"]).date() >= win_start)
+        t3 = "%s 派息约 %s USDT（%s，%d 笔）；近 30 日累计 %s USDT（约 %s）。" % (
+            "今日" if last_earn_day == today else last_earn_day[5:],
+            format(val, ",.2f"), "、".join(coins) or "—", cnt,
+            format(val30, ",.2f"), money(val30 * rate),
+        )
+    else:
+        t3 = "窗口内暂无理财派息记录。"
+    bullets.append({"label": "理财生息", "text": t3, "tone": "muted"})
+
+    # 4. 已实现
+    if realized_entries:
+        today_n = sum(1 for x in realized_entries if str(x.get("date") or "")[:10] == today)
+        t4 = "已实现累计：加密 %s、传统 %s，共 %d 笔%s。" % (
+            signed(summary.get("crypto_realized_cny") or 0),
+            signed(summary.get("traditional_realized_cny") or 0),
+            len(realized_entries),
+            "，其中今日 %d 笔" % today_n if today_n else "",
+        )
+    else:
+        t4 = "暂无卖出记录，已实现盈亏为 ¥0。"
+    bullets.append({"label": "已实现", "text": t4, "tone": "muted"})
+
+    # 5. 需要留意
+    notes = []
+    if shares_age and shares_age >= 3:
+        notes.append("份额已 %d 天未更新，记得在后台核对持仓。" % shares_age)
+    if price_mode and price_mode != "live":
+        notes.append("本次币价使用快照回退，涨跌可能不准。")
+    if pending:
+        notes.append("%d 个标的待填份额：%s。" % (len(pending), "、".join(pending[:3])))
+    if cost_pending:
+        notes.append("%d 个标的待填成本价：%s。" % (len(cost_pending), "、".join(cost_pending[:3])))
+    if notes:
+        bullets.append({"label": "待办", "text": " ".join(notes), "tone": "warn"})
+    else:
+        bullets.append({"label": "待办", "text": "份额、成本价、币价均为最新，无需处理。", "tone": "muted"})
+
+    if abs(day_change) < 0.5:
+        headline = "今日资产 %s，与上一交易日基本持平" % money(total_cny)
+    else:
+        headline = "今日资产 %s，%s（%s）" % (
+            money(total_cny),
+            "上涨 " + signed(day_change) if day_change >= 0 else "下跌 " + signed(abs(day_change)),
+            pct(day_pct),
+        )
+    movers = [r for r in movers if abs(r.get("day_change_cny") or 0) > 0.5]
+    if movers:
+        top = max(movers, key=lambda r: abs(r["day_change_cny"]) if r["day_change_cny"] > 0 else 0)
+        top = movers[0]
+        second = movers[-1]
+        lead = top if abs(top.get("day_change_cny") or 0) >= abs(second.get("day_change_cny") or 0) else second
+        if abs(lead.get("day_change_cny") or 0) > 0.5:
+            headline += "；波动主要来自 %s" % lead["id"]
+    headline += "。"
+
+    return {
+        "date": today,
+        "generated_at": generated_at,
+        "price_mode": price_mode,
+        "headline": headline,
+        "tone": "pos" if day_change >= 0 else "neg",
+        "day_change_cny": r2(day_change, 2),
+        "day_change_pct": summary.get("day_change_pct"),
+        "bullets": bullets,
+        "source": "rules",
+    }
+
+
 def main():
     holdings_path = os.path.join(ROOT, "data", "holdings.json")
     dashboard_path = os.path.join(ROOT, "data", "dashboard.json")
@@ -950,6 +1100,24 @@ def main():
         "realized_detail": {"crypto": crypto_detail, "traditional": trad_detail},
         "history": hist[-400:],
     }
+    # ---------- 当日资产分析（自动摘要） ----------
+    dashboard["analysis"] = build_daily_analysis(
+        today=today,
+        total_cny=total_cny,
+        day_change=day_change,
+        summary=dashboard["summary"],
+        groups=dashboard["groups"],
+        items=dashboard["items"],
+        events=events or {},
+        rate=rate,
+        realized_entries=(crypto_detail or []) + (trad_detail or []),
+        price_mode=crypto_meta.get("price_mode"),
+        shares_age=dashboard["meta"].get("shares_age_days"),
+        pending=pending,
+        cost_pending=cost_pending,
+        generated_at=dashboard["meta"].get("generated_at"),
+    )
+
     save_json(dashboard_path, dashboard)
 
     # 快照落库：带上当日完整明细，供首页「历史快照」整页复现

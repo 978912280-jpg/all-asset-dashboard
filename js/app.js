@@ -157,6 +157,7 @@
     renderMeta();
     renderKpi();
     renderPending();
+    renderAnalysis();
     renderSplit();
     renderTable();
     renderFlow();
@@ -198,6 +199,7 @@
     view.meta = JSON.parse(JSON.stringify(base.meta || {}));
     view.meta.snapshot_replay = ds;
     view.pnl_breakdown = detail.pnl_breakdown || null;
+    view.analysis = null;
     state.replay = ds;
     state.data = view;
     state.calSel = ds;
@@ -410,6 +412,36 @@
         '<div class="bar-sub"><span>' + (g.key === "cash" ? "稳定币 + 支付宝余额" : (g.key === "traditional" ? "美股基金 + 国内基金" : "分四类记账")) + "</span></div>" +
         "</div>";
     }).join("");
+  }
+
+  function renderAnalysis() {
+    var box = $("analysis-head");
+    if (!box) return;
+    var a = (state.data && state.data.analysis) || null;
+    var list = $("analysis-list");
+    var foot = $("analysis-foot");
+    var tag = $("analysis-tag");
+    if (!a) {
+      box.className = "analysis-head muted";
+      box.textContent = "当日分析待生成：下次构建（手动或每日自动）后会自动出现在这里。";
+      list.innerHTML = "";
+      if (foot) foot.textContent = "";
+      if (tag) tag.textContent = "待生成";
+      return;
+    }
+    box.className = "analysis-head " + (a.tone === "neg" ? "neg" : "pos");
+    box.textContent = a.headline || "";
+    list.innerHTML = (a.bullets || []).map(function (b) {
+      var tone = b.tone === "neg" ? " neg" : (b.tone === "pos" ? " pos" : "");
+      return '<li><span class="a-label">' + escapeHtml(b.label || "") + "</span>" +
+        '<span class="a-text' + tone + '">' + escapeHtml(b.text || "") + "</span></li>";
+    }).join("");
+    if (tag) tag.textContent = a.date || "自动生成";
+    if (foot) {
+      var t = (a.generated_at || "").slice(11, 16);
+      foot.textContent = "由构建流程按当日数据自动生成" + (t ? " · " + t : "") +
+        (state.replay ? " · 历史快照无独立分析" : "");
+    }
   }
 
   function renderSplit() {

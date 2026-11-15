@@ -997,3 +997,40 @@ body.view-mode .topbar-meta { display: none !important; }
   justify-content: center;
 }
 body.view-mode .cur-chip { display: inline-flex !important; }
+
+/* ---------- 当日资产分析 + 缩小的资产占比 ---------- */
+.home-grid {
+  grid-template-columns: 1.02fr 1fr;
+  grid-template-areas: "analysis cal" "donut cal" "bars bars";
+  align-items: stretch;
+}
+.home-grid .analysis-card { grid-area: analysis; }
+.home-grid .split-card { grid-area: donut; }
+.home-grid .cal-card { grid-area: cal; }
+.home-grid .bars-card { grid-area: bars; }
+
+.analysis-tag {
+  font-size: 11px; color: var(--muted); border: 1px solid var(--line);
+  border-radius: 999px; padding: 1px 8px; white-space: nowrap;
+}
+.analysis-head { font-size: 15px; line-height: 1.6; font-weight: 600; margin: 2px 0 10px; }
+.analysis-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.analysis-list li { display: flex; gap: 8px; font-size: 13px; line-height: 1.65; }
+.analysis-list .a-label {
+  flex: 0 0 auto; font-size: 12px; color: var(--muted); background: var(--chip, #f2f4f6);
+  border-radius: 6px; padding: 1px 7px; height: 20px; line-height: 20px;
+}
+.analysis-list .a-text { flex: 1 1 auto; }
+.analysis-list .a-text.neg, .analysis-head.neg { color: var(--down, #d33); }
+.analysis-list .a-text.pos, .analysis-head.pos { color: var(--up, #0a8f5b); }
+.analysis-foot { font-size: 11px; color: var(--muted); margin: 10px 0 0; text-align: right; }
+
+.home-grid .donut-box .chart { height: 210px; }
+
+@media (max-width: 899px) {
+  .home-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas: "analysis" "donut" "cal" "bars";
+  }
+  .home-grid .donut-box .chart { height: 190px; }
+}
