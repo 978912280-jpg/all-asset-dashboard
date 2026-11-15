@@ -416,11 +416,12 @@
 
   function anaToken(v, kind) {
     v = Number(v) || 0;
-    var signCls = v > 0 ? "pos" : (v < 0 ? "neg" : "");
+    var signCls = kind === "abs" ? "neg" : (v > 0 ? "pos" : (v < 0 ? "neg" : ""));
     var txt;
     if (kind === "pct") txt = (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(2) + "%";
     else if (kind === "signed") txt = signedMoney(v, 0);
     else if (kind === "neg") txt = "−" + curSym() + num(convCny(Math.abs(v)), 0);
+    else if (kind === "abs") txt = curSym() + num(convCny(Math.abs(v)), 0);
     else txt = curSym() + num(convCny(v), 0);
     return '<span class="ana-num ' + signCls + '">' + txt + "</span>";
   }
