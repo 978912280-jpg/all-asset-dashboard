@@ -1034,3 +1034,8 @@ body.view-mode .cur-chip { display: inline-flex !important; }
   }
   .home-grid .donut-box .chart { height: 190px; }
 }
+
+.analysis-list .a-text { color: var(--text, #1c1f23); }
+.analysis-head .ana-num, .analysis-list .ana-num { font-weight: 600; }
+.ana-num.pos { color: var(--up, #0a8f5b); }
+.ana-num.neg { color: var(--down, #d33); }

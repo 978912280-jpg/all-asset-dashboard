@@ -60,6 +60,10 @@ jobs:
       - name: 抓取价格并计算资产
         env:
           BUILD_SOURCE: ${{ github.event.inputs.source || 'auto' }}
+          # 可选：配置后当日资产分析会由大模型润色；未配置则使用规则文案（不影响计算）
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
         run: python3 scripts/build.py
 
       - name: 推送 Bark 通知

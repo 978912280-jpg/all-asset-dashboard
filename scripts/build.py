@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.10.4"
+PAGE_VERSION = "1.10.5"
 PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -466,22 +466,21 @@ def load_crypto(cfg, rate, prev_items=None):
 # --------------------------------------------------------------------------
 
 
+ANA_KINDS = {"money", "signed", "pct", "int"}
+
+
 def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items,
                          events, rate, realized_entries, price_mode, shares_age,
                          pending, cost_pending, generated_at):
-    """按当日数据自动生成一段中文资产摘要（本地规则引擎，不依赖外部模型）。"""
-    def money(v):
-        v = float(v or 0)
-        sign = "−" if v < 0 else ""
-        return "%s¥%s" % (sign, format(abs(v), ",.0f"))
+    """按当日数据生成摘要模板：数字用 {token} 占位，前端按当前币种填充后再展示。"""
+    values = {}
 
-    def signed(v, digits=0):
-        v = float(v or 0)
-        return ("+" if v >= 0 else "−") + "¥" + format(abs(v), ",.%df" % digits)
+    def tok(key, v, kind="money"):
+        values[key] = {"v": r2(v or 0, 2), "kind": kind}
+        return "{" + key + "}"
 
-    def pct(v):
-        v = float(v or 0)
-        return ("+" if v >= 0 else "−") + ("%.2f%%" % abs(v))
+    def signed(key, v):
+        return tok(key, v, "signed")
 
     day_pct = summary.get("day_change_pct") or 0
     bullets = []
@@ -492,15 +491,17 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
     up = [r for r in movers if (r.get("day_change_cny") or 0) > 1][:2]
     down = [r for r in movers if (r.get("day_change_cny") or 0) < -1][-2:][::-1]
     t1 = "总资产 %s，今日 %s（%s）。传统 %s，加密货币 %s。" % (
-        money(total_cny), signed(day_change), pct(day_pct),
-        signed(summary.get("traditional_day_change_cny") or 0),
-        signed(summary.get("crypto_day_change_cny") or 0),
+        tok("total", total_cny), signed("day", day_change), tok("pct", day_pct, "pct"),
+        signed("trad_day", summary.get("traditional_day_change_cny") or 0),
+        signed("crypto_day", summary.get("crypto_day_change_cny") or 0),
     )
     detail = []
     if up:
-        detail.append("贡献最大：" + "、".join("%s %s" % (r["id"], signed(r["day_change_cny"])) for r in up))
+        detail.append("贡献最大：" + "、".join(
+            "%s %s" % (r["id"], signed("up%d" % (i + 1), r["day_change_cny"])) for i, r in enumerate(up)))
     if down:
-        detail.append("拖累最大：" + "、".join("%s %s" % (r["id"], signed(r["day_change_cny"])) for r in down))
+        detail.append("拖累最大：" + "、".join(
+            "%s %s" % (r["id"], signed("down%d" % (i + 1), r["day_change_cny"])) for i, r in enumerate(down)))
     if detail:
         t1 += " " + "；".join(detail) + "。"
     bullets.append({"label": "盈亏", "text": t1, "tone": "pos" if day_change >= 0 else "neg"})
@@ -511,6 +512,8 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
     flow_days = sorted({x.get("day") for x in flows if x.get("day")})
     last_flow_day = flow_days[-1] if flow_days else None
     net = events.get("net_deposit") or {}
+    net_total = tok("net_total", (net.get("computed_total_usdt") or net.get("baseline_total_usdt") or 0) * rate)
+    net_crypto = tok("net_crypto", (net.get("computed_usdt") or net.get("baseline_usdt") or 0) * rate)
     if last_flow_day:
         din = sum(float(x.get("value_usdt") or 0) for x in flows
                   if x.get("day") == last_flow_day and x.get("direction") == "入金")
@@ -519,20 +522,17 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
         when = "今日" if last_flow_day == today else "最近一次（" + last_flow_day[5:] + "）"
         parts = []
         if din:
-            parts.append("入金 %s USDT（约 %s）" % (format(din, ",.2f"), money(din * rate)))
+            parts.append("入金 %s USDT（约 %s）" % (format(din, ",.2f"), tok("din", din * rate)))
         if dout:
-            parts.append("出金 %s USDT（约 %s）" % (format(dout, ",.2f"), money(dout * rate)))
-        t2 = ("%s链上%s；" % (when, "，".join(parts)) if parts else "%s无链上出入金；") +             "净入金总额 %s，加密账户口径 %s。" % (
-                money((net.get("computed_total_usdt") or net.get("baseline_total_usdt") or 0) * rate),
-                money((net.get("computed_usdt") or net.get("baseline_usdt") or 0) * rate),
-            )
+            parts.append("出金 %s USDT（约 %s）" % (format(dout, ",.2f"), tok("dout", dout * rate)))
+        body = "，".join(parts) if parts else "无链上出入金"
+        t2 = "%s链上%s；净入金总额 %s，加密账户口径 %s。" % (when, body, net_total, net_crypto)
     else:
-        t2 = "窗口内暂无链上出入金记录；净入金总额 %s。" % money(
-            (net.get("computed_total_usdt") or 0) * rate)
+        t2 = "窗口内暂无链上出入金记录；净入金总额 %s。" % net_total
     stock_in = sum(float(x.get("value_usdt") or 0) for x in transfer_rows
                    if "美股" in str(x.get("kind") or "") and str(x.get("kind") or "").startswith("划入"))
     if stock_in:
-        t2 += "累计划入美股账户 %s（内部划转，不计净入金）。" % money(stock_in * rate)
+        t2 += "累计划入美股账户 %s（内部划转，不计净入金）。" % tok("stock_in", stock_in * rate)
     bullets.append({"label": "出入金", "text": t2, "tone": "muted"})
 
     # 3. 理财生息
@@ -550,7 +550,7 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
         t3 = "%s派息约 %s USDT（%s，%d 笔）；近 30 日累计 %s USDT（约 %s）。" % (
             "今日" if last_earn_day == today else last_earn_day[5:],
             format(val, ",.2f"), "、".join(coins) or "—", cnt,
-            format(val30, ",.2f"), money(val30 * rate),
+            format(val30, ",.2f"), tok("earn30", val30 * rate),
         )
     else:
         t3 = "窗口内暂无理财派息记录。"
@@ -560,16 +560,16 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
     if realized_entries:
         today_n = sum(1 for x in realized_entries if str(x.get("date") or "")[:10] == today)
         t4 = "已实现累计：加密 %s、传统 %s，共 %d 笔%s。" % (
-            signed(summary.get("crypto_realized_cny") or 0),
-            signed(summary.get("traditional_realized_cny") or 0),
+            signed("real_crypto", summary.get("crypto_realized_cny") or 0),
+            signed("real_trad", summary.get("traditional_realized_cny") or 0),
             len(realized_entries),
             "，其中今日 %d 笔" % today_n if today_n else "",
         )
     else:
-        t4 = "暂无卖出记录，已实现盈亏为 ¥0。"
+        t4 = "暂无卖出记录，已实现盈亏为 %s。" % signed("real_total", 0)
     bullets.append({"label": "已实现", "text": t4, "tone": "muted"})
 
-    # 5. 需要留意
+    # 5. 待办
     notes = []
     if shares_age and shares_age >= 3:
         notes.append("份额已 %d 天未更新，记得在后台核对持仓。" % shares_age)
@@ -585,19 +585,14 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
         bullets.append({"label": "待办", "text": "份额、成本价、币价均为最新，无需处理。", "tone": "muted"})
 
     if abs(day_change) < 0.5:
-        headline = "今日资产 %s，与上一交易日基本持平" % money(total_cny)
+        headline = "今日资产 {total}，与上一交易日基本持平"
+    elif day_change > 0:
+        headline = "今日资产 {total}，上涨 {day}（{pct}）"
     else:
-        headline = "今日资产 %s，%s（%s）" % (
-            money(total_cny),
-            "上涨 " + signed(day_change) if day_change >= 0 else "下跌 " + signed(abs(day_change)),
-            pct(day_pct),
-        )
-    movers = [r for r in movers if abs(r.get("day_change_cny") or 0) > 0.5]
+        headline = "今日资产 {total}，下跌 {day_abs}（{pct}）"
+        values["day_abs"] = {"v": r2(abs(day_change), 2), "kind": "neg"}
     if movers:
-        top = max(movers, key=lambda r: abs(r["day_change_cny"]) if r["day_change_cny"] > 0 else 0)
-        top = movers[0]
-        second = movers[-1]
-        lead = top if abs(top.get("day_change_cny") or 0) >= abs(second.get("day_change_cny") or 0) else second
+        lead = max(movers, key=lambda r: abs(r.get("day_change_cny") or 0))
         if abs(lead.get("day_change_cny") or 0) > 0.5:
             headline += "；波动主要来自 %s" % lead["id"]
     headline += "。"
@@ -608,11 +603,89 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
         "price_mode": price_mode,
         "headline": headline,
         "tone": "pos" if day_change >= 0 else "neg",
+        "bullets": bullets,
+        "values": values,
         "day_change_cny": r2(day_change, 2),
         "day_change_pct": summary.get("day_change_pct"),
-        "bullets": bullets,
-        "source": "rules",
+            "source": "rules",
     }
+
+
+def decl(v, key, values, kind="money"):
+    values[key] = {"v": r2(v or 0, 2), "kind": kind}
+
+
+def llm_polish(analysis):
+    """用大模型润色摘要文案：只改措辞，不改数字，必须原样保留 {token} 占位符。"""
+    import json as _json
+    import os
+    import urllib.request
+
+    key = os.environ.get("LLM_API_KEY") or os.environ.get("ARK_API_KEY") or os.environ.get("OPENAI_API_KEY")
+    if not key:
+        analysis["ai"] = {"used": False, "reason": "no_key"}
+        return analysis
+    base = os.environ.get("LLM_BASE_URL") or "https://ark.cn-beijing.volces.com/api/v3"
+    model = os.environ.get("LLM_MODEL") or "doubao-seed-1-6-250615"
+    allowed = set(analysis.get("values") or {})
+    body = {
+        "headline": analysis.get("headline"),
+        "bullets": [{"label": b.get("label"), "text": b.get("text")} for b in analysis.get("bullets", [])],
+    }
+    facts = {k: v.get("v") for k, v in (analysis.get("values") or {}).items()}
+    prompt = (
+        "你是个人资产仪表盘的文案助手。下面是当日资产的要点（数字是人民币口径）与事实数据。\n"
+        "请把 headline 和每条 bullet 的 text 改写得更自然、更像人话，保留专业和克制，不夸张、不建议买卖。\n"
+        "硬性规则：1) 只能改措辞，不得增删数字；2) 所有 {xxx} 占位符必须原样保留，不得翻译、不得改成具体数字；\n"
+        "3) 不要新增占位符；4) 每条 bullet 的 label 保持不变（盈亏/出入金/理财生息/已实现/待办）；\n"
+        "5) 中文输出，headline 一句话不超过 40 字，每条 bullet 不超过 90 字。\n"
+        "只输出 JSON，格式：{\"headline\":\"...\",\"bullets\":[{\"label\":\"...\",\"text\":\"...\"}]}\n\n"
+        "要点：%s\n事实（人民币）：%s"
+    ) % (_json.dumps(body, ensure_ascii=False), _json.dumps(facts, ensure_ascii=False))
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": "你只做文案润色，严格保留占位符，输出 JSON。"},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.3,
+    }
+    req = urllib.request.Request(
+        base.rstrip("/") + "/chat/completions",
+        data=_json.dumps(payload).encode("utf-8"),
+        headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = _json.loads(resp.read().decode("utf-8"))
+        text = data["choices"][0]["message"]["content"].strip()
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+        out = _json.loads(text)
+        import re as _re
+        bad = []
+        for b in out.get("bullets", []):
+            for t in _re.findall(r"\{([a-z0-9_]+)\}", b.get("text") or ""):
+                if t not in allowed:
+                    bad.append(t)
+        for t in _re.findall(r"\{([a-z0-9_]+)\}", out.get("headline") or ""):
+            if t not in allowed:
+                bad.append(t)
+        if bad or not out.get("headline") or not out.get("bullets"):
+            analysis["ai"] = {"used": False, "reason": "invalid_tokens:" + ",".join(bad[:5])}
+            return analysis
+        analysis["headline"] = out["headline"]
+        by_label = {b.get("label"): b for b in out["bullets"]}
+        for b in analysis["bullets"]:
+            src = by_label.get(b["label"])
+            if src and src.get("text"):
+                b["text"] = src["text"]
+        analysis["ai"] = {"used": True, "model": model}
+    except Exception as exc:  # 网络、额度、解析失败都退回规则文案
+        analysis["ai"] = {"used": False, "reason": type(exc).__name__ + ": " + str(exc)[:120]}
+    return analysis
 
 
 def main():
@@ -1117,6 +1190,10 @@ def main():
         cost_pending=cost_pending,
         generated_at=dashboard["meta"].get("generated_at"),
     )
+    dashboard["analysis"] = llm_polish(dashboard["analysis"])
+    ai = dashboard["analysis"].get("ai") or {}
+    print("      当日分析：%s" % ("AI 润色成功（%s）" % ai.get("model") if ai.get("used")
+                                 else "规则文案（未润色：%s）" % ai.get("reason")))
 
     save_json(dashboard_path, dashboard)
 

@@ -414,6 +414,26 @@
     }).join("");
   }
 
+  function anaToken(v, kind) {
+    v = Number(v) || 0;
+    var signCls = v > 0 ? "pos" : (v < 0 ? "neg" : "");
+    var txt;
+    if (kind === "pct") txt = (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(2) + "%";
+    else if (kind === "signed") txt = signedMoney(v, 0);
+    else if (kind === "neg") txt = "−" + curSym() + num(convCny(Math.abs(v)), 0);
+    else txt = curSym() + num(convCny(v), 0);
+    return '<span class="ana-num ' + signCls + '">' + txt + "</span>";
+  }
+
+  function anaFill(text, values) {
+    var map = values || {};
+    return String(text || "").replace(/\{([a-z0-9_]+)\}/g, function (m, key) {
+      var item = map[key];
+      if (!item) return m;
+      return anaToken(item.v, item.kind || "money");
+    });
+  }
+
   function renderAnalysis() {
     var box = $("analysis-head");
     if (!box) return;
@@ -429,18 +449,18 @@
       if (tag) tag.textContent = "待生成";
       return;
     }
+    var vals = a.values || {};
     box.className = "analysis-head " + (a.tone === "neg" ? "neg" : "pos");
-    box.textContent = a.headline || "";
+    box.innerHTML = anaFill(a.headline || "", vals);
     list.innerHTML = (a.bullets || []).map(function (b) {
-      var tone = b.tone === "neg" ? " neg" : (b.tone === "pos" ? " pos" : "");
       return '<li><span class="a-label">' + escapeHtml(b.label || "") + "</span>" +
-        '<span class="a-text' + tone + '">' + escapeHtml(b.text || "") + "</span></li>";
+        '<span class="a-text">' + anaFill(b.text || "", vals) + "</span></li>";
     }).join("");
     if (tag) tag.textContent = a.date || "自动生成";
     if (foot) {
       var t = (a.generated_at || "").slice(11, 16);
-      foot.textContent = "由构建流程按当日数据自动生成" + (t ? " · " + t : "") +
-        (state.replay ? " · 历史快照无独立分析" : "");
+      var by = a.ai && a.ai.used ? "规则口径 + AI 润色（" + (a.ai.model || "模型") + "）" : "规则引擎生成";
+      foot.textContent = by + (t ? " · " + t : "") + (state.replay ? " · 历史快照无独立分析" : "");
     }
   }
 
