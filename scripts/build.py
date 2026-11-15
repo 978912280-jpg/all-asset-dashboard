@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.10.19"
+PAGE_VERSION = "1.10.20"
 PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -680,8 +680,33 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
     for r in crypto_rows:
         tok("val_%s" % r["id"].lower(), float(r.get("value_cny") or 0))
 
+    # 补充派生事实（均由本文件计算，保证口径唯一）
+    cny = lambda v: float(v or 0)
+    cash_cny = cny(summary.get("cash_cny"))
+    stable_cny = cny(summary.get("stable_cash_cny"))
+    fiat_cny = cny(summary.get("fiat_cash_cny"))
+    trad_cost = cny(summary.get("traditional_cost_cny"))
+    raw("share_stable_in_cash", (stable_cny / cash_cny * 100) if cash_cny else 0, "ratio")
+    raw("share_fiat_in_cash", (fiat_cny / cash_cny * 100) if cash_cny else 0, "ratio")
+    raw("trad_cost", trad_cost, "money")
+    raw("trad_cost_gap", cny(summary.get("traditional_cny")) - trad_cost, "signed")
+    raw("crypto_cost_base", cny(summary.get("crypto_account_cny")), "money")
+    raw("item_count", len(items), "int")
+    raw("btc_share_total", (cny(sum(i.get("value_cny") or 0 for i in items if i.get("id") == "BTC"))
+                            / cny(total_cny) * 100) if total_cny else 0, "ratio")
+    counts = events.get("counts") or {}
+    raw("trade_cnt", counts.get("trades") or 0, "int")
+    raw("flow_cnt", counts.get("flows") or 0, "int")
+    raw("transfer_cnt", counts.get("transfers") or 0, "int")
+    raw("earn30_cnt", len([x for x in earn
+                           if x.get("day") and datetime.fromisoformat(x["day"]).date() >= win_start]) if earn_days else 0, "int")
+
     facts = [
         "总资产 %s，今日 %s（%s）" % ("{total}", "{day}", "{pct}"),
+        "今日单日贡献：%s" % ("、".join("%s %s" % (r["id"], "{up%d}" % (i + 1)) for i, r in enumerate(up) if i < 2)
+                              or "无正贡献标的") +
+        "；拖累：%s" % ("、".join("%s %s" % (r["id"], "{down%d}" % (i + 1)) for i, r in enumerate(down) if i < 2)
+                        or "无拖累标的"),
         "传统日变动 %s，加密日变动 %s，加密日涨幅 %s" % ("{trad_day}", "{crypto_day}", "{crypto_day_pct}"),
         "累计总盈亏 %s（%s），其中加密 %s（%s）、传统 %s（%s）" % (
             "{pnl_total}", "{pnl_pct}", "{pnl_crypto}", "{pnl_crypto_pct}", "{pnl_trad}", "{pnl_trad_pct}"),
@@ -697,6 +722,9 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
             earn_today_tok, coins_txt or "—", earn_cnt_tok, earn30_usdt_tok, "{earn30}", "{earn_apr}"),
         "已实现盈亏 %s，卖出 %s 笔" % ("{real_total}", "{sold_cnt}"),
         "支付宝现金 {alipay}；持仓份额已 {shares_age} 天未更新",
+        "持仓标的共 {item_count} 个；现金构成里稳定币占 {share_stable_in_cash}、支付宝现金占 {share_fiat_in_cash}",
+        "传统持仓成本合计 {trad_cost}，与当前市值差额 {trad_cost_gap}；BTC 占总资产 {btc_share_total}",
+        "账本流水规模：交易 {trade_cnt} 笔、出入金 {flow_cnt} 笔、划转 {transfer_cnt} 笔；近 30 日派息 {earn30_cnt} 笔",
     ]
 
     if abs(day_change) < 0.5 or abs(day_pct) < 0.01:
@@ -758,7 +786,7 @@ def llm_polish(analysis):
     allowed = set((analysis.get("values") or {}).keys())
     prompt = (
         "你是个人资产仪表台的撰写者。下面是今天的真实数据，每一项都带有占位符。\n"
-        "请写一份「当日资产观察」：2~3 段自然叙述，全文控制在 320 字以内（超过会被作废），第一段给总判断，第二段讲今天的变化与原因，"
+        "请写一份「当日资产观察」：4 段自然叙述，全文控制在 550~750 字（低于 450 字或超过 750 字会被作废）。第一段给总判断；第二段讲今天的变化与原因（谁贡献、谁拖累、幅度）；第三段讲结构与风险观察（集中度、现金构成、成本与市值的差异、收益缺口落在哪）；第四段用一两句做当日总结，"
         "第三段点出一两个值得留意的结构事实。语言自然、克制，像人复盘，不要小标题、不要列表、不要客套。\n\n"
         "硬规则：\n"
         "1. 所有数字（金额、比例、笔数、日期、天数）必须原样写成给定的 {占位符}，禁止出现任何裸数字或中文数字金额（如「三成」「两笔」）。\n"
@@ -771,7 +799,7 @@ def llm_polish(analysis):
     payload = {"model": model,
                "messages": [{"role": "system", "content": "你只做中文资产观察写作，严格遵守占位符规则，输出 JSON。"},
                             {"role": "user", "content": prompt}],
-               "temperature": 0.6, "max_tokens": 420}
+               "temperature": 0.6, "max_tokens": 900}
     req = urllib.request.Request(url, data=_json.dumps(payload).encode("utf-8"),
         headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"})
     try:
@@ -811,7 +839,10 @@ def llm_polish(analysis):
             analysis["ai"] = {"used": False, "reason": "too_few_facts"}
             return analysis
         total = sum(len(x) for x in paras)
-        if total > 620:
+        if total < 420:
+            analysis["ai"] = {"used": False, "reason": "too_short:%d" % total}
+            return analysis
+        if total > 780:
             analysis["ai"] = {"used": False, "reason": "too_long:%d" % total}
             return analysis
         analysis["freeform"] = paras
