@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.10.7"
+PAGE_VERSION = "1.10.8"
 PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -625,7 +625,12 @@ def llm_polish(analysis):
     if not key:
         analysis["ai"] = {"used": False, "reason": "no_key"}
         return analysis
-    base = os.environ.get("LLM_BASE_URL") or "https://ark.cn-beijing.volces.com/api/v3"
+    base = (os.environ.get("LLM_BASE_URL") or "https://ark.cn-beijing.volces.com/api/v3").strip()
+    # 兼容两种填法：只填到 /api/v3，或直接填完整的 .../chat/completions
+    if base.rstrip("/").endswith("/chat/completions"):
+        url = base.rstrip("/")
+    else:
+        url = base.rstrip("/") + "/chat/completions"
     model = os.environ.get("LLM_MODEL") or "doubao-seed-1-6-250615"
     allowed = set(analysis.get("values") or {})
     body = {
@@ -651,7 +656,7 @@ def llm_polish(analysis):
         "temperature": 0.3,
     }
     req = urllib.request.Request(
-        base.rstrip("/") + "/chat/completions",
+        url,
         data=_json.dumps(payload).encode("utf-8"),
         headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"},
     )
@@ -684,7 +689,19 @@ def llm_polish(analysis):
                 b["text"] = src["text"]
         analysis["ai"] = {"used": True, "model": model}
     except Exception as exc:  # 网络、额度、解析失败都退回规则文案
-        analysis["ai"] = {"used": False, "reason": type(exc).__name__ + ": " + str(exc)[:120]}
+        detail = ""
+        body = getattr(exc, "read", None)
+        if body:
+            try:
+                detail = " | body=" + body().decode("utf-8", "ignore")[:200]
+            except Exception:
+                detail = ""
+        analysis["ai"] = {
+            "used": False,
+            "reason": type(exc).__name__ + ": " + str(exc)[:100] + detail,
+            "url": url,
+            "model": model,
+        }
     return analysis
 
 
