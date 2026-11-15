@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.10.26"
+PAGE_VERSION = "1.10.27"
 PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -793,7 +793,8 @@ def llm_polish(analysis):
         "2. 只能使用下面出现过的占位符，不得新增、不得改写占位符名字。\n"
         "3. 不得自行加减乘除推算新数字，不得加入数据里没有的事实。\n"
         "4. 不做买卖建议、不预测价格、不做好坏评价。\n"
-        "5. 只输出 JSON：{\"paragraphs\": [\"第一段\", \"第二段\", \"第三段\"]}，不要解释。\n\n"
+        "5. 页面支持人民币与美元一键切换，所以正文里不要出现「人民币」「元」「美元」「美金」这类说法，也不要说某个金额是某币种口径；只有 USDT 是资产本身单位，可以正常出现。\n"
+        "6. 只输出 JSON：{\"paragraphs\": [\"第一段\", \"第二段\", \"第三段\"]}，不要解释。\n\n"
         "数据：\n" + "\n".join("- " + f for f in facts)
     )
     payload = {"model": model,
