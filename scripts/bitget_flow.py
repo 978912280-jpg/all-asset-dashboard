@@ -225,7 +225,11 @@ def main():
     trades = []
     for f in fills:
         sym = str(f.get("symbol") or "")
-        coin = sym.replace("USDT", "").replace("USDC", "")
+        coin = sym
+        for _q in ("USDT", "USDC", "USDGO", "USDG", "DAI"):
+            if sym.endswith(_q):
+                coin = sym[:-len(_q)]
+                break
         side = "买入" if str(f.get("side")).lower() == "buy" else "卖出"
         fd = f.get("feeDetail") or {}
         trades.append({
