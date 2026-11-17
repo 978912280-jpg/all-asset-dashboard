@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.10.32"
+PAGE_VERSION = "1.10.33"
 PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -1370,7 +1370,13 @@ def main():
         generated_at=dashboard["meta"].get("generated_at"),
         history=hist,
     )
-    dashboard["analysis"] = llm_polish(dashboard["analysis"])
+    # AI 接口默认关闭：只保留规则引擎生成的基础分析（需要时设 LLM_ENABLED=1 重新打开）
+    ai_enabled = (os.environ.get("LLM_ENABLED") or "0").strip().lower() in ("1", "true", "yes")
+    if ai_enabled:
+        dashboard["analysis"] = llm_polish(dashboard["analysis"])
+    else:
+        dashboard["analysis"].setdefault("ai", {})
+        dashboard["analysis"]["ai"] = {"used": False, "reason": "disabled"}
     ai = dashboard["analysis"].get("ai") or {}
     print("      当日分析：%s" % ("AI 润色成功（%s）" % ai.get("model") if ai.get("used")
                                  else "规则文案（未润色：%s）" % ai.get("reason")))
