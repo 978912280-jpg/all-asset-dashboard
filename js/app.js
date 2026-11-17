@@ -1647,7 +1647,7 @@
       '<div>传统&nbsp;&nbsp;' + cny(rec.traditional_cny) + "（" + signed(rec.traditional_pnl_cny) + "）</div>" +
       '<div>加密（币类）&nbsp;&nbsp;' + cny(rec.crypto_coin_cny) + "（" + signed(rec.crypto_pnl_cny) + "）</div>" +
       '<div>现金&nbsp;&nbsp;' + cny(rec.cash_cny) + "</div>" +
-      '<div>当日浮动&nbsp;&nbsp;' + signed(rec.day_change_cny) +
+      '<div>' + (rec.cut ? "区间浮动" : "当日浮动") + '&nbsp;&nbsp;' + signed(rec.day_change_cny) +
       (rec.day_change_pct === null || rec.day_change_pct === undefined ? "" : "（" + pct(rec.day_change_pct) + "）") +
       "</div></div>";
   }
