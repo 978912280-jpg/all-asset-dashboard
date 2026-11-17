@@ -1759,7 +1759,7 @@
     // 让左右两轴刻度数量一致：两边都按统一 splitCount 生成整齐刻度
     function niceScale(min, max, splitCount) {
       if (!isFinite(min) || !isFinite(max)) return null;
-      if (min === max) { min -= 1; max += 1; }
+      if (min === max) { var pad = Math.max(Math.abs(min) * 0.01, 100); min -= pad; max += pad; }
       var span = max - min, count = splitCount || 4;
       var raw = span / count;
       var mag = Math.pow(10, Math.floor(Math.log10(raw)));
@@ -1779,7 +1779,10 @@
       pnlMin = pnlMin === null ? v : Math.min(pnlMin, v);
       pnlMax = pnlMax === null ? v : Math.max(pnlMax, v);
     });
-    var margin = (pnlMax !== null && pnlMin !== null) ? Math.abs(pnlMax - pnlMin) * 0.06 : 0;
+    var pnlSpan = (pnlMax !== null && pnlMin !== null) ? Math.abs(pnlMax - pnlMin) : 0;
+    // 只有一个数据点时盈亏也只有一个值，人为撑开区间，避免右轴刻度全是同一个数
+    if (pnlSpan === 0 && pnlMin !== null) pnlSpan = Math.max(Math.abs(pnlMin) * 0.02, 100);
+    var margin = pnlSpan * 0.06;
     if (pnlMin !== null) { pnlMin -= margin; pnlMax += margin; }
     // 右轴按左轴段数等分，并把上下界对齐到步长，保证刻度个数与左轴完全一致
     var rMin = null, rMax = null, rInt = null;
