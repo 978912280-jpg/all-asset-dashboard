@@ -1781,7 +1781,7 @@
     });
     var pnlSpan = (pnlMax !== null && pnlMin !== null) ? Math.abs(pnlMax - pnlMin) : 0;
     // 只有一个数据点时盈亏也只有一个值，人为撑开区间，避免右轴刻度全是同一个数
-    if (pnlSpan === 0 && pnlMin !== null) pnlSpan = Math.max(Math.abs(pnlMin) * 0.02, 100);
+    if (pnlSpan === 0 && pnlMin !== null) pnlSpan = Math.max(Math.abs(pnlMin) * 0.12, 200);
     var margin = pnlSpan * 0.06;
     if (pnlMin !== null) { pnlMin -= margin; pnlMax += margin; }
     // 右轴按左轴段数等分，并把上下界对齐到步长，保证刻度个数与左轴完全一致
