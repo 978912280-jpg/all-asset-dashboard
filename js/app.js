@@ -1746,8 +1746,7 @@
         // 竖屏：按视口剩余高度铺满，避免图表缩在上半屏、下方留大片空白
         var top = 0;
         try { top = box.getBoundingClientRect().top; } catch (e) { top = 0; }
-        var avail = (window.innerHeight || 800) - top - 110;
-        hpx = Math.max(Math.round(wpx * 1.0), Math.min(avail, Math.round((window.innerHeight || 800) * 0.72)));
+        hpx = Math.round(wpx); // 手机端 1:1 正方形，两侧留白最小化
       } else {
         hpx = Math.round(wpx * 9 / 16);
       }
@@ -1828,7 +1827,11 @@
 
     var needZoom = dates.length > 60;
     state.trend.setOption({
-      grid: { left: 12, right: 62, top: 34, bottom: needZoom ? 66 : 30, containLabel: true },
+      grid: {
+        left: wpx < 640 ? 2 : 12,
+        right: wpx < 640 ? 2 : 62,
+        top: 34, bottom: needZoom ? 66 : 30, containLabel: true,
+      },
       dataZoom: needZoom ? [
         { type: "inside", startValue: Math.max(0, dates.length - 60), endValue: dates.length - 1 },
         { type: "slider", height: 22, bottom: 14,
