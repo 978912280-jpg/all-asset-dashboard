@@ -275,6 +275,7 @@ code {
   .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .split-body { grid-template-columns: 1fr; }
   .chart { height: 220px; }
+  .chart-tall { height: 630px; }
   .donut-box .chart { height: 260px; }
   .topbar-inner { padding: 12px; }
   .topbar-meta { align-items: flex-start; }

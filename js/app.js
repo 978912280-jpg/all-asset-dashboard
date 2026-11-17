@@ -1706,6 +1706,14 @@
     });
     var margin = (pnlMax !== null && pnlMin !== null) ? Math.abs(pnlMax - pnlMin) * 0.06 : 0;
     if (pnlMin !== null) { pnlMin -= margin; pnlMax += margin; }
+    // 右轴按左轴段数等分，并把上下界对齐到步长，保证刻度个数与左轴完全一致
+    var rMin = null, rMax = null, rInt = null;
+    if (pnlMin !== null && pnlMax !== null && axisSegs > 0) {
+      rInt = (pnlMax - pnlMin) / axisSegs;
+      if (!isFinite(rInt) || rInt <= 0) rInt = 1;
+      rMin = Math.floor(pnlMin / rInt) * rInt;
+      rMax = rMin + rInt * axisSegs;
+    }
 
     // Catmull-Rom 平滑：把相邻两点拟合成 12 段折线，保留原始数据点作为锚点
     function smoothSegment(i, api) {
@@ -1773,8 +1781,8 @@
         },
         {
           type: "value", scale: true, position: "right",
-          min: pnlMin, max: pnlMax,
-          interval: (pnlMin !== null && pnlMax !== null) ? (pnlMax - pnlMin) / axisSegs : null,
+          min: rMin, max: rMax,
+          interval: rInt,
           splitNumber: axisSegs,
           axisLabel: {
             color: cssVar("--muted", "#6b7280"), fontSize: 11,
