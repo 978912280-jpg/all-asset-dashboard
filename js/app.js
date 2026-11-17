@@ -1746,8 +1746,8 @@
         // 竖屏：按视口剩余高度铺满，避免图表缩在上半屏、下方留大片空白
         var top = 0;
         try { top = box.getBoundingClientRect().top; } catch (e) { top = 0; }
-        var avail = (window.innerHeight || 800) - top - 150;
-        hpx = Math.max(Math.round(wpx * 0.95), Math.min(avail, Math.round((window.innerHeight || 800) * 0.62)));
+        var avail = (window.innerHeight || 800) - top - 110;
+        hpx = Math.max(Math.round(wpx * 1.0), Math.min(avail, Math.round((window.innerHeight || 800) * 0.72)));
       } else {
         hpx = Math.round(wpx * 9 / 16);
       }
@@ -1856,7 +1856,7 @@
           color: cssVar("--muted", "#6b7280"), fontSize: 11, hideOverlap: true,
           formatter: function (v) {
             v = String(v);
-            if (v.indexOf("第") === 0) return v;
+            if (v.indexOf("第") === 0 || v.indexOf("月") >= 0 || v.indexOf("年") >= 0) return v;
             if (v.length === 4) return v;
             if (v.length === 7) return v.slice(2);
             return v.slice(5);
