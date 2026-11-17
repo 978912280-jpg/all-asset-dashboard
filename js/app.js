@@ -1728,7 +1728,18 @@
     // 粒度随区间递进：周视图=按日（近 7 日）；月视图=按周聚合（近 30 日）；年视图=按月聚合（近一年）
     var bucket = state.trendRange === "week" ? null
       : (state.trendRange === "year" ? "month" : "week");
-    if (bucket) h = aggregateHistory(h, bucket);
+    var fallbackNote = "";
+    if (bucket) {
+      var first = aggregateHistory(h, bucket);
+      // 粒度太粗导致点太少（数据还短）时逐级回退：月→周→日
+      if (first.length < 3) {
+        if (bucket === "month") { bucket = "week"; first = aggregateHistory(h, bucket); }
+        if (first.length < 3 && bucket === "week") { bucket = null; first = h; }
+        fallbackNote = "（当前数据跨度还短，已回退为按" +
+          (bucket === "week" ? "周" : "日") + "显示）";
+      }
+      h = first;
+    }
     if (!window.echarts) {
       $("trend-chart").innerHTML = '<p class="empty-tip">图表库未加载，趋势暂不可用</p>';
       return;
@@ -1920,8 +1931,8 @@
     }, true);
     state.trend.resize();
 
-    var unitTxt = state.trendRange === "week" ? "日" : (state.trendRange === "year" ? "月" : "周");
-    var rangeLabel = state.trendRange === "week" ? "近 7 日 · 按日" : ("按" + unitTxt + "聚合");
+    var unitTxt = !bucket ? "日" : (bucket === "week" ? "周" : "月");
+    var rangeLabel = (state.trendRange === "week" ? "近 7 日 · " : "") + "按" + unitTxt + "聚合" + fallbackNote;
     $("trend-tip").textContent = h.length === 1
       ? "已有 1 个" + unitTxt + "数据点（" + (h[0].from || h[0].date) + " ~ " + (h[0].to || h[0].date) + "）。后台每日构建后会累积成趋势曲线。"
       : rangeLabel + " · 共 " + h.length + " 个" + unitTxt + "度数据点（" + (h[0].from || h[0].date) + " ~ " + (h[h.length - 1].to || h[h.length - 1].date) +
