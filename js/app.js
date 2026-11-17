@@ -1778,7 +1778,10 @@
       // 注：step 已保证 (max-min)/step 为整数段
     }
     var numTotal = total.filter(function (v) { return typeof v === "number"; });
-    var leftScale = niceScale(Math.min.apply(null, numTotal), Math.max.apply(null, numTotal), 4);
+    // 目标 10 个刻度（9 段）；上下各留 8% 余量，避免平滑曲线顶到轴上限
+    var tMin = Math.min.apply(null, numTotal), tMax = Math.max.apply(null, numTotal);
+    var tPad = (tMax - tMin) * 0.08;
+    var leftScale = niceScale(tMin - tPad, tMax + tPad, 9);
     // 左轴实际刻段数（用于让右轴严格同刻段、同刻度个数）
     var axisSegs = leftScale ? Math.round((leftScale.max - leftScale.min) / leftScale.interval) : 4;
 
@@ -1799,6 +1802,8 @@
       rInt = (pnlMax - pnlMin) / axisSegs;
       if (!isFinite(rInt) || rInt <= 0) rInt = 1;
       rMin = Math.floor(pnlMin / rInt) * rInt;
+      // 下限向下取整会同时拉低上限，需按新下限重算步长，保证最高点仍在轴内
+      rInt = (pnlMax - rMin) / axisSegs;
       rMax = rMin + rInt * axisSegs;
     }
 
@@ -1902,7 +1907,6 @@
             },
           },
           splitLine: { show: false },
-          splitNumber: 4,
         },
       ],
       series: [
