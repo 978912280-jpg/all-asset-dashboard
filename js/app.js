@@ -1684,7 +1684,14 @@
       if (!buckets[k]) { buckets[k] = []; order.push(k); }
       buckets[k].push(x);
     });
-    var unitName = mode === "week" ? "周" : (mode === "month" ? "月" : "年");
+    // ISO 周数（与日历一致：周一为每周第一天）
+    function isoWeek(dstr) {
+      var d = new Date(dstr + "T00:00:00");
+      var t = new Date(d.getTime());
+      t.setDate(t.getDate() + 3 - ((t.getDay() + 6) % 7));
+      var week1 = new Date(t.getFullYear(), 0, 4);
+      return 1 + Math.round(((t.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+    }
     return order.map(function (k, idx) {
       var g = buckets[k];
       var last = g[g.length - 1];
@@ -1698,8 +1705,11 @@
       }
       return {
         date: last.date, cut: mode,
-        label: "第" + (idx + 1) + unitName,
-        dateText: "第" + (idx + 1) + unitName + "（" + g[0].date + " ~ " + last.date + "）",
+        label: mode === "week" ? ("第" + isoWeek(last.date) + "周")
+          : (mode === "month" ? (String(Number(last.date.slice(5, 7))) + "月") : (last.date.slice(0, 4) + "年")),
+        dateText: (mode === "week" ? (last.date.slice(0, 4) + "年第" + isoWeek(last.date) + "周")
+          : (mode === "month" ? (last.date.slice(0, 4) + "年" + String(Number(last.date.slice(5, 7))) + "月")
+            : (last.date.slice(0, 4) + "年"))) + "（" + g[0].date + " ~ " + last.date + "）",
         from: g[0].date, to: last.date, points: g.length,
         total_cny: avgTotal,
         total_pnl_cny: last.total_pnl_cny,
