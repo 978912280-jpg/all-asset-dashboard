@@ -1669,7 +1669,15 @@
       $("trend-chart").innerHTML = '<p class="empty-tip">图表库未加载，趋势暂不可用</p>';
       return;
     }
-    if (!state.trend) state.trend = echarts.init($("trend-chart"));
+    // 趋势图固定 16:9：按容器宽度换算高度，避免移动/桌面比例漂移
+    var box = $("trend-chart");
+    var wpx = box.clientWidth || 0;
+    if (wpx > 0) {
+      var hpx = Math.round(wpx * 9 / 16);
+      box.style.height = hpx + "px";
+    }
+    if (!state.trend) state.trend = echarts.init(box);
+    else state.trend.resize();
     var dates = h.map(function (x) { return x.date; });
     var byDate = {};
     h.forEach(function (x) { byDate[x.date] = x; });
@@ -1891,7 +1899,7 @@
       clearTimeout(t);
       t = setTimeout(function () {
         if (state.donut) state.donut.resize();
-        if (state.trend) state.trend.resize();
+        if (state.trend) renderTrend();
         renderFlow();
       }, 120);
     });

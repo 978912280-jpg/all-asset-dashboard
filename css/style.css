@@ -183,8 +183,7 @@ code {
 .donut-box { width: 100%; }
 .donut-box .chart { height: 470px; }
 .chart { width: 100%; height: 260px; }
-.chart-tall { height: 675px; }
-@media (max-width: 640px) { .chart-tall { height: 630px; } }
+.chart-tall { height: auto; min-height: 200px; }
 
 .split-legend { display: flex; flex-direction: column; gap: 10px; }
 .legend-row {
@@ -275,7 +274,7 @@ code {
   .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .split-body { grid-template-columns: 1fr; }
   .chart { height: 220px; }
-  .chart-tall { height: 630px; }
+  .chart-tall { height: auto; min-height: 180px; }
   .donut-box .chart { height: 260px; }
   .topbar-inner { padding: 12px; }
   .topbar-meta { align-items: flex-start; }
