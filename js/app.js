@@ -1725,10 +1725,10 @@
     }) : all;
     if (!h.length) h = all.slice(-1);
     // 周/月/年视角：把日快照聚合成一个数据点（盈亏=区间累计浮动，资产=区间平均）
-    var mode = state.trendRange === "week" ? "week" : (state.trendRange === "year" ? "year" : "month");
-    if (mode !== "week" || true) {
-      h = aggregateHistory(h, mode);
-    }
+    // 粒度随区间递进：周视图=按日（近 7 日）；月视图=按周聚合（近 30 日）；年视图=按月聚合（近一年）
+    var bucket = state.trendRange === "week" ? null
+      : (state.trendRange === "year" ? "month" : "week");
+    if (bucket) h = aggregateHistory(h, bucket);
     if (!window.echarts) {
       $("trend-chart").innerHTML = '<p class="empty-tip">图表库未加载，趋势暂不可用</p>';
       return;
@@ -1920,8 +1920,8 @@
     }, true);
     state.trend.resize();
 
-    var unitTxt = state.trendRange === "week" ? "周" : (state.trendRange === "year" ? "年" : "月");
-    var rangeLabel = "按" + unitTxt + "聚合";
+    var unitTxt = state.trendRange === "week" ? "日" : (state.trendRange === "year" ? "月" : "周");
+    var rangeLabel = state.trendRange === "week" ? "近 7 日 · 按日" : ("按" + unitTxt + "聚合");
     $("trend-tip").textContent = h.length === 1
       ? "已有 1 个" + unitTxt + "数据点（" + (h[0].from || h[0].date) + " ~ " + (h[0].to || h[0].date) + "）。后台每日构建后会累积成趋势曲线。"
       : rangeLabel + " · 共 " + h.length + " 个" + unitTxt + "度数据点（" + (h[0].from || h[0].date) + " ~ " + (h[h.length - 1].to || h[h.length - 1].date) +
