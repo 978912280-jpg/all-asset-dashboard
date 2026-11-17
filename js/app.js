@@ -1806,7 +1806,9 @@
       rMin = Math.floor(pnlMin / rInt) * rInt;
       // 下限向下取整会同时拉低上限，需按新下限重算步长，保证最高点仍在轴内
       rInt = (pnlMax - rMin) / axisSegs;
-      rMax = rMin + rInt * axisSegs;
+      // 收敛浮点误差：否则末端会出现两个几乎相同的刻度，导致右轴比左轴多一格
+      var rd = function (x) { return Math.round(x * 10000) / 10000; };
+      rMin = rd(rMin); rInt = rd(rInt); rMax = rd(rMin + rInt * axisSegs);
     }
 
     // Catmull-Rom 平滑：把相邻两点拟合成 12 段折线，保留原始数据点作为锚点
