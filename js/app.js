@@ -1691,9 +1691,12 @@
       var norm = raw / mag;
       var step = mag * (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10);
       return { min: Math.floor(min / step) * step, max: Math.ceil(max / step) * step, interval: step };
+      // 注：step 已保证 (max-min)/step 为整数段
     }
     var numTotal = total.filter(function (v) { return typeof v === "number"; });
     var leftScale = niceScale(Math.min.apply(null, numTotal), Math.max.apply(null, numTotal), 4);
+    // 左轴实际刻段数（用于让右轴严格同刻段、同刻度个数）
+    var axisSegs = leftScale ? Math.round((leftScale.max - leftScale.min) / leftScale.interval) : 4;
 
     var pnlMin = null, pnlMax = null;
     pnl.forEach(function (v) {
@@ -1752,15 +1755,18 @@
           min: leftScale ? leftScale.min : null,
           max: leftScale ? leftScale.max : null,
           interval: leftScale ? leftScale.interval : null,
-          splitNumber: 4,
+          splitNumber: axisSegs,
           axisLabel: {
             color: isDark() ? "#c9a227" : "#9a7b1f", fontSize: 11,
             formatter: function (v) {
               if (curCode() === "USD") {
                 var a = Math.abs(v);
-                return (v < 0 ? "−" : "") + "$" + (a >= 1000 ? (a / 1000).toFixed(1) + "k" : Math.round(a));
+                return (v < 0 ? "−" : "") + "$" + (a >= 1000 ? (a / 1000).toFixed(2) + "k" : a.toFixed(2));
               }
-              return v >= 10000 ? "¥" + (v / 10000).toFixed(1) + "万" : "¥" + Math.round(v);
+              var av = Math.abs(v);
+              return (v < 0 ? "−" : "") + "¥" + (av >= 10000
+                ? (av / 10000).toFixed(2) + "万"
+                : av.toFixed(2));
             },
           },
           splitLine: { lineStyle: { color: isDark() ? "#16202e" : "#f1f3f5" } },
@@ -1768,8 +1774,8 @@
         {
           type: "value", scale: true, position: "right",
           min: pnlMin, max: pnlMax,
-          interval: (pnlMin !== null && pnlMax !== null) ? (pnlMax - pnlMin) / 4 : null,
-          splitNumber: 4,
+          interval: (pnlMin !== null && pnlMax !== null) ? (pnlMax - pnlMin) / axisSegs : null,
+          splitNumber: axisSegs,
           axisLabel: {
             color: cssVar("--muted", "#6b7280"), fontSize: 11,
             formatter: function (v) {
