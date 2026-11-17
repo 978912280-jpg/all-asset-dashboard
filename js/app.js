@@ -1652,6 +1652,65 @@
       "</div></div>";
   }
 
+  // 把日快照聚合为周/月/年数据点：
+  //  - 盈亏：区间内每日浮动之和（即区间累计盈亏变化）
+  //  - 资产：区间内每日总资产的平均值
+  //  - 结构字段（传统/加密现金）：同样取区间平均；累计盈亏取区间最后一日的值
+  function aggregateHistory(list, mode) {
+    function keyOf(d) {
+      var dt = new Date(d + "T00:00:00");
+      if (mode === "week") {
+        // 以周一为一周起点
+        var wd = (dt.getDay() + 6) % 7;
+        var monday = new Date(dt.getTime() - wd * 86400000);
+        return monday.toISOString().slice(0, 10);
+      }
+      if (mode === "year") return d.slice(0, 4);
+      return d.slice(0, 7);
+    }
+    function avgNum(arr) {
+      var ns = arr.filter(function (v) { return typeof v === "number" && isFinite(v); });
+      if (!ns.length) return null;
+      return ns.reduce(function (a, b) { return a + b; }, 0) / ns.length;
+    }
+    function sumNum(arr) {
+      var ns = arr.filter(function (v) { return typeof v === "number" && isFinite(v); });
+      if (!ns.length) return null;
+      return ns.reduce(function (a, b) { return a + b; }, 0);
+    }
+    var buckets = {}, order = [];
+    list.forEach(function (x) {
+      var k = keyOf(x.date);
+      if (!buckets[k]) { buckets[k] = []; order.push(k); }
+      buckets[k].push(x);
+    });
+    return order.map(function (k) {
+      var g = buckets[k];
+      var last = g[g.length - 1];
+      var avgTotal = avgNum(g.map(function (x) { return x.total_cny; }));
+      var chg = sumNum(g.map(function (x) { return x.day_change_cny; }));
+      if (chg === null) chg = null;
+      var pctVal = null;
+      if (chg !== null && avgTotal) {
+        var base = avgTotal - chg;
+        if (base) pctVal = chg / base * 100;
+      }
+      return {
+        date: last.date, cut: mode,
+        from: g[0].date, to: last.date, points: g.length,
+        total_cny: avgTotal,
+        total_pnl_cny: last.total_pnl_cny,
+        traditional_cny: avgNum(g.map(function (x) { return x.traditional_cny; })),
+        traditional_pnl_cny: last.traditional_pnl_cny,
+        crypto_coin_cny: avgNum(g.map(function (x) { return x.crypto_coin_cny; })),
+        crypto_pnl_cny: last.crypto_pnl_cny,
+        cash_cny: avgNum(g.map(function (x) { return x.cash_cny; })),
+        day_change_cny: chg,
+        day_change_pct: pctVal,
+      };
+    });
+  }
+
   function renderTrend() {
     // 趋势图始终展示完整历史，切换历史快照复现时不回退
     var all = (state.base || state.data).history || [];
@@ -1665,6 +1724,11 @@
       return new Date(x.date + "T00:00:00") >= cutoff;
     }) : all;
     if (!h.length) h = all.slice(-1);
+    // 周/月/年视角：把日快照聚合成一个数据点（盈亏=区间累计浮动，资产=区间平均）
+    var mode = state.trendRange === "week" ? "week" : (state.trendRange === "year" ? "year" : "month");
+    if (mode !== "week" || true) {
+      h = aggregateHistory(h, mode);
+    }
     if (!window.echarts) {
       $("trend-chart").innerHTML = '<p class="empty-tip">图表库未加载，趋势暂不可用</p>';
       return;
@@ -1856,10 +1920,12 @@
     }, true);
     state.trend.resize();
 
-    var rangeLabel = state.trendRange === "week" ? "近 7 日" : (state.trendRange === "year" ? "近一年" : "近 30 日");
+    var unitTxt = state.trendRange === "week" ? "周" : (state.trendRange === "year" ? "年" : "月");
+    var rangeLabel = "按" + unitTxt + "聚合";
     $("trend-tip").textContent = h.length === 1
-      ? "已有 1 个每日快照（" + h[0].date + "）。后台每日构建后会累积成趋势曲线。"
-      : rangeLabel + " · 共 " + h.length + " 个每日快照（" + h[0].date + " ~ " + h[h.length - 1].date + "），金线=总资产（左轴），红绿线=总盈亏（右轴，0 上方绿、0 下方红）。";
+      ? "已有 1 个" + unitTxt + "数据点（" + (h[0].from || h[0].date) + " ~ " + (h[0].to || h[0].date) + "）。后台每日构建后会累积成趋势曲线。"
+      : rangeLabel + " · 共 " + h.length + " 个" + unitTxt + "度数据点（" + (h[0].from || h[0].date) + " ~ " + (h[h.length - 1].to || h[h.length - 1].date) +
+        "）；每个点的盈亏=区间内每日浮动之和，资产=区间内每日总资产平均值。金线=总资产（左轴），红绿线=总盈亏（右轴，0 上方绿、0 下方红）。";
   }
 
   // ---------- 数据来源 ----------
