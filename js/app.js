@@ -1774,7 +1774,9 @@
       var mag = Math.pow(10, Math.floor(Math.log10(raw)));
       var norm = raw / mag;
       var step = mag * (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10);
-      return { min: Math.floor(min / step) * step, max: Math.ceil(max / step) * step, interval: step };
+      var lo = Math.floor(min / step) * step;
+      // 固定段数：上限按下限 + 段数×步长推出，保证左右轴都是 count+1 个刻度
+      return { min: lo, max: lo + step * count, interval: step };
       // 注：step 已保证 (max-min)/step 为整数段
     }
     var numTotal = total.filter(function (v) { return typeof v === "number"; });
