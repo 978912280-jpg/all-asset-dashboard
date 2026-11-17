@@ -1732,9 +1732,9 @@
     if (bucket) {
       var first = aggregateHistory(h, bucket);
       // 粒度太粗导致点太少（数据还短）时逐级回退：月→周→日
-      if (first.length < 3) {
+      if (first.length < 2) {
         if (bucket === "month") { bucket = "week"; first = aggregateHistory(h, bucket); }
-        if (first.length < 3 && bucket === "week") { bucket = null; first = h; }
+        if (first.length < 2 && bucket === "week") { bucket = null; first = h; }
         fallbackNote = "（当前数据跨度还短，已回退为按" +
           (bucket === "week" ? "周" : "日") + "显示）";
       }
