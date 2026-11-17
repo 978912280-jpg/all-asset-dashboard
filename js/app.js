@@ -1641,7 +1641,7 @@
       if (v === null || v === undefined) return '<span class="pa-dim">—</span>';
       return '<span class="' + (v >= 0 ? "pos" : "neg") + '">' + signedMoney(v) + "</span>";
     }
-    return '<div class="tr-tip"><div class="tr-tip-h">' + rec.date + '</div>' +
+    return '<div class="tr-tip"><div class="tr-tip-h">' + (rec.dateText || rec.date) + '</div>' +
       '<div>总资产&nbsp;&nbsp;' + cny(rec.total_cny) + "</div>" +
       '<div>总盈亏&nbsp;&nbsp;' + signed(rec.total_pnl_cny) + "</div>" +
       '<div>传统&nbsp;&nbsp;' + cny(rec.traditional_cny) + "（" + signed(rec.traditional_pnl_cny) + "）</div>" +
@@ -1684,7 +1684,8 @@
       if (!buckets[k]) { buckets[k] = []; order.push(k); }
       buckets[k].push(x);
     });
-    return order.map(function (k) {
+    var unitName = mode === "week" ? "周" : (mode === "month" ? "月" : "年");
+    return order.map(function (k, idx) {
       var g = buckets[k];
       var last = g[g.length - 1];
       var avgTotal = avgNum(g.map(function (x) { return x.total_cny; }));
@@ -1697,6 +1698,8 @@
       }
       return {
         date: last.date, cut: mode,
+        label: "第" + (idx + 1) + unitName,
+        dateText: "第" + (idx + 1) + unitName + "（" + g[0].date + " ~ " + last.date + "）",
         from: g[0].date, to: last.date, points: g.length,
         total_cny: avgTotal,
         total_pnl_cny: last.total_pnl_cny,
@@ -1728,14 +1731,23 @@
     var box = $("trend-chart");
     var wpx = box.clientWidth || 0;
     if (wpx > 0) {
-      var hpx = Math.round(wpx * 9 / 16);
+      var hpx;
+      if (wpx < 640) {
+        // 竖屏：按视口剩余高度铺满，避免图表缩在上半屏、下方留大片空白
+        var top = 0;
+        try { top = box.getBoundingClientRect().top; } catch (e) { top = 0; }
+        var avail = (window.innerHeight || 800) - top - 150;
+        hpx = Math.max(Math.round(wpx * 0.95), Math.min(avail, Math.round((window.innerHeight || 800) * 0.62)));
+      } else {
+        hpx = Math.round(wpx * 9 / 16);
+      }
       box.style.height = hpx + "px";
     }
     if (!state.trend) state.trend = echarts.init(box);
     else state.trend.resize();
-    var dates = h.map(function (x) { return x.date; });
+    var dates = h.map(function (x) { return x.label || x.date; });
     var byDate = {};
-    h.forEach(function (x) { byDate[x.date] = x; });
+    h.forEach(function (x) { byDate[x.label || x.date] = x; });
     var total = h.map(function (x) {
       return (x.total_cny === null || x.total_cny === undefined) ? "-" : Math.round(convCny(x.total_cny));
     });
@@ -1831,6 +1843,7 @@
           color: cssVar("--muted", "#6b7280"), fontSize: 11, hideOverlap: true,
           formatter: function (v) {
             v = String(v);
+            if (v.indexOf("第") === 0) return v;
             if (v.length === 4) return v;
             if (v.length === 7) return v.slice(2);
             return v.slice(5);
