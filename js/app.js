@@ -9,7 +9,7 @@
     sortDir: "desc",
     donut: null,
     trend: null,
-    trendRange: "month",
+    trendRange: "day",
     groupColors: { traditional: "#1d4ed8", crypto: "#b45309", cash: "#0f766e" },
     currency: "CNY",
   };
@@ -1714,32 +1714,12 @@
   function renderTrend() {
     // 趋势图始终展示完整历史，切换历史快照复现时不回退
     var all = (state.base || state.data).history || [];
-    var spanDays = state.trendRange === "week" ? 7 : (state.trendRange === "year" ? 365 : 30);
-    var cutoff = null;
-    if (all.length) {
-      var last = new Date(all[all.length - 1].date + "T00:00:00");
-      cutoff = new Date(last.getTime() - (spanDays - 1) * 86400000);
-    }
-    var h = cutoff ? all.filter(function (x) {
-      return new Date(x.date + "T00:00:00") >= cutoff;
-    }) : all;
-    if (!h.length) h = all.slice(-1);
-    // 周/月/年视角：把日快照聚合成一个数据点（盈亏=区间累计浮动，资产=区间平均）
-    // 粒度随区间递进：周视图=按日（近 7 日）；月视图=按周聚合（近 30 日）；年视图=按月聚合（近一年）
-    var bucket = state.trendRange === "week" ? null
-      : (state.trendRange === "year" ? "month" : "week");
-    var fallbackNote = "";
-    if (bucket) {
-      var first = aggregateHistory(h, bucket);
-      // 粒度太粗导致点太少（数据还短）时逐级回退：月→周→日
-      if (first.length < 2) {
-        if (bucket === "month") { bucket = "week"; first = aggregateHistory(h, bucket); }
-        if (first.length < 2 && bucket === "week") { bucket = null; first = h; }
-        fallbackNote = "（当前数据跨度还短，已回退为按" +
-          (bucket === "week" ? "周" : "日") + "显示）";
-      }
-      h = first;
-    }
+    if (!all.length) { all = []; }
+    // 视角即粒度：日=每个日快照一个点；周/月/年=每周/每月/每年聚合一个点
+    var bucket = state.trendRange === "week" ? "week"
+      : (state.trendRange === "month" ? "month" : (state.trendRange === "year" ? "year" : null));
+    var h = bucket ? aggregateHistory(all, bucket) : all.slice();
+    if (!h.length && all.length) h = all.slice(-1);
     if (!window.echarts) {
       $("trend-chart").innerHTML = '<p class="empty-tip">图表库未加载，趋势暂不可用</p>';
       return;
@@ -1821,8 +1801,16 @@
       return pts;
     }
 
+    var needZoom = dates.length > 60;
     state.trend.setOption({
-      grid: { left: 12, right: 56, top: 34, bottom: 26, containLabel: true },
+      grid: { left: 12, right: 62, top: 34, bottom: needZoom ? 66 : 30, containLabel: true },
+      dataZoom: needZoom ? [
+        { type: "inside", startValue: Math.max(0, dates.length - 60), endValue: dates.length - 1 },
+        { type: "slider", height: 22, bottom: 14,
+          startValue: Math.max(0, dates.length - 60), endValue: dates.length - 1,
+          borderColor: cssVar("--line", "#e5e7eb"), fillerColor: "rgba(212,160,23,.18)",
+          handleStyle: { color: trGold() }, textStyle: { fontSize: 10, color: cssVar("--muted", "#6b7280") } },
+      ] : [],
       tooltip: Object.assign(tipSkin(), {
         trigger: "item",
         formatter: function (p) {
@@ -1839,7 +1827,15 @@
         data: dates,
         boundaryGap: false,
         axisLine: { lineStyle: { color: cssVar("--line", "#e5e7eb") } },
-        axisLabel: { color: cssVar("--muted", "#6b7280"), fontSize: 11, formatter: function (v) { return v.slice(5); } },
+        axisLabel: {
+          color: cssVar("--muted", "#6b7280"), fontSize: 11, hideOverlap: true,
+          formatter: function (v) {
+            v = String(v);
+            if (v.length === 4) return v;
+            if (v.length === 7) return v.slice(2);
+            return v.slice(5);
+          },
+        },
       },
       yAxis: [
         {
@@ -1931,12 +1927,14 @@
     }, true);
     state.trend.resize();
 
-    var unitTxt = !bucket ? "日" : (bucket === "week" ? "周" : "月");
-    var rangeLabel = (state.trendRange === "week" ? "近 7 日 · " : "") + "按" + unitTxt + "聚合" + fallbackNote;
+    var unitTxt = !bucket ? "日" : (bucket === "week" ? "周" : (bucket === "month" ? "月" : "年"));
+    var rangeLabel = !bucket ? "按日" : ("按" + unitTxt + "聚合");
     $("trend-tip").textContent = h.length === 1
       ? "已有 1 个" + unitTxt + "数据点（" + (h[0].from || h[0].date) + " ~ " + (h[0].to || h[0].date) + "）。后台每日构建后会累积成趋势曲线。"
-      : rangeLabel + " · 共 " + h.length + " 个" + unitTxt + "度数据点（" + (h[0].from || h[0].date) + " ~ " + (h[h.length - 1].to || h[h.length - 1].date) +
-        "）；每个点的盈亏=区间内每日浮动之和，资产=区间内每日总资产平均值。金线=总资产（左轴），红绿线=总盈亏（右轴，0 上方绿、0 下方红）。";
+      : rangeLabel + " · 共 " + h.length + " 个" + unitTxt + "数据点（" + (h[0].from || h[0].date) + " ~ " + (h[h.length - 1].to || h[h.length - 1].date) + "）" +
+        (bucket ? "；每个点的盈亏=区间内每日浮动之和，资产=区间内每日总资产平均值" : "；每个点的盈亏=当日浮动，资产=当日总资产") +
+        "。金线=总资产（左轴），红绿线=总盈亏（右轴，0 上方绿、0 下方红）" +
+        (needZoom ? "；点数超过 60，可拖动底部横条前后查看。" : "。");
   }
 
   // ---------- 数据来源 ----------
@@ -2002,7 +2000,7 @@
     box.addEventListener("click", function (e) {
       var btn = e.target.closest(".seg-btn");
       if (!btn) return;
-      state.trendRange = btn.getAttribute("data-range") || "month";
+      state.trendRange = btn.getAttribute("data-range") || "day";
       Array.prototype.forEach.call(box.children, function (b) {
         b.classList.toggle("active", b === btn);
       });
