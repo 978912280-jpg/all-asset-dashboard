@@ -1907,7 +1907,7 @@
             formatter: function (v) {
               var a = Math.abs(v);
               if (a < 1) return "0";
-              return (v > 0 ? "+" : "−") + curSym() + (a >= 1000 ? (a / 1000).toFixed(1) + "k" : Math.round(a));
+              return (v > 0 ? "+" : "−") + curSym() + (a >= 1000 ? (a / 1000).toFixed(2) + "k" : Math.round(a));
             },
           },
           splitLine: { show: false },
