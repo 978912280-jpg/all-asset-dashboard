@@ -183,7 +183,8 @@ code {
 .donut-box { width: 100%; }
 .donut-box .chart { height: 470px; }
 .chart { width: 100%; height: 260px; }
-.chart-tall { height: 300px; }
+.chart-tall { height: 450px; }
+@media (max-width: 640px) { .chart-tall { height: 420px; } }
 
 .split-legend { display: flex; flex-direction: column; gap: 10px; }
 .legend-row {

@@ -9,6 +9,7 @@
     sortDir: "desc",
     donut: null,
     trend: null,
+    trendRange: "month",
     groupColors: { traditional: "#1d4ed8", crypto: "#b45309", cash: "#0f766e" },
     currency: "CNY",
   };
@@ -1653,7 +1654,17 @@
 
   function renderTrend() {
     // 趋势图始终展示完整历史，切换历史快照复现时不回退
-    var h = (state.base || state.data).history || [];
+    var all = (state.base || state.data).history || [];
+    var spanDays = state.trendRange === "week" ? 7 : (state.trendRange === "year" ? 365 : 30);
+    var cutoff = null;
+    if (all.length) {
+      var last = new Date(all[all.length - 1].date + "T00:00:00");
+      cutoff = new Date(last.getTime() - (spanDays - 1) * 86400000);
+    }
+    var h = cutoff ? all.filter(function (x) {
+      return new Date(x.date + "T00:00:00") >= cutoff;
+    }) : all;
+    if (!h.length) h = all.slice(-1);
     if (!window.echarts) {
       $("trend-chart").innerHTML = '<p class="empty-tip">图表库未加载，趋势暂不可用</p>';
       return;
@@ -1669,6 +1680,20 @@
       return (x.total_pnl_cny === null || x.total_pnl_cny === undefined) ? null : Math.round(convCny(x.total_pnl_cny));
     });
     function pnlColor(v) { return v >= 0 ? trUp() : trDown(); }
+
+    // 让左右两轴刻度数量一致：两边都按统一 splitCount 生成整齐刻度
+    function niceScale(min, max, splitCount) {
+      if (!isFinite(min) || !isFinite(max)) return null;
+      if (min === max) { min -= 1; max += 1; }
+      var span = max - min, count = splitCount || 4;
+      var raw = span / count;
+      var mag = Math.pow(10, Math.floor(Math.log10(raw)));
+      var norm = raw / mag;
+      var step = mag * (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10);
+      return { min: Math.floor(min / step) * step, max: Math.ceil(max / step) * step, interval: step };
+    }
+    var numTotal = total.filter(function (v) { return typeof v === "number"; });
+    var leftScale = niceScale(Math.min.apply(null, numTotal), Math.max.apply(null, numTotal), 4);
 
     var pnlMin = null, pnlMax = null;
     pnl.forEach(function (v) {
@@ -1724,6 +1749,10 @@
       yAxis: [
         {
           type: "value", scale: true,
+          min: leftScale ? leftScale.min : null,
+          max: leftScale ? leftScale.max : null,
+          interval: leftScale ? leftScale.interval : null,
+          splitNumber: 4,
           axisLabel: {
             color: isDark() ? "#c9a227" : "#9a7b1f", fontSize: 11,
             formatter: function (v) {
@@ -1738,6 +1767,9 @@
         },
         {
           type: "value", scale: true, position: "right",
+          min: pnlMin, max: pnlMax,
+          interval: (pnlMin !== null && pnlMax !== null) ? (pnlMax - pnlMin) / 4 : null,
+          splitNumber: 4,
           axisLabel: {
             color: cssVar("--muted", "#6b7280"), fontSize: 11,
             formatter: function (v) {
@@ -1801,9 +1833,10 @@
     }, true);
     state.trend.resize();
 
+    var rangeLabel = state.trendRange === "week" ? "近 7 日" : (state.trendRange === "year" ? "近一年" : "近 30 日");
     $("trend-tip").textContent = h.length === 1
       ? "已有 1 个每日快照（" + h[0].date + "）。后台每日构建后会累积成趋势曲线。"
-      : "共 " + h.length + " 个每日快照（" + h[0].date + " ~ " + h[h.length - 1].date + "），金线=总资产（左轴），红绿线=总盈亏（右轴，0 上方绿、0 下方红）。";
+      : rangeLabel + " · 共 " + h.length + " 个每日快照（" + h[0].date + " ~ " + h[h.length - 1].date + "），金线=总资产（左轴），红绿线=总盈亏（右轴，0 上方绿、0 下方红）。";
   }
 
   // ---------- 数据来源 ----------
@@ -1863,11 +1896,26 @@
     });
   }
 
+  function bindTrendRange() {
+    var box = $("trend-range");
+    if (!box) return;
+    box.addEventListener("click", function (e) {
+      var btn = e.target.closest(".seg-btn");
+      if (!btn) return;
+      state.trendRange = btn.getAttribute("data-range") || "month";
+      Array.prototype.forEach.call(box.children, function (b) {
+        b.classList.toggle("active", b === btn);
+      });
+      renderTrend();
+    });
+  }
+
   function init() {
     if ($("btn-back-today")) $("btn-back-today").addEventListener("click", exitReplay);
     bindTheme();
     bindCurrency();
     bindTabs();
+    bindTrendRange();
     bindPanel();
     bindRefreshPrice();
     bindSort();
