@@ -25,9 +25,9 @@
       "symbol": "QQQM",
       "currency": "USD",
       "asset_class": "美股基金",
-      "shares": 2.5382,
+      "shares": 2.8143,
       "note": "定投纳指，每月约 1350 USD",
-      "cost_price": 296.214
+      "cost_price": 293.8
     },
     {
       "id": "VOO",
@@ -35,9 +35,9 @@
       "symbol": "VOO",
       "currency": "USD",
       "asset_class": "美股基金",
-      "shares": 1.319,
+      "shares": 1.5404,
       "note": "",
-      "cost_price": 700.933
+      "cost_price": 697.936
     },
     {
       "id": "QQQI",
@@ -45,9 +45,9 @@
       "symbol": "QQQI",
       "currency": "USD",
       "asset_class": "美股基金",
-      "shares": 8.0522,
+      "shares": 9.5717,
       "note": "",
-      "cost_price": 53.067
+      "cost_price": 52.835
     },
     {
       "id": "008163",
