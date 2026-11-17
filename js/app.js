@@ -1737,8 +1737,9 @@
         var v = 0.5 * ((2 * p1) + (-c0 + p2) * t +
           (2 * c0 - 5 * p1 + 4 * p2 - c3) * t * t +
           (-c0 + 3 * p1 - 3 * p2 + c3) * t * t * t);
-        // 轻微限制过冲，避免曲线偏离真实数值太多
-        if (pnlMin !== null) v = Math.max(pnlMin, Math.min(pnlMax, v));
+        // 限制过冲：夹在相邻两点之间，避免样条画出虚假的峰谷
+        var lo = Math.min(p1, p2), hi = Math.max(p1, p2);
+        v = Math.max(lo, Math.min(hi, v));
         var y = api.coord([i, v])[1];
         pts.push({ x: a[0] + (b[0] - a[0]) * t, y: y, v: v });
       }
@@ -1806,7 +1807,7 @@
       ],
       series: [
         {
-          name: "总资产", type: "line", yAxisIndex: 0, smooth: true,
+          name: "总资产", type: "line", yAxisIndex: 0, smooth: 0.25,
           data: total.map(function (v, i) { return [dates[i], v]; }),
           symbol: "circle", symbolSize: 7,
           lineStyle: { width: 2.4, color: trGold() },
