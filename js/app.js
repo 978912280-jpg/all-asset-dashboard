@@ -885,7 +885,7 @@
       window.scrollTo({ top: 0, behavior: "instant" });
       state.view = isHome ? "home" : key;
       setTimeout(function () {
-        if (key === "trend" && state.trend) { state.trend.resize(); }
+        if (key === "trend") renderTrend();
         if (key === "flow") renderFlow();
         if (key === "pnl") renderRealized();
       }, 50);
