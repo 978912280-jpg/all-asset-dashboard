@@ -1,18 +1,37 @@
 {
-  "updated_at": "2026-11-18T02:21:25+08:00",
+  "updated_at": "2026-11-18T11:49:17+08:00",
   "since": "2026-11-13",
-  "fills": 3,
+  "fills": 5,
   "cost_total_usdt": {
     "BTC": 6095.9415,
     "SOL": 3578.96,
-    "BGB": 0
+    "BGB": 0,
+    "USDC": 0.0,
+    "XAUT": 380.9058
   },
-  "realized_usdt": {},
+  "realized_usdt": {
+    "USDC": 381.2017
+  },
   "qty_net": {
-    "BTC": 0.002726
+    "BTC": 0.002726,
+    "USDC": -380.8399,
+    "XAUT": 0.1007
   },
   "qty_mode": "delta",
-  "realized_pnl_usdt": {},
-  "sell_entries": [],
+  "realized_pnl_usdt": {
+    "USDC": 381.2017
+  },
+  "sell_entries": [
+    {
+      "date": "2026-11-18 11:33",
+      "coin": "USDC",
+      "shares": 380.8399,
+      "price": 1.001,
+      "cost_price": 0.0,
+      "proceeds": 381.2,
+      "fee": 0.0,
+      "pnl_usdt": 381.2017
+    }
+  ],
   "source": "bitget_fills"
 }
