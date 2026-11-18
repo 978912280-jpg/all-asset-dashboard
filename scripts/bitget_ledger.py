@@ -109,6 +109,14 @@ def replay(fills, base_cost, calib_shares=None, fx_price=None, log=print):
             qty[coin] = qty.get(coin, 0.0) + size
             qty_delta[coin] = qty_delta.get(coin, 0.0) + size
         elif side == "sell":
+            # 稳定币之间的兑换（如 USDC→USDT）属于内部划转，不产生盈亏，
+            # 也不计入卖出笔数与已实现盈亏，只调整份额。
+            if coin in STABLE:
+                held0 = qty.get(coin, 0.0)
+                qty[coin] = max(0.0, held0 - size)
+                qty_delta[coin] = qty_delta.get(coin, 0.0) - size
+                cost[coin] = max(0.0, cost.get(coin, 0.0) - size)
+                continue
             held = qty.get(coin, 0.0)
             avg_cost = (cost.get(coin, 0.0) / held) if held > 0 else 0.0
             basis = min(cost.get(coin, 0.0), avg_cost * size)
