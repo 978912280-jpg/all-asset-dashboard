@@ -607,8 +607,17 @@
   }
 
   // ---------- 保存 ----------
+  function cstStamp() {
+    var d = new Date(Date.now() + 8 * 3600 * 1000);
+    return d.toISOString().slice(0, 19) + "+08:00";
+  }
+
   function payload() {
     var h = JSON.parse(JSON.stringify(state.holdings));
+    // 每次网页保存份额都刷新 meta.updated_at，首页「份额 N 天未更新」以它为准
+    h.meta = h.meta || {};
+    h.meta.updated_at = cstStamp();
+    h.meta.version = (h.meta.version || "1.2.1");
     return h;
   }
 
