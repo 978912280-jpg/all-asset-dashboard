@@ -1851,7 +1851,14 @@
       tooltip: Object.assign(tipSkin(), {
         // 轴触发：鼠标落在总资产或总盈亏任意一条线上都会弹出同一个数据点说明
         trigger: "axis",
+        confine: true,
         axisPointer: { type: "line", lineStyle: { color: "rgba(148,163,184,.5)", width: 1 } },
+        position: function (pt, params, dom, rect, size) {
+          // 竖屏时提示框贴顶显示并左右夹在画布内，避免靠左/靠右的点被裁掉
+          var viewW = size.viewSize[0], boxW = size.contentSize[0];
+          var x = Math.min(Math.max(pt[0] - boxW / 2, 4), Math.max(4, viewW - boxW - 4));
+          return [x, wpx < 640 ? 6 : 12];
+        },
         formatter: function (p) {
           var a = Array.isArray(p) ? p[0] : p;
           var ds = (a && dates.indexOf(a.name) >= 0) ? a.name :
