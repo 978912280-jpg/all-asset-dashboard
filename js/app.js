@@ -1849,10 +1849,13 @@
           handleStyle: { color: trGold() }, textStyle: { fontSize: 10, color: cssVar("--muted", "#6b7280") } },
       ] : [],
       tooltip: Object.assign(tipSkin(), {
-        trigger: "item",
+        // 轴触发：鼠标落在总资产或总盈亏任意一条线上都会弹出同一个数据点说明
+        trigger: "axis",
+        axisPointer: { type: "line", lineStyle: { color: "rgba(148,163,184,.5)", width: 1 } },
         formatter: function (p) {
-          var ds = (dates.indexOf(p.name) >= 0) ? p.name :
-            (p.dataIndex !== undefined && dates[p.dataIndex]) || "";
+          var a = Array.isArray(p) ? p[0] : p;
+          var ds = (a && dates.indexOf(a.name) >= 0) ? a.name :
+            (a && a.dataIndex !== undefined && dates[a.dataIndex]) || "";
           return trTip(byDate[ds] || { date: ds });
         },
       }),
