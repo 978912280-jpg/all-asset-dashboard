@@ -73,7 +73,7 @@
         if (cm && cm.snapshot_date) {
           var stale = cm.snapshot_date !== today;
           $("fresh-badge").textContent = "加密快照 " + cm.snapshot_date +
-            (stale ? "（每日约 07:00 汇总，点上方「立即抓取最新价格」可更新）" : "（已是最新）");
+            (stale ? "（每日约 07:00 汇总，点上方「立即抓取最新数据」可更新）" : "（已是最新）");
         }
         var bm = (state.dashboard && state.dashboard.meta) || {};
         if (bm.generated_at && $("fresh-badge")) {
@@ -976,7 +976,7 @@
           toast("需先填写下方 GitHub Token（Actions 读写权限），或在 GitHub Actions 手动 Run workflow");
           return;
         }
-        ghMsg("正在抓取最新价格：传统标的实时价 + 加密货币最新快照…", "");
+        ghMsg("正在抓取最新数据：传统标的实时价 + 加密货币最新快照…", "");
         $("btn-rebuild").disabled = true;
         var t0 = Date.now();
         ghDispatch().then(function (res) {
@@ -986,7 +986,7 @@
             return;
           }
           ghMsg("已触发构建，约 1 分钟完成，完成后页面会自动刷新…", "ok");
-          pollBuild(t0, { btn: "btn-rebuild", prefix: "抓取中…", restore: "立即抓取最新价格" });
+          pollBuild(t0, { btn: "btn-rebuild", prefix: "抓取中…", restore: "立即抓取最新数据" });
         }).catch(function (e) {
           $("btn-rebuild").disabled = false;
           ghMsg("触发失败：" + e.message, "warn");
@@ -1037,6 +1037,17 @@
     bindButtons();
     ghLoad();
     loadAll().catch(function (e) { toast("加载失败：" + e.message); });
+    // 从仪表台侧栏点「立即抓取最新数据」跳转过来时（admin.html?rebuild=1）自动触发一次
+    var wantRebuild = /rebuild=1/.test(location.search);
+    if (wantRebuild) {
+      setTimeout(function () {
+        readGhForm();
+        if (!gh.token) { ghMsg("请先填写 GitHub Token（Actions 读写权限），再点「立即抓取最新数据」", "warn"); return; }
+        if (state.dirty) { toast("有未保存的修改，已跳过自动抓取"); return; }
+        var btn = $("btn-rebuild");
+        if (btn) btn.click();
+      }, 900);
+    }
   }
 
   if (document.readyState === "loading") {

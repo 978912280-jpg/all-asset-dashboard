@@ -904,6 +904,57 @@
       show(b.getAttribute("data-view"));
       openMenu(false);
     });
+    // 侧栏操作项：立即抓取最新数据 / 份额维护后台
+    var GH_KEY = "asset_dash_gh";
+    function ghCfg() {
+      try { return JSON.parse(localStorage.getItem(GH_KEY) || "{}"); } catch (e) { return {}; }
+    }
+    function closeMenu() { openMenu(false); }
+    if ($("rail-admin")) {
+      $("rail-admin").addEventListener("click", function () {
+        closeMenu();
+        location.href = "admin.html";
+      });
+    }
+    if ($("rail-refresh")) {
+      $("rail-refresh").addEventListener("click", function () {
+        closeMenu();
+        var cfg = ghCfg();
+        if (!cfg.token) { location.href = "admin.html?rebuild=1"; return; }
+        var repo = cfg.repo || "978912280-jpg/all-asset-dashboard";
+        var branch = cfg.branch || "main";
+        var btn = $("rail-refresh");
+        btn.disabled = true; btn.textContent = "抓取中…";
+        fetch("https://api.github.com/repos/" + repo + "/actions/workflows/daily.yml/dispatches", {
+          method: "POST",
+          headers: { Authorization: "token " + cfg.token, Accept: "application/vnd.github+json" },
+          body: JSON.stringify({ ref: branch, inputs: { source: "manual" } }),
+        }).then(function (r) {
+          if (!r.ok && r.status !== 204) throw new Error("HTTP " + r.status);
+          var t0 = Date.now();
+          var timer = setInterval(function () {
+            fetch("https://api.github.com/repos/" + repo + "/actions/runs?per_page=1", {
+              headers: { Authorization: "token " + cfg.token, Accept: "application/vnd.github+json" },
+            }).then(function (res) { return res.json(); }).then(function (j) {
+              var run = ((j.workflow_runs) || [])[0];
+              if (!run) return;
+              if (new Date(run.created_at).getTime() < t0 - 15000) return;
+              if (run.status !== "completed") { btn.textContent = "构建中…"; return; }
+              clearInterval(timer);
+              if (run.conclusion === "success") { location.reload(); }
+              else { btn.disabled = false; btn.textContent = "立即抓取最新数据"; alert("构建未成功：" + run.conclusion); }
+            }).catch(function () { /* 忽略单次失败 */ });
+            if (Date.now() - t0 > 180000) {
+              clearInterval(timer);
+              btn.disabled = false; btn.textContent = "立即抓取最新数据";
+            }
+          }, 8000);
+        }).catch(function (e) {
+          btn.disabled = false; btn.textContent = "立即抓取最新数据";
+          alert("触发失败：" + e.message + "（可到后台填写 Token）");
+        });
+      });
+    }
     document.addEventListener("click", function (e) {
       var b = e.target.closest(".back-home");
       if (!b) return;

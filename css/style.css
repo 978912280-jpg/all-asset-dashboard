@@ -942,6 +942,8 @@ drawer-title, .rail .drawer-title { margin: 0 0 6px; padding: 0 8px; font-size: 
   background: var(--accent, #1f2329); color: #fff;
   border-color: transparent;
 }
+.drawer-title-sub { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.rail-act { font-weight: 600; }
 .drawer-mask {
   position: fixed; inset: 0; z-index: 55;
   background: rgba(15, 23, 42, .35);
