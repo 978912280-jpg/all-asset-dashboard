@@ -1918,7 +1918,9 @@
           interval: rInt,
           splitNumber: axisSegs,
           axisLabel: {
-            color: cssVar("--muted", "#6b7280"), fontSize: 11,
+            // 0 以上绿色、0 以下红色，与右侧盈亏线同色系
+            color: function (v) { return v >= 0 ? trUp() : trDown(); },
+            fontSize: 11,
             formatter: function (v) {
               var a = Math.abs(v);
               if (a < 1) return "0";
