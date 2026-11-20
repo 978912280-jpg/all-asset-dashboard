@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.3.2"
+PAGE_VERSION = "1.3.3"
 PAGE_DATE = ""  # 留空则使用构建当天日期，避免版本括号里的日期长期不变
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -1047,6 +1047,20 @@ def main():
             row["pnl_pct"] = r2(row["pnl_cny"] / cost_cny * 100, 2) if cost_cny else None
             row["cost_source"] = "净入金校准 + Bitget 成交" + (
                 "（含 %.2f USDT 成交待份额更新）" % pending_usdt if pending_usdt else "")
+
+        # 账本里完全没有成本记录的币：只可能是奖励/派息/空投，或校准前就持有。
+        # 一律按 0 成本记账（盈亏 = 全部市值），并标注来源，避免显示成「未计算」。
+        for row in crypto_rows:
+            if row["group"] != CRYPTO_GROUP:
+                continue
+            if row.get("cost_source"):
+                continue
+            row["cost_pending_usdt"] = 0
+            row["cost_cny"] = 0.0
+            row["cost_price"] = 0.0
+            row["pnl_cny"] = r2(row.get("value_cny") or 0, 2)
+            row["pnl_pct"] = None
+            row["cost_source"] = "无成本记录（奖励/派息入账，0 成本）"
 
     trad_cny = sum(r["value_cny"] or 0 for r in trad_rows)
     crypto_cny = sum(r["value_cny"] or 0 for r in crypto_rows if r["group"] == CRYPTO_GROUP)
