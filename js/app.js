@@ -762,12 +762,13 @@
   function bindPinLock() {
     var lock = $("pin-lock"), pad = $("pin-pad"), dots = $("pin-dots"), tip = $("pin-tip");
     if (!lock || !pad) return;
-    // 12 小时内免重复验证：从「份额维护后台」返回时不再弹密码框
-    var UNLOCK_KEY = "asset_dash_unlock_at";
-    var UNLOCK_TTL = 12 * 3600 * 1000;
-    var unlockedAt = 0;
-    try { unlockedAt = Number(localStorage.getItem(UNLOCK_KEY) || 0); } catch (e) { unlockedAt = 0; }
-    if (unlockedAt && (Date.now() - unlockedAt) < UNLOCK_TTL) {
+    // 除「从份额维护后台返回主页」这一次跳转外，每次进入网站都必须输入密码。
+    // 后台返回按钮会写入一次性标记，这里读到即消费并放行；刷新或重新进入需重新验证。
+    var SKIP_KEY = "asset_dash_skip_pin";
+    var skip = null;
+    try { skip = sessionStorage.getItem(SKIP_KEY); } catch (e) { skip = null; }
+    if (skip === "1") {
+      try { sessionStorage.removeItem(SKIP_KEY); } catch (e) { /* 无存储时忽略 */ }
       lock.hidden = true;
       document.body.classList.remove("locked");
       return;
@@ -800,7 +801,6 @@
         if (pinHash("adpin::" + buf) === PIN_HASH) {
           dots.classList.add("ok");
           tip.textContent = "验证通过";
-          try { localStorage.setItem(UNLOCK_KEY, String(Date.now())); } catch (e) { /* 无本地存储时忽略 */ }
           setTimeout(function () {
             lock.hidden = true;
             document.body.classList.remove("locked");

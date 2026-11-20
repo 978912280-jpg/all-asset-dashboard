@@ -941,7 +941,11 @@
 
   function bindButtons() {
     if ($("btn-back-dash")) {
-      $("btn-back-dash").onclick = function () { location.href = "index.html"; };
+      $("btn-back-dash").onclick = function () {
+        // 仅这一次「后台 → 主页」的跳转免密码，其余进入一律重新验证
+        try { sessionStorage.setItem("asset_dash_skip_pin", "1"); } catch (e) { /* 无存储时忽略 */ }
+        location.href = "index.html";
+      };
     }
     $("btn-save").onclick = save;
     $("btn-gh-test").onclick = ghTest;
