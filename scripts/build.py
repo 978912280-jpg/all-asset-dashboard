@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.2.8"
+PAGE_VERSION = "1.2.9"
 PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -197,7 +197,8 @@ def load_cost_total():
     用于判断「成交已入账但加密货币快照份额尚未更新」的滞后情形。
     """
     root = Path(ROOT) / "data"
-    qty_net, calib_shares = {}, {}
+    qty_net, calib_shares, qty_recent = {}, {}, {}
+    recent_days = 0
     calib_file = root / "crypto_cost.json"
     if calib_file.exists():
         try:
@@ -215,7 +216,10 @@ def load_cost_total():
                 # 只有明确标记为「校准后净变化」的账本才用于暂缓成本，避免旧格式（绝对持仓）误判
                 if p.get("qty_mode") == "delta":
                     qty_net = {str(k).upper(): float(v) for k, v in (p.get("qty_net") or {}).items()}
-                return {str(k).upper(): float(v) for k, v in c.items()}, qty_net, {str(k).upper(): float(v) for k, v in calib_shares.items()}
+                    qty_recent = {str(k).upper(): float(v) for k, v in (p.get("qty_net_recent") or {}).items()}
+                    recent_days = int(p.get("recent_days") or 0)
+                return ({str(k).upper(): float(v) for k, v in c.items()}, qty_net,
+                        {str(k).upper(): float(v) for k, v in calib_shares.items()}, qty_recent)
         except (ValueError, OSError) as e:
             print("      [warn] 成本账本读取失败：%s" % e)
     cal = root / "crypto_cost.json"
@@ -225,10 +229,11 @@ def load_cost_total():
             c = (p.get("calibration") or {}).get("cost_total_usdt")
             if c:
                 print("      成本账本：使用 %s 校准值" % (p["calibration"].get("date"),))
-                return {str(k).upper(): float(v) for k, v in c.items()}, qty_net, {str(k).upper(): float(v) for k, v in calib_shares.items()}
+                return ({str(k).upper(): float(v) for k, v in c.items()}, qty_net,
+                        {str(k).upper(): float(v) for k, v in calib_shares.items()}, qty_recent)
         except (ValueError, OSError) as e:
             print("      [warn] crypto_cost.json 读取失败：%s" % e)
-    return {}, {}, {}
+    return {}, {}, {}, {}
 
 
 def load_realized_pnl():
@@ -1005,7 +1010,7 @@ def main():
         })
 
     # ---- 按成本账本（净入金校准 + Bitget 成交）补齐加密币的成本与逐项盈亏 ----
-    cost_map, qty_net, calib_shares = load_cost_total()
+    cost_map, qty_net, calib_shares, qty_recent = load_cost_total()
     if cost_map:
         for row in crypto_rows:
             if row["group"] != CRYPTO_GROUP:
@@ -1022,9 +1027,12 @@ def main():
             if expected > 0 and actual > 0 and usdt > 0:
                 gap = expected - actual
                 bought = float(qty_net.get(coin) or 0)
+                # 只有「最近几天」的成交才可能处于快照滞后；更早的成交早已落户，
+                # 剩余缺口来自生息/派息等 0 成本增发，不应再扣住成本（否则成本价被永久钉死）。
+                recent = float(qty_recent.get(coin, bought) or 0)
                 # 只把「本次买入尚未体现到份额」的部分暂缓；缺口若超过成交净数量，
                 # 说明是质押/空投等非成交原因导致份额变动，不做成本调整。
-                if gap > max(1e-9, expected * 1e-5) and gap <= bought + max(1e-9, expected * 1e-5):
+                if gap > max(1e-9, expected * 1e-5) and gap <= recent + max(1e-9, expected * 1e-5):
                     pending_usdt = gap * (usdt / expected)
                     usdt = max(0.0, usdt - pending_usdt)
                     print("      %s 有 %.8f 尚未进入份额，暂缓 %.2f USDT 成本" % (coin, gap, pending_usdt))

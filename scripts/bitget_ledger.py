@@ -146,6 +146,48 @@ def replay(fills, base_cost, calib_shares=None, fx_price=None, log=print):
             sorted(sell_entries, key=lambda x: x["date"], reverse=True))
 
 
+RECENT_DAYS = 3
+
+
+def parse_start(text):
+    """校准起点支持「日期」与「日期 时:分」两种写法。
+
+    校准份额取自当日快照，快照已包含当日 06:00 的成交；因此起点必须能精确到时刻，
+    否则会把已计入校准份额的成交再算一次，产生永久性「缺口」。
+    """
+    text = str(text).strip()
+    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(text, fmt).replace(tzinfo=CST)
+        except ValueError:
+            continue
+    raise ValueError("无法解析校准起点：%s" % text)
+
+
+def recent_qty(fills, days=RECENT_DAYS, now=None):
+    """统计最近 days 天内的成交净数量（用于判定「成交已入账但快照份额未跟上」的临时缺口）。"""
+    now = now or datetime.now(CST)
+    since_ms = int((now - timedelta(days=days)).timestamp() * 1000)
+    out = {}
+    for f in fills:
+        try:
+            ts = int(f.get("cTime") or 0)
+        except (TypeError, ValueError):
+            ts = 0
+        if ts and ts < since_ms:
+            continue
+        coin = (f.get("coin") or "").upper() or (f.get("symbol") or "").split("USDT")[0].upper()
+        if not coin:
+            continue
+        try:
+            size = float(f.get("size") or f.get("amount") or 0)
+        except (TypeError, ValueError):
+            continue
+        sign = -1 if str(f.get("side")).lower() in ("sell", "卖出") else 1
+        out[coin] = out.get(coin, 0.0) + sign * size
+    return {k: round(v, 8) for k, v in out.items()}
+
+
 def update(data_path=None, log=print):
     cfg = json.loads(Path(data_path or (Path(__file__).resolve().parent.parent / "data" / "crypto_cost.json")).read_text(encoding="utf-8"))
     key, secret, passphrase = os.environ.get("BITGET_KEY"), os.environ.get("BITGET_SECRET"), os.environ.get("BITGET_PASSPHRASE")
@@ -157,10 +199,12 @@ def update(data_path=None, log=print):
     if not start:
         log("    [warn] crypto_cost.json 缺少校准日期")
         return None
-    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=CST).timestamp() * 1000)
+    start_dt = parse_start(start)
+    start_ms = int(start_dt.timestamp() * 1000)
     fills = fetch_fills(key, secret, passphrase, start_ms, log=log)
     base = cal.get("cost_total_usdt") or {}
     cost, realized, qty, realized_pnl, sell_entries = replay(fills, base, calib_shares=cal.get("calib_shares"), log=log)
+    recent = recent_qty(fills)
     payload = {
         "updated_at": datetime.now(CST).strftime("%Y-%m-%dT%H:%M:%S+08:00"),
         "since": start,
@@ -168,6 +212,8 @@ def update(data_path=None, log=print):
         "cost_total_usdt": cost,
         "realized_usdt": realized,
         "qty_net": qty,
+        "qty_net_recent": recent,
+        "recent_days": RECENT_DAYS,
         "qty_mode": "delta",
         "realized_pnl_usdt": realized_pnl,
         "sell_entries": sell_entries,
