@@ -81,10 +81,10 @@ def main():
     for k, v in sorted(biz.items(), key=lambda x: -x[1])[:20]:
         print("      %-42s %d" % (k, v))
 
-    # 3) 闪兑账单 vs /fills 镜像
-    conv = [b for b in bills if str(b.get("businessType") or "").upper().startswith("SMALL_EXCHANGE")]
-    print("\n[3] 闪兑（SMALL_EXCHANGE）账单 %d 条，示例 8 条：" % len(conv))
-    for b in sorted(conv, key=lambda x: int(x.get("cTime") or 0), reverse=True)[:8]:
+    # 3) 闪兑账单 vs /fills 镜像（含新版 CONVERT 通道）
+    conv = [b for b in bills if str(b.get("businessType") or "").upper().startswith(("SMALL_EXCHANGE", "CONVERT"))]
+    print("\n[3] 闪兑（SMALL_EXCHANGE / CONVERT）账单 %d 条，示例 12 条：" % len(conv))
+    for b in sorted(conv, key=lambda x: int(x.get("cTime") or 0), reverse=True)[:12]:
         print("      " + json.dumps(b, ensure_ascii=False)[:480])
 
     fill_order_ids = set(str(f.get("orderId")) for f in fills)
