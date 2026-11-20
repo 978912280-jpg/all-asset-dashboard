@@ -940,6 +940,9 @@
   }
 
   function bindButtons() {
+    if ($("btn-back-dash")) {
+      $("btn-back-dash").onclick = function () { location.href = "index.html"; };
+    }
     $("btn-save").onclick = save;
     $("btn-gh-test").onclick = ghTest;
     $("btn-gh-clear").onclick = function () {

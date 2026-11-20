@@ -762,7 +762,16 @@
   function bindPinLock() {
     var lock = $("pin-lock"), pad = $("pin-pad"), dots = $("pin-dots"), tip = $("pin-tip");
     if (!lock || !pad) return;
-    // 每次进入网站都需重新验证，不做任何本地记忆
+    // 12 小时内免重复验证：从「份额维护后台」返回时不再弹密码框
+    var UNLOCK_KEY = "asset_dash_unlock_at";
+    var UNLOCK_TTL = 12 * 3600 * 1000;
+    var unlockedAt = 0;
+    try { unlockedAt = Number(localStorage.getItem(UNLOCK_KEY) || 0); } catch (e) { unlockedAt = 0; }
+    if (unlockedAt && (Date.now() - unlockedAt) < UNLOCK_TTL) {
+      lock.hidden = true;
+      document.body.classList.remove("locked");
+      return;
+    }
     lock.hidden = false;
     document.body.classList.add("locked");
     var buf = "";
@@ -791,6 +800,7 @@
         if (pinHash("adpin::" + buf) === PIN_HASH) {
           dots.classList.add("ok");
           tip.textContent = "验证通过";
+          try { localStorage.setItem(UNLOCK_KEY, String(Date.now())); } catch (e) { /* 无本地存储时忽略 */ }
           setTimeout(function () {
             lock.hidden = true;
             document.body.classList.remove("locked");
