@@ -188,6 +188,85 @@ def recent_qty(fills, days=RECENT_DAYS, now=None):
     return {k: round(v, 8) for k, v in out.items()}
 
 
+CONVERT_BIZ = ("CONVERT_USER_IN", "CONVERT_USER_OUT", "SMALL_EXCHANGE_USER_IN", "SMALL_EXCHANGE_USER_OUT")
+
+
+def fetch_converts(key, secret, passphrase, start_ms, log=print):
+    """拉取「闪兑 / 兑换」账单，按 bizOrderId 配成一笔进出。
+
+    闪兑不走现货撮合，/fills 里查不到，只能靠账单还原：卖出币数量、买入币数量。
+    返回 [{ts, id, out:[(coin,size)], in:[(coin,size)]}]，size 均为正数。
+    """
+    rows, cur, now_ms = [], int(start_ms), int(datetime.now(CST).timestamp() * 1000)
+    while cur < now_ms:
+        nxt = min(cur + 5 * 86400 * 1000, now_ms)
+        cursor, pages = None, 0
+        while pages < 20:
+            params = {"startTime": str(cur), "endTime": str(nxt), "limit": "100"}
+            if cursor:
+                params["idLessThan"] = cursor
+            try:
+                chunk = _get("/api/v2/spot/account/bills", params, key, secret, passphrase)
+            except Exception as e:  # noqa: BLE001
+                log("      [warn] 闪兑账单 %s 段读取失败：%s" % (cur, str(e)[:80]))
+                break
+            if not chunk:
+                break
+            rows.extend(chunk)
+            cursor = chunk[-1].get("billId")
+            pages += 1
+            if len(chunk) < 100:
+                break
+        cur = nxt
+
+    groups = {}
+    for b in rows:
+        bt = str(b.get("businessType") or "").upper()
+        if not bt.startswith(("CONVERT_USER", "SMALL_EXCHANGE")):
+            continue
+        try:
+            size = abs(float(b.get("size") or 0))
+        except (TypeError, ValueError):
+            continue
+        if size <= 0:
+            continue
+        coin = str(b.get("coin") or "").upper()
+        oid = str(b.get("bizOrderId") or b.get("billId"))
+        g = groups.setdefault(oid, {"ts": int(b.get("cTime") or 0), "out": [], "in": []})
+        g["out" if bt.endswith("_OUT") else "in"].append((coin, size))
+    pairs = [dict(v, id=k) for k, v in groups.items() if v["out"] and v["in"]]
+    log("    Bitget 闪兑账单：%d 条明细，%d 组可配对" % (len(rows), len(pairs)))
+    return pairs
+
+
+def apply_converts(pairs, cost, holdings, qty_delta, log=print):
+    """把闪兑的「卖出币账面成本」按数量比例转移到「买入币」，不产生已实现盈亏。
+
+    奖励币（派息/空投）成本本就为 0，换回 BTC/SOL 时转移 0，仍然是 0 成本增发（摊薄）；
+    用真金换来的币，则把成本如实带过去，避免「闪兑买入按 0 成本」的假盈利。
+    """
+    transferred = 0.0
+    for pr in sorted(pairs, key=lambda x: x["ts"]):
+        out_cost = 0.0
+        for coin, size in pr["out"]:
+            held = holdings.get(coin, 0.0)
+            unit = (cost.get(coin, 0.0) / held) if held > 0 else 0.0
+            take = min(cost.get(coin, 0.0), unit * size)
+            cost[coin] = max(0.0, cost.get(coin, 0.0) - take)
+            holdings[coin] = max(0.0, held - size)
+            qty_delta[coin] = qty_delta.get(coin, 0.0) - size
+            out_cost += take
+        total = sum(s for _, s in pr["in"]) or 1.0
+        for coin, size in pr["in"]:
+            cost[coin] = cost.get(coin, 0.0) + out_cost * size / total
+            holdings[coin] = holdings.get(coin, 0.0) + size
+            qty_delta[coin] = qty_delta.get(coin, 0.0) + size
+        transferred += out_cost
+    if pairs:
+        log("    闪兑成本转移完成：%d 组，转移成本 %.2f USDT" % (len(pairs), transferred))
+    return transferred
+
+
 def update(data_path=None, log=print):
     cfg = json.loads(Path(data_path or (Path(__file__).resolve().parent.parent / "data" / "crypto_cost.json")).read_text(encoding="utf-8"))
     key, secret, passphrase = os.environ.get("BITGET_KEY"), os.environ.get("BITGET_SECRET"), os.environ.get("BITGET_PASSPHRASE")
@@ -204,7 +283,25 @@ def update(data_path=None, log=print):
     fills = fetch_fills(key, secret, passphrase, start_ms, log=log)
     base = cal.get("cost_total_usdt") or {}
     cost, realized, qty, realized_pnl, sell_entries = replay(fills, base, calib_shares=cal.get("calib_shares"), log=log)
+    # 闪兑：/fills 看不到，用账单把「卖出币成本」转移给「买入币」（奖励币成本 0 → 仍为 0 成本摊薄）
+    converts = []
+    try:
+        converts = fetch_converts(key, secret, passphrase, start_ms, log=log)
+    except Exception as e:  # noqa: BLE001
+        log("    [warn] 闪兑账单读取失败，按无闪兑处理：%s" % str(e)[:90])
+    holdings = {k: float(v) for k, v in (cal.get("calib_shares") or {}).items()}
+    for coin, delta in qty.items():
+        holdings[coin] = holdings.get(coin, 0.0) + float(delta)
+    transferred = apply_converts(converts, cost, holdings, qty, log=log)
     recent = recent_qty(fills)
+    rec_ms = int((datetime.now(CST) - timedelta(days=RECENT_DAYS)).timestamp() * 1000)
+    for pr in converts:
+        if pr["ts"] < rec_ms:
+            continue
+        for coin, size in pr["out"]:
+            recent[coin] = recent.get(coin, 0.0) - size
+        for coin, size in pr["in"]:
+            recent[coin] = recent.get(coin, 0.0) + size
     payload = {
         "updated_at": datetime.now(CST).strftime("%Y-%m-%dT%H:%M:%S+08:00"),
         "since": start,
@@ -212,7 +309,9 @@ def update(data_path=None, log=print):
         "cost_total_usdt": cost,
         "realized_usdt": realized,
         "qty_net": qty,
-        "qty_net_recent": recent,
+        "qty_net_recent": {k: round(v, 8) for k, v in recent.items()},
+        "converts": len(converts),
+        "convert_cost_usdt": round(transferred, 4),
         "recent_days": RECENT_DAYS,
         "qty_mode": "delta",
         "realized_pnl_usdt": realized_pnl,
