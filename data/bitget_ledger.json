@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-20T18:00:33+08:00",
+  "updated_at": "2026-11-20T18:18:36+08:00",
   "since": "2026-11-13",
   "fills": 5,
   "cost_total_usdt": {
@@ -15,6 +15,11 @@
     "USDC": -380.8399,
     "XAUT": 0.1007
   },
+  "qty_net_recent": {
+    "USDC": -380.8399,
+    "XAUT": 0.1007
+  },
+  "recent_days": 3,
   "qty_mode": "delta",
   "realized_pnl_usdt": {},
   "sell_entries": [],
