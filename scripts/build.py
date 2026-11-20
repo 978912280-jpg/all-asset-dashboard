@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.2.9"
+PAGE_VERSION = "1.3.0"
 PAGE_DATE = "2026.11.15"
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -1029,7 +1029,7 @@ def main():
                 bought = float(qty_net.get(coin) or 0)
                 # 只有「最近几天」的成交才可能处于快照滞后；更早的成交早已落户，
                 # 剩余缺口来自生息/派息等 0 成本增发，不应再扣住成本（否则成本价被永久钉死）。
-                recent = float(qty_recent.get(coin, bought) or 0)
+                recent = (float(qty_recent.get(coin, 0.0) or 0.0) if qty_recent else bought)
                 # 只把「本次买入尚未体现到份额」的部分暂缓；缺口若超过成交净数量，
                 # 说明是质押/空投等非成交原因导致份额变动，不做成本调整。
                 if gap > max(1e-9, expected * 1e-5) and gap <= recent + max(1e-9, expected * 1e-5):
