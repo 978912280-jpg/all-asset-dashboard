@@ -340,13 +340,25 @@ def main():
     except (ValueError, OSError):
         pass
 
+    # 划入美股账户金额：以账单 STOCK_USER_DEPOSIT_OUT 为准（transferRecords 只覆盖 uta/spot 互转，
+    # 会漏掉部分划出记录，导致口径偏小）。这是唯一权威来源。
+    stock_total = 0.0
+    for b in bills:
+        if str(b.get("businessType") or "").upper() == "STOCK_USER_DEPOSIT_OUT":
+            try:
+                stock_total += abs(float(b.get("size") or 0))
+            except (TypeError, ValueError):
+                continue
+    print("      划入美股账户（账单口径）：%.2f USDT" % stock_total)
+
     dep_after = sum((f["value_usdt"] or 0) for f in flows
                     if f["direction"] == "入金" and f["day"] > base_date)
     wd_after = sum((f["value_usdt"] or 0) for f in flows
                    if f["direction"] == "出金" and f["day"] > base_date)
-    net = round(baseline + dep_after - wd_after, 2)
     net_total = round(baseline_total + dep_after - wd_after, 2)
-    stock_part = round(baseline_total - baseline, 2)
+    stock_part = round(stock_total, 2)
+    # 加密账户口径 = 总净入金 − 全部划入美股（不再用基准日那一个静态值，避免漏算基准日后的划出）
+    net = round(net_total - stock_part, 2) if stock_part else round(baseline + dep_after - wd_after, 2)
 
     payload = {
         "updated_at": datetime.now(CST).strftime("%Y-%m-%dT%H:%M:%S+08:00"),

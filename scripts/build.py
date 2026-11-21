@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.3.6"
+PAGE_VERSION = "1.3.7"
 PAGE_DATE = ""  # 留空则使用构建当天日期，避免版本括号里的日期长期不变
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -673,8 +673,12 @@ def build_daily_analysis(*, today, total_cny, day_change, summary, groups, items
         t3 = "%s链上%s；净入金总额 %s，加密账户口径 %s。" % (when, body, net_total, net_crypto)
     else:
         t3 = "窗口内暂无链上出入金记录；净入金总额 %s。" % net_total
-    stock_in = sum(float(x.get("value_usdt") or 0) for x in transfer_rows
-                   if "美股" in str(x.get("kind") or "") and str(x.get("kind") or "").startswith("划入"))
+    # 划入美股金额以账单口径为准（events 里已按 STOCK_USER_DEPOSIT_OUT 汇总），
+    # transferRecords 会漏记部分划出，不能用它兜底求和。
+    stock_in = float(net.get("stock_part_usdt") or 0)
+    if not stock_in:
+        stock_in = sum(float(x.get("value_usdt") or 0) for x in transfer_rows
+                       if "美股" in str(x.get("kind") or "") and str(x.get("kind") or "").startswith("划入"))
     if stock_in:
         t3 += "划入美股账户 %s，属内部划转。" % tok("stock_in", stock_in * rate)
     after = float(net.get("deposit_after") or 0) + float(net.get("withdraw_after") or 0)
