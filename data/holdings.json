@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": "1.3.4",
+    "version": "1.3.5",
     "base_currency": "CNY",
     "updated_at": "2026-11-21T13:43:09+08:00",
     "_comment": "本文件是全维度资产统计的唯一份额来源：只需要维护每个传统标的的 shares（持有份额）与 cost_price（每份持仓成本价，按该标的币种计价），价格与市值、盈亏全部由后台 build.py 抓取并计算。"
@@ -133,7 +133,18 @@
       "SONY"
     ],
     "extra_tickers": [],
-    "cost_price": {},
-    "manual": []
+    "cost_price": {
+      "QQQM": 292.182,
+      "VOO": 694.902,
+      "QQQI": 52.422,
+      "VWO": 57.22,
+      "VEA": 69.9
+    },
+    "manual": [],
+    "cost_alias": {
+      "QQQ": "QQQM",
+      "SPY": "VOO"
+    },
+    "_comment_cost": "cost_price 按 ticker 填「每份成本价（美元）」，可填正股/ETF 的成本；未填则自动沿用 traditional 里同代码标的的成本价；cost_alias 用于把 rToken 代码映射到对应传统标的（如 rQQQ → QQQM）。"
   }
 }

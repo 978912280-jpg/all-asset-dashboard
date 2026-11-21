@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.3.4"
+PAGE_VERSION = "1.3.5"
 PAGE_DATE = ""  # 留空则使用构建当天日期，避免版本括号里的日期长期不变
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -216,7 +216,17 @@ def load_rtoken_rows(holdings, rate, prev_items=None):
         price = float(it.get("price_usd") or 0)
         if shares <= 0 or price <= 0:
             continue
+        aliases = {str(k).upper(): str(v).upper() for k, v in (cfg.get("cost_alias") or {}).items()}
         cost_price = costs.get(ticker, 0.0) or costs.get(coin, 0.0)
+        if not cost_price:
+            # 沿用同一代码在 traditional 里的成本价（卖出正股换 rToken，成本不变）
+            want = aliases.get(ticker, ticker)
+            for t in (holdings.get("traditional") or []):
+                if str(t.get("symbol") or t.get("id") or "").upper() == want:
+                    cost_price = float(t.get("cost_price") or 0)
+                    if cost_price:
+                        print("      %s 成本价沿用 traditional「%s」的 %.4f" % (coin, want, cost_price))
+                    break
         value_native = shares * price
         value_cny = r2(value_native * rate, 2)
         cost_native = shares * cost_price if cost_price > 0 else None
@@ -340,6 +350,16 @@ def _read_json(path):
         return None
 
 
+def rtoken_coin_set(cfg):
+    """data/rtoken.json 里已识别为代币化美股的币种，加密侧必须排除，避免双算。"""
+    data = _read_json(Path(ROOT) / "data" / "rtoken.json") or {}
+    coins = {str(it.get("coin") or "").upper() for it in (data.get("items") or [])}
+    rcfg = cfg.get("rtokens") or {}
+    if rcfg.get("enabled", True) is False:
+        return set()
+    return {c for c in coins if c}
+
+
 def load_crypto_from_account(cfg, rate, prev_items=None):
     """直接从 Bitget 私有接口读取现货+理财持仓，不依赖上游加密仪表台。
 
@@ -351,8 +371,12 @@ def load_crypto_from_account(cfg, rate, prev_items=None):
         return None, None
     include = set((cfg.get("crypto") or {}).get("include_coins") or [])
     exclude = set((cfg.get("crypto") or {}).get("exclude_coins") or [])
+    rt_excl = rtoken_coin_set(cfg)
     coins = {c: v for c, v in coins.items()
-             if (not include or c in include) and c not in exclude and float(v.get("total") or 0) > 0}
+             if (not include or c in include) and c not in exclude
+             and c not in rt_excl and float(v.get("total") or 0) > 0}
+    if rt_excl & set((acct or {}).get("coins") or {}):
+        print("      代币化美股已从加密侧剔除：%s" % "、".join(sorted(rt_excl)))
     if not coins:
         return None, None
     # 价格：稳定币按 1，其余取 Bitget 实时行情
