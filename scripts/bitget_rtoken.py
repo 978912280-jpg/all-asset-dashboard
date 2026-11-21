@@ -30,6 +30,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bitget_ledger as L  # 复用签名与 _get
 import sources
 
+STABLE = {"USDT", "USDC", "USD", "DAI", "FDUSD", "TUSD", "BUSD"}
+
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "rtoken.json"
 HOLDINGS = ROOT / "data" / "holdings.json"
@@ -107,6 +109,49 @@ def detect(coins, tickers, extra=(), log=print):
     return hits
 
 
+
+
+def calc_cost_usdt(coins, key, secret, passphrase, since_ms, log=print):
+    """按真实成交价累计每个 rToken 的净投入（USDT）。
+
+    口径：
+      · 现货成交 rXXXUSDT：买入按成交额加成本，卖出按成交额减成本；
+      · 闪兑 CONVERT/SMALL_EXCHANGE：rToken 在 IN 侧 → 按 OUT 侧稳定币数量加成本；
+        rToken 在 OUT 侧 → 按 IN 侧稳定币数量减成本。
+    这样成本价 = 累计投入 ÷ 当前份额，完全来自实际成交价，不再借用正股成本。
+    """
+    cost = {c: 0.0 for c in coins}
+    fills = L.fetch_fills(key, secret, passphrase, since_ms, log=lambda *a: None)
+    for f in fills:
+        sym = str(f.get("symbol") or "").upper()
+        coin = sym[:-4] if sym.endswith("USDT") else ""
+        if coin not in cost:
+            continue
+        try:
+            size = float(f.get("size") or 0)
+            amount = float(f.get("amount") or 0) or size * float(f.get("priceAvg") or 0)
+        except (TypeError, ValueError):
+            continue
+        if str(f.get("side")).lower() in ("buy", "买入"):
+            cost[coin] += amount
+        else:
+            cost[coin] -= amount
+    pairs = L.fetch_converts(key, secret, passphrase, since_ms, log=lambda *a: None)
+    for pr in pairs:
+        for coin in coins:
+            if any(c == coin for c, _ in pr["in"]):
+                gross = sum(sz for c, sz in pr["out"] if c in STABLE)
+                if gross:
+                    cost[coin] += gross
+                else:
+                    log("      [warn] %s 闪兑的卖出侧不是稳定币，成本无法从账单还原" % coin)
+            if any(c == coin for c, _ in pr["out"]):
+                gross = sum(sz for c, sz in pr["in"] if c in STABLE)
+                if gross:
+                    cost[coin] -= gross
+    return {c: round(v, 4) for c, v in cost.items()}
+
+
 def main():
     key = os.environ.get("BITGET_KEY")
     secret = os.environ.get("BITGET_SECRET")
@@ -128,6 +173,16 @@ def main():
             coins[c] = max(coins.get(c, 0.0), round(amt, 10))
 
     hits = detect(coins, cfg.get("tickers") or DEFAULT_TICKERS, cfg.get("extra_tickers"), log=print)
+    since = str(cfg.get("cost_since") or "")[:10]
+    since_ms = 0
+    if since:
+        try:
+            since_ms = int(datetime.strptime(since, "%Y-%m-%d").replace(tzinfo=CST).timestamp() * 1000)
+        except ValueError:
+            since_ms = 0
+    if not since_ms:
+        since_ms = int((datetime.now(CST) - timedelta(days=60)).timestamp() * 1000)
+    costs = calc_cost_usdt([c for c, _ in hits], key, secret, passphrase, since_ms, log=print) if hits else {}
     prices = sources.bitget_prices([c for c, _ in hits], log=print) if hits else {}
     items = []
     for coin, ticker in hits:
@@ -144,6 +199,8 @@ def main():
             "price_usd": round(price, 4),
             "value_usd": round(shares * price, 2),
             "price_source": "Bitget 实时价",
+            "cost_usdt": costs.get(coin, 0.0),
+            "cost_price": round(costs.get(coin, 0.0) / shares, 4) if shares else 0.0,
         })
 
     payload = {

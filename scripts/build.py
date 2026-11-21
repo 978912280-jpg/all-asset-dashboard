@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.3.5"
+PAGE_VERSION = "1.3.6"
 PAGE_DATE = ""  # 留空则使用构建当天日期，避免版本括号里的日期长期不变
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -216,17 +216,12 @@ def load_rtoken_rows(holdings, rate, prev_items=None):
         price = float(it.get("price_usd") or 0)
         if shares <= 0 or price <= 0:
             continue
-        aliases = {str(k).upper(): str(v).upper() for k, v in (cfg.get("cost_alias") or {}).items()}
-        cost_price = costs.get(ticker, 0.0) or costs.get(coin, 0.0)
+        # 成本价一律用 rToken 自己的真实成交价累计（bitget_rtoken.py 由 Bitget 成交/闪兑还原），
+        # 只有没抓到成交时，才用 holdings.json 的 rtokens.cost_price 手工兜底。
+        cost_total = float(it.get("cost_usdt") or 0)
+        cost_price = (cost_total / shares) if cost_total > 0 and shares > 0 else 0.0
         if not cost_price:
-            # 沿用同一代码在 traditional 里的成本价（卖出正股换 rToken，成本不变）
-            want = aliases.get(ticker, ticker)
-            for t in (holdings.get("traditional") or []):
-                if str(t.get("symbol") or t.get("id") or "").upper() == want:
-                    cost_price = float(t.get("cost_price") or 0)
-                    if cost_price:
-                        print("      %s 成本价沿用 traditional「%s」的 %.4f" % (coin, want, cost_price))
-                    break
+            cost_price = costs.get(ticker, 0.0) or costs.get(coin, 0.0)
         value_native = shares * price
         value_cny = r2(value_native * rate, 2)
         cost_native = shares * cost_price if cost_price > 0 else None
@@ -260,7 +255,9 @@ def load_rtoken_rows(holdings, rate, prev_items=None):
             "price_source": it.get("price_source") or "Bitget 实时价",
             "price_ts": (data or {}).get("updated_at"),
             "pending": False,
-            "note": "Bitget Stock Plus 代币化美股",
+            "note": "Bitget Stock Plus 代币化美股" + (
+                "；成本来自实际成交价累计" if cost_total > 0 else
+                "；成本待补（未抓到成交）" if cost_price <= 0 else "；成本取 holdings.json 手工值"),
         })
     if rows:
         print("      代币化美股 %d 个：%s" % (len(rows), "、".join(
