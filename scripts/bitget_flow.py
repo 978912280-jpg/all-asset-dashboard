@@ -99,8 +99,8 @@ def pull_bills(key, secret, passphrase, start_ms, end_ms, log=print):
     while cur < end_ms:
         nxt = min(cur + SLICE_DAYS * 86400 * 1000, end_ms)
         cursor, pages = None, 0
-        while pages < 20:
-            params = {"startTime": str(cur), "endTime": str(nxt), "limit": "20"}
+        while pages < 30:
+            params = {"startTime": str(cur), "endTime": str(nxt), "limit": "100"}
             if cursor:
                 params["idLessThan"] = cursor
             try:
@@ -114,7 +114,7 @@ def pull_bills(key, secret, passphrase, start_ms, end_ms, log=print):
             cursor = rows[-1].get("billId")
             pages += 1
             time.sleep(0.12)
-            if len(rows) < 20:
+            if len(rows) < 100:
                 break
         cur = nxt
     seen, uniq = set(), []
