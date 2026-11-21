@@ -118,6 +118,37 @@ def main():
         c = str(b.get("coin") or "").upper()
         bill_coins[c] = bill_coins.get(c, 0) + 1
     print("\n[6] 账单涉及币种：%s" % json.dumps(bill_coins, ensure_ascii=False)[:600])
+
+    # 7) 美股账户入金口径对账：STOCK_* 账单 + 各币划转记录
+    stock_bills = [b for b in bills if "STOCK" in str(b.get("businessType") or "").upper()]
+    print("\n[7] STOCK_* 账单 %d 条：" % len(stock_bills))
+    for b in sorted(stock_bills, key=lambda x: int(x.get("cTime") or 0)):
+        print("      %s %s size=%s %s" % (
+            datetime.fromtimestamp(int(b.get("cTime") or 0) / 1000, CST).strftime("%Y-%m-%d %H:%M"),
+            b.get("businessType"), b.get("size"), b.get("coin")))
+    try:
+        tot = sum(abs(float(b.get("size") or 0)) for b in stock_bills
+                  if "DEPOSIT_OUT" in str(b.get("businessType") or "").upper())
+        print("      划出到美股合计（DEPOSIT_OUT）：%.2f" % tot)
+    except (TypeError, ValueError):
+        pass
+    try:
+        tr_all = []
+        for coin in ("USDC", "USDT", "BTC", "SOL", "BGB", "ETH", "USDGO", "XAUT"):
+            rows = get("/api/v2/spot/account/transferRecords",
+                       {"coin": coin, "startTime": str(int(start.timestamp() * 1000)),
+                        "endTime": str(int(now.timestamp() * 1000)), "limit": "100"})
+            for r in rows:
+                tr_all.append((coin, r))
+        print("\n      划转记录（全币种，%d 条）：" % len(tr_all))
+        for coin, r in tr_all[:40]:
+            print("      %s %s %s size=%s %s" % (
+                datetime.fromtimestamp(int(r.get("tsTime") or r.get("cTime") or 0) / 1000, CST
+                                       ).strftime("%Y-%m-%d %H:%M") if (r.get("tsTime") or r.get("cTime")) else "-",
+                coin, r.get("fromType"), r.get("size") or r.get("amount"), r.get("toType")))
+    except Exception as e:  # noqa: BLE001
+        print("      划转记录读取失败：%s" % str(e)[:80])
+
     print("\n=== 探测结束 ===")
 
 
