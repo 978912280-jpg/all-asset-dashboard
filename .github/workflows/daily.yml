@@ -41,6 +41,14 @@ jobs:
           BITGET_PASSPHRASE: ${{ secrets.BITGET_PASSPHRASE }}
         run: python3 scripts/bitget_ledger.py
 
+      - name: 识别代币化美股（rToken）
+        continue-on-error: true
+        env:
+          BITGET_KEY: ${{ secrets.BITGET_KEY }}
+          BITGET_SECRET: ${{ secrets.BITGET_SECRET }}
+          BITGET_PASSPHRASE: ${{ secrets.BITGET_PASSPHRASE }}
+        run: python3 scripts/bitget_rtoken.py
+
       - name: 同步 Bitget 账户持仓（现货 + 理财）
         continue-on-error: true
         env:

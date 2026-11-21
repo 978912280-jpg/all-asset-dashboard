@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.3.3"
+PAGE_VERSION = "1.3.4"
 PAGE_DATE = ""  # 留空则使用构建当天日期，避免版本括号里的日期长期不变
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -184,6 +184,79 @@ def build_traditional(holdings, fund_items, rate, prev_items=None):
             "note": it.get("note") or "",
         })
     return rows
+
+
+# --------------------------------------------------------------------------
+# 代币化美股（Bitget Stock Plus / rToken）：计入「传统股票 & 基金」类别
+# --------------------------------------------------------------------------
+
+def load_rtoken_rows(holdings, rate, prev_items=None):
+    """把 data/rtoken.json 里的代币化美股转成传统资产行。
+
+    份额来自 Bitget 现货（bitget_rtoken.py 自动识别），成本价由 holdings.json
+    的 rtokens.cost_price 手工提供（单位 USDT/份，与美股同价）。
+    未提供成本价的标的先按 0 成本展示并标记 cost_pending，避免盈亏被算成 0。
+    """
+    cfg = holdings.get("rtokens") or {}
+    if cfg.get("enabled", True) is False:
+        return [], {"enabled": False}
+    data = _read_json(Path(ROOT) / "data" / "rtoken.json")
+    items = (data or {}).get("items") or []
+    if not items:
+        return [], {"enabled": True, "count": 0}
+    costs = {str(k).upper(): float(v or 0) for k, v in (cfg.get("cost_price") or {}).items()}
+    # 已手工登记在 traditional 里的同一代码，提示可能重复统计
+    trad_syms = {str(t.get("symbol") or t.get("id") or "").upper() for t in (holdings.get("traditional") or [])}
+    prev_items = prev_items or {}
+    rows = []
+    for it in items:
+        coin = str(it.get("coin") or "").upper()
+        ticker = str(it.get("ticker") or coin.lstrip("R")).upper()
+        shares = float(it.get("shares") or 0)
+        price = float(it.get("price_usd") or 0)
+        if shares <= 0 or price <= 0:
+            continue
+        cost_price = costs.get(ticker, 0.0) or costs.get(coin, 0.0)
+        value_native = shares * price
+        value_cny = r2(value_native * rate, 2)
+        cost_native = shares * cost_price if cost_price > 0 else None
+        cost_cny = r2(cost_native * rate, 2) if cost_native is not None else None
+        pnl_cny = r2(value_cny - cost_cny, 2) if cost_cny is not None else None
+        pnl_pct = r2(pnl_cny / cost_cny * 100, 2) if (pnl_cny is not None and cost_cny) else None
+        prev = prev_items.get(coin) or {}
+        prev_price = prev.get("price")
+        day_cny = shares * (price - prev_price) * rate if prev_price else 0.0
+        if ticker in trad_syms:
+            print("      [warn] %s（%s）与 traditional 里同代码标的重叠，请确认不是重复统计" % (coin, ticker))
+        rows.append({
+            "id": coin,
+            "name": "%s（%s，代币化）" % (it.get("name") or ticker, ticker),
+            "asset_class": "美股（代币化 rToken）",
+            "group": TRADITIONAL_GROUP,
+            "shares": r2(shares, 8),
+            "cost_price": r2(cost_price, 4),
+            "price": r2(price, 4),
+            "currency": "USD",
+            "change_pct": None,
+            "value_native": r2(value_native, 2),
+            "value_cny": value_cny,
+            "cost_native": r2(cost_native, 2) if cost_native is not None else None,
+            "cost_cny": cost_cny,
+            "pnl_cny": pnl_cny,
+            "pnl_pct": pnl_pct,
+            "cost_pending": cost_price <= 0,
+            "day_change_cny": r2(day_cny, 2),
+            "day_basis": "prev_snapshot" if prev_price else "live",
+            "price_source": it.get("price_source") or "Bitget 实时价",
+            "price_ts": (data or {}).get("updated_at"),
+            "pending": False,
+            "note": "Bitget Stock Plus 代币化美股",
+        })
+    if rows:
+        print("      代币化美股 %d 个：%s" % (len(rows), "、".join(
+            "%s %.6g 份 = %.2f USD" % (r["id"], r["shares"], r["value_native"]) for r in rows)))
+    return rows, {"enabled": True, "count": len(rows), "value_usd": r2(
+        sum(float(r["value_native"] or 0) for r in rows), 2), "updated_at": (data or {}).get("updated_at")}
 
 
 # --------------------------------------------------------------------------
@@ -907,6 +980,9 @@ def main():
 
     print("[3/5] 计算传统标的市值 …")
     trad_rows = build_traditional(holdings, fund_items, rate, prev_items)
+    rtoken_rows, rtoken_meta = load_rtoken_rows(holdings, rate, prev_items)
+    if rtoken_rows:
+        trad_rows = trad_rows + rtoken_rows
     for r in trad_rows:
         print("      %-8s 份额=%-10s 成本价=%-9s 现价=%-9s 市值=%s 盈亏=%s [%s]" % (
             r["id"], r["shares"], r["cost_price"], r["price"], r["value_cny"],
@@ -1330,6 +1406,9 @@ def main():
             "traditional_pnl_pct": r2(trad_pnl / trad_cost * 100, 2) if trad_cost else None,
             "cost_pending_count": len(cost_pending),
             "cost_pending_ids": cost_pending,
+            "rtoken_count": rtoken_meta.get("count") or 0,
+            "rtoken_value_usd": rtoken_meta.get("value_usd") or 0,
+            "rtoken_updated_at": rtoken_meta.get("updated_at") or "",
             "crypto_pnl_cny": r2(crypto_pnl_cny, 2),
             "crypto_realized_cny": realized_cny,
             "crypto_day_change_cny": r2(crypto_day, 2),
