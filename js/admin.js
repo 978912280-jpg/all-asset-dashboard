@@ -278,34 +278,69 @@
     }).join("");
   }
 
+  function ledgerCur(r) {
+    return String(r.currency || (function () {
+      var hit = (state.holdings.traditional || []).filter(function (t) {
+        return String(t.id || "").toUpperCase() === String(r.id || "").toUpperCase();
+      })[0];
+      return (hit && hit.currency) || "USD";
+    })()).toUpperCase();
+  }
+
+  function ledgerMoney(r, v) {
+    return (ledgerCur(r) === "CNY" ? "¥" : "$") + num(Math.abs(v), 2);
+  }
+
+  function ledgerFormHtml(r, idx) {
+    var calc = (Number(r.shares) || 0) * (Number(r.price) || 0);
+    var cp = tradCost(r.id);
+    return '<div class="ledger-row">' +
+      '<label>时间<input type="date" data-lidx="' + idx + '" data-lfield="date" value="' + esc(r.date || "") + '"></label>' +
+      '<label>标的<select data-lidx="' + idx + '" data-lfield="id">' + tradOptions(r.id) + "</select></label>" +
+      '<label>卖出份额<input type="number" step="0.000001" min="0" inputmode="decimal" data-lidx="' + idx + '" data-lfield="shares" value="' +
+      (r.shares === "" || r.shares === undefined ? "" : r.shares) + '"></label>' +
+      '<label>成交价<input type="number" step="0.0001" min="0" inputmode="decimal" data-lidx="' + idx + '" data-lfield="price" value="' +
+      (r.price === "" || r.price === undefined ? "" : r.price) + '"></label>' +
+      '<label>卖出金额<input type="number" step="0.01" min="0" inputmode="decimal" data-lidx="' + idx + '" data-lfield="amount" value="' +
+      (Number(r.amount) ? Number(r.amount) : "") + '" placeholder="' + (calc ? num(calc, 2) : "按份额×价自动") + '"></label>' +
+      '<label>成本价（自动取持仓）<span class="ldg-static">' + (cp ? num(cp, 4) : '<span class="muted">先填持仓成本价</span>') + "</span></label>" +
+      '<label>备注<input type="text" data-lidx="' + idx + '" data-lfield="note" value="' + esc(r.note || "") + '" placeholder="选填"></label>' +
+      '<div class="ldg-foot">' +
+      '<span class="ldg-state ' + (Number(r.id) && Number(r.shares) > 0 ? "wait" : "wait") + '">' +
+      (Number(r.id) && Number(r.shares) > 0 ? "待确认" : "未填写完整") + "</span>" +
+      '<button class="btn tiny primary" data-lcommit="' + idx + '" type="button">' + (r.confirmed ? "保存修改" : "确认登记") + "</button>" +
+      '<button class="row-del" data-ldel="' + idx + '" type="button">删除</button></div>' +
+      "</div>";
+  }
+
   function renderLedger() {
-    var body = $("ledger-body");
+    var body = $("ledger-body");     // 只放未确认 / 正在编辑的表单
+    var list = $("ledger-list");     // 已登记记录列表（只读行）
     if (!body) return;
     var rows = ledgerRows();
-    body.innerHTML = rows.map(function (r, idx) {
-      var calc = (Number(r.shares) || 0) * (Number(r.price) || 0);
-      var cp = tradCost(r.id);
-      return '<div class="ledger-row">' +
-        '<label>时间<input type="date" data-lidx="' + idx + '" data-lfield="date" value="' + esc(r.date || "") + '"></label>' +
-        '<label>标的<select data-lidx="' + idx + '" data-lfield="id">' + tradOptions(r.id) + "</select></label>" +
-        '<label>卖出份额<input type="number" step="0.000001" min="0" data-lidx="' + idx + '" data-lfield="shares" value="' +
-        (Number(r.shares) || 0) + '"></label>' +
-        '<label>成交价<input type="number" step="0.0001" min="0" data-lidx="' + idx + '" data-lfield="price" value="' +
-        (Number(r.price) || 0) + '"></label>' +
-        '<label>卖出金额<input type="number" step="0.01" min="0" data-lidx="' + idx + '" data-lfield="amount" value="' +
-        (Number(r.amount) ? Number(r.amount) : "") + '" placeholder="' + (calc ? num(calc, 2) : "按份额×价自动") + '"></label>' +
-        '<label>成本价（自动取持仓）<span class="ldg-static">' + (cp ? num(cp, 4) : '<span class="muted">先填持仓成本价</span>') + "</span></label>" +
-        '<label>备注<input type="text" data-lidx="' + idx + '" data-lfield="note" value="' + esc(r.note || "") + '" placeholder="选填"></label>' +
-        '<div class="ldg-foot">' +
-        '<span class="ldg-state ' + (r.confirmed ? "ok" : "wait") + '">' +
-        (r.confirmed
-          ? "已登记 · 已实现 " + (ledgerRowPnl(r) >= 0 ? "+" : "−") + num(Math.abs(ledgerRowPnl(r)), 2)
-          : (Number(r.id) && Number(r.shares) > 0 ? "待确认" : "未填写完整")) + "</span>" +
-        '<button class="btn tiny ' + (r.confirmed ? "ghost" : "primary") + '" data-lcommit="' + idx + '" type="button">' +
-        (r.confirmed ? "已登记" : "确认登记") + "</button>" +
-        '<button class="row-del" data-ldel="' + idx + '" type="button">删除</button></div>' +
-        "</div>";
-    }).join("");
+    var done = rows.map(function (r, i) { return { r: r, i: i }; }).filter(function (x) { return x.r.confirmed; });
+    var drafts = rows.map(function (r, i) { return { r: r, i: i }; }).filter(function (x) { return !x.r.confirmed; });
+
+    if (list) {
+      list.innerHTML = done.length ? done.map(function (x) {
+        var r = x.r;
+        var pnl = ledgerRowPnl(r);
+        var amt = Number(r.amount) || (Number(r.shares) || 0) * (Number(r.price) || 0);
+        return '<div class="ledger-item">' +
+          '<div class="li-main">' +
+          '<div class="li-top"><span class="li-id">' + esc(r.id || "") + "</span>" +
+          '<span class="li-date">' + esc(r.date || "—") + "</span></div>" +
+          '<div class="li-sub">' + num(Number(r.shares) || 0, 4) + " 份 @ " +
+          ledgerMoney(r, Number(r.price) || 0) + " · 金额 " + ledgerMoney(r, amt) + "</div>" +
+          (r.note ? '<div class="li-sub">' + esc(r.note) + "</div>" : "") +
+          "</div>" +
+          '<div class="li-right">' +
+          '<span class="li-pnl ' + (pnl >= 0 ? "pos" : "neg") + '">' + (pnl >= 0 ? "+" : "−") + ledgerMoney(r, pnl) + "</span>" +
+          '<button class="row-del" data-ledit="' + x.i + '" type="button">编辑</button>' +
+          "</div></div>";
+      }).join("") : "";
+    }
+    body.innerHTML = drafts.map(function (x) { return ledgerFormHtml(x.r, x.i); }).join("");
     updateLedgerHint();
   }
 
@@ -322,27 +357,18 @@
       : "未登记时传统只算未实现盈亏";
   }
 
-  // 原地刷新某一行的状态徽标/按钮，不重建 DOM（重建会打断正在输入的数字）
+  // 原地刷新状态徽标：只改徽标文本，重建 DOM 会打断正在输入的数字
   function refreshLedgerRowState(idx) {
     var body = $("ledger-body");
     if (!body) return;
-    var rowEl = body.querySelector('.ledger-row [data-lidx="' + idx + '"][data-lfield="date"]');
-    var wrap = rowEl ? rowEl.closest(".ledger-row") : null;
-    if (!wrap) return;
+    var wrap = body.querySelector('.ledger-row [data-lidx="' + idx + '"][data-lfield="date"]');
+    var row = wrap ? wrap.closest(".ledger-row") : null;
+    if (!row) return;
     var r = ledgerRows()[idx];
-    if (!r) return;
-    var stateEl = wrap.querySelector(".ldg-state");
-    var btn = wrap.querySelector("[data-lcommit]");
-    var ready = r.confirmed;
-    if (stateEl) {
-      stateEl.className = "ldg-state " + (ready ? "ok" : "wait");
-      stateEl.textContent = ready
-        ? "已登记 · 已实现 " + (ledgerRowPnl(r) >= 0 ? "+" : "−") + num(Math.abs(ledgerRowPnl(r)), 2)
-        : (String(r.id) && Number(r.shares) > 0 ? "待确认" : "未填写完整");
-    }
-    if (btn) {
-      btn.textContent = ready ? "已登记" : "确认登记";
-      btn.className = "btn tiny " + (ready ? "ghost" : "primary");
+    var el = row.querySelector(".ldg-state");
+    if (el && r) {
+      el.textContent = String(r.id) && Number(r.shares) > 0 ? "待确认" : "未填写完整";
+      el.className = "ldg-state wait";
     }
   }
 
@@ -405,7 +431,7 @@
       el.value = row[field] === "" ? "" : String(row[field]);
       updateLedgerHint();
     }, true);
-    body.addEventListener("click", function (e) {
+    function onLedgerClick(e) {
       var cbtn = e.target.closest("[data-lcommit]");
       if (cbtn) {
         var cidx = Number(cbtn.getAttribute("data-lcommit"));
@@ -440,12 +466,27 @@
           (ledgerRowPnl(crow) >= 0 ? "+" : "−") + num(Math.abs(ledgerRowPnl(crow)), 2) + "（原币），记得点右上角保存推送");
         return;
       }
+      var ebtn = e.target.closest("[data-ledit]");
+      if (ebtn) {
+        var erow = ledgerRows()[Number(ebtn.getAttribute("data-ledit"))];
+        if (!erow) return;
+        erow.confirmed = false;   // 回到表单，重新「保存修改」后才计入
+        markDirty();
+        renderLedger();
+        toast("已打开编辑，改完点「保存修改」才会生效");
+        return;
+      }
       var btn = e.target.closest("[data-ldel]");
       if (!btn) return;
+      var delRow = ledgerRows()[Number(btn.getAttribute("data-ldel"))];
+      if (delRow && delRow.confirmed && !confirm("删除这条已登记的卖出记录？已实现盈亏会相应减少。")) return;
       ledgerRows().splice(Number(btn.getAttribute("data-ldel")), 1);
       markDirty();
       renderLedger();
-    });
+    }
+    body.addEventListener("click", onLedgerClick);
+    var listEl = $("ledger-list");
+    if (listEl) listEl.addEventListener("click", onLedgerClick);
   }
 
   // ---------- PoolX 持仓（官方 API 读不到，手工登记） ----------

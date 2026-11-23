@@ -41,6 +41,11 @@ body, a, button, input, select, textarea, .seg-btn, .cal-cell {
 .ldg-state { font-size: 12px; color: var(--muted); }
 .ldg-state.ok { color: #15803d; font-weight: 600; }
 .ldg-state.wait { color: #b45309; }
+/* 台账已登记记录表：涨绿跌红 */
+.admin-table td.num.pos, .pos { color: #15803d; }
+.admin-table td.num.neg, .neg { color: #dc2626; }
+html[data-theme="dark"] .pos { color: #4ade80; }
+html[data-theme="dark"] .neg { color: #f87171; }
 html[data-theme="dark"] .ldg-state.ok { color: #4ade80; }
 html[data-theme="dark"] .ldg-state.wait { color: #fbbf24; }
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-version="1.4.1">
+<html lang="zh-CN" data-page-version="1.4.2">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -41,9 +41,9 @@
   })();
   </script>
   <link rel="stylesheet" href="css/style.css?v=20261112a">
-  <link rel="stylesheet" href="css/admin.css?v=1.4.1">
+  <link rel="stylesheet" href="css/admin.css?v=1.4.2">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-  <script src="js/admin.js?v=1.4.1" defer></script>
+  <script src="js/admin.js?v=1.4.2" defer></script>
   <style>
     /* 传统交易台账：卡片式录入，窄屏不横向滚动 */
     .ledger-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
@@ -52,7 +52,21 @@
     .ledger-row label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; opacity: .9; }
     .ledger-row input, .ledger-row select { width: 100%; box-sizing: border-box; }
     .ledger-row .ldg-static { font-size: 13px; padding: 6px 0; }
-    .ledger-row .ldg-foot { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+    .ledger-row .ldg-foot { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; align-items: center; }
+    /* 已登记记录：每条一行，窄屏自适应 */
+    .ledger-records { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+    .ledger-records:empty { display: none; }
+    .ledger-item { border: 1px solid #e2e4e8; border-radius: 10px; padding: 9px 12px;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .ledger-item .li-main { min-width: 0; }
+    .ledger-item .li-top { display: flex; align-items: baseline; gap: 8px; }
+    .ledger-item .li-id { font-weight: 600; font-size: 14px; }
+    .ledger-item .li-date { font-size: 11px; opacity: .6; }
+    .ledger-item .li-sub { font-size: 12px; opacity: .85; margin-top: 2px; }
+    .ledger-item .li-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none; }
+    .ledger-item .li-pnl { font-size: 15px; font-weight: 600; white-space: nowrap; }
+    .ledger-item .li-pnl.pos { color: #15803d; }
+    .ledger-item .li-pnl.neg { color: #dc2626; }
   </style>
 </head>
 <body>
@@ -141,6 +155,7 @@
         <h2>传统交易台账（卖出记录）</h2>
         <p class="card-desc">每卖出一笔就登记一条：时间、卖出份额、成交价、卖出金额，填完点该行「确认登记」（未确认的行不会计入已实现盈亏）。已实现盈亏 = 卖出金额 − 卖出份额 × 该标的当前成本价（平均成本法，卖出后成本价不变）。卖出金额不填时按「份额 × 成交价」自动计算。</p>
       </div>
+      <div class="ledger-records" id="ledger-list"></div>
       <div class="ledger-list" id="ledger-body"></div>
       <div class="cash-form">
         <button class="btn ghost" id="ledger-add" type="button">+ 登记一笔卖出</button>
