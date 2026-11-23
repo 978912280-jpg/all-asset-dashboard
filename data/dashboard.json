@@ -1,12 +1,12 @@
 {
   "meta": {
-    "holdings_updated_at": "2026-11-21T13:43:09+08:00",
-    "shares_age_days": 3,
+    "holdings_updated_at": "2026-11-24T01:23:46+08:00",
+    "shares_age_days": 1,
     "title": "全维度资产统计",
     "subtitle": "传统股票/基金 + 加密货币 合并统计 · 份额 × 价格 = 市值",
     "version": "1.3.9",
     "version_date": "2026.11.24",
-    "generated_at": "2026-11-24T01:18:37+08:00",
+    "generated_at": "2026-11-24T01:24:31+08:00",
     "build_source": "manual",
     "crypto_price_mode": "live",
     "page_version": "1.3.9",
@@ -23,49 +23,51 @@
     }
   },
   "summary": {
-    "total_cny": 129331.73,
-    "traditional_cny": 31960.73,
-    "crypto_cny": 65921.41,
+    "total_cny": 129196.04,
+    "traditional_cny": 31972.49,
+    "crypto_cny": 65773.96,
     "cash_cny": 31449.59,
     "stable_cash_cny": 2.59,
     "fiat_cash_cny": 31447.0,
-    "crypto_account_cny": 65924.0,
-    "traditional_weight": 24.71,
-    "crypto_weight": 50.97,
-    "cash_weight": 24.32,
-    "day_change_cny": -1253.0,
-    "day_change_pct": -0.96,
-    "crypto_usdt": 9866.87,
+    "crypto_account_cny": 65776.55,
+    "traditional_weight": 24.75,
+    "crypto_weight": 50.91,
+    "cash_weight": 24.34,
+    "day_change_cny": -1413.63,
+    "day_change_pct": -1.08,
+    "crypto_usdt": 9844.81,
     "count": 13,
-    "pending_count": 0,
-    "pending_ids": [],
-    "traditional_cost_cny": 32257.66,
-    "traditional_pnl_cny": -296.94,
-    "traditional_unrealized_cny": -296.94,
+    "pending_count": 1,
+    "pending_ids": [
+      "QQQM"
+    ],
+    "traditional_cost_cny": 31804.14,
+    "traditional_pnl_cny": 168.35,
+    "traditional_unrealized_cny": 168.35,
     "traditional_realized_cny": 0.0,
-    "traditional_day_change_cny": 42.53,
-    "traditional_day_change_pct": 0.13,
-    "traditional_pnl_pct": -0.92,
+    "traditional_day_change_cny": 29.37,
+    "traditional_day_change_pct": 0.09,
+    "traditional_pnl_pct": 0.53,
     "cost_pending_count": 0,
     "cost_pending_ids": [],
     "rtoken_count": 0,
     "rtoken_value_usd": 0,
     "rtoken_updated_at": "",
-    "crypto_pnl_cny": -6509.66,
+    "crypto_pnl_cny": -6657.11,
     "crypto_realized_cny": 0.0,
-    "crypto_day_change_cny": -1295.53,
-    "crypto_day_change_pct": -1.93,
-    "crypto_pnl_usdt": -974.3,
-    "crypto_pnl_pct": -8.99,
-    "total_pnl_cny": -6806.6,
-    "total_pnl_pct": -6.5
+    "crypto_day_change_cny": -1443.0,
+    "crypto_day_change_pct": -2.15,
+    "crypto_pnl_usdt": -996.37,
+    "crypto_pnl_pct": -9.19,
+    "total_pnl_cny": -6488.76,
+    "total_pnl_pct": -6.22
   },
   "groups": [
     {
       "key": "traditional",
       "name": "传统股票 & 基金",
-      "cny": 31960.73,
-      "weight": 24.71,
+      "cny": 31972.49,
+      "weight": 24.75,
       "count": 6,
       "items": [
         "QQQM",
@@ -79,8 +81,8 @@
     {
       "key": "crypto",
       "name": "加密货币",
-      "cny": 65921.41,
-      "weight": 50.97,
+      "cny": 65773.96,
+      "weight": 50.91,
       "count": 4,
       "items": [
         "SOL",
@@ -93,7 +95,7 @@
       "key": "cash",
       "name": "现金",
       "cny": 31449.59,
-      "weight": 24.32,
+      "weight": 24.34,
       "count": 3,
       "items": [
         "USDT",
@@ -108,25 +110,25 @@
       "name": "纳指100 ETF（QQQM）",
       "asset_class": "美股基金",
       "group": "traditional",
-      "shares": 2.9753,
+      "shares": 0.0,
       "cost_price": 292.182,
-      "price": 268.42,
+      "price": 268.17,
       "currency": "USD",
-      "change_pct": 6.84,
-      "value_native": 798.63,
-      "value_cny": 5335.92,
-      "cost_native": 869.33,
-      "cost_cny": 5808.29,
-      "pnl_cny": -472.36,
-      "pnl_pct": -8.13,
+      "change_pct": 6.74,
+      "value_native": 0.0,
+      "value_cny": 0.0,
+      "cost_native": 0.0,
+      "cost_cny": 0.0,
+      "pnl_cny": 0.0,
+      "pnl_pct": null,
       "cost_pending": false,
-      "day_change_cny": 15.9,
+      "day_change_cny": 10.93,
       "day_basis": "prev_snapshot",
       "price_source": "腾讯实时",
-      "price_ts": "2026-11-23 12:18:20",
-      "pending": false,
+      "price_ts": "2026-11-23 12:24:20",
+      "pending": true,
       "note": "定投纳指，每月约 1350 USD",
-      "weight": 4.13
+      "weight": 0.0
     },
     {
       "id": "VOO",
@@ -135,20 +137,20 @@
       "group": "traditional",
       "shares": 1.6694,
       "cost_price": 694.902,
-      "price": 664.72,
+      "price": 664.29,
       "currency": "USD",
-      "change_pct": 4.59,
-      "value_native": 1109.68,
-      "value_cny": 7414.18,
+      "change_pct": 4.52,
+      "value_native": 1108.97,
+      "value_cny": 7409.38,
       "cost_native": 1160.07,
       "cost_cny": 7750.82,
-      "pnl_cny": -336.65,
-      "pnl_pct": -4.34,
+      "pnl_cny": -341.44,
+      "pnl_pct": -4.41,
       "cost_pending": false,
-      "day_change_cny": 19.85,
+      "day_change_cny": 15.06,
       "day_basis": "prev_snapshot",
       "price_source": "腾讯实时",
-      "price_ts": "2026-11-23 12:18:20",
+      "price_ts": "2026-11-23 12:24:20",
       "pending": false,
       "note": "",
       "weight": 5.73
@@ -158,25 +160,25 @@
       "name": "纳指100高收益 ETF（QQQI）",
       "asset_class": "美股基金",
       "group": "traditional",
-      "shares": 10.4484,
-      "cost_price": 52.422,
-      "price": 48.64,
+      "shares": 26.9426,
+      "cost_price": 50.076,
+      "price": 48.6,
       "currency": "USD",
-      "change_pct": 6.71,
-      "value_native": 508.21,
-      "value_cny": 3395.53,
-      "cost_native": 547.73,
-      "cost_cny": 3659.55,
-      "pnl_cny": -264.02,
-      "pnl_pct": -7.21,
+      "change_pct": 6.63,
+      "value_native": 1309.41,
+      "value_cny": 8748.62,
+      "cost_native": 1349.18,
+      "cost_cny": 9014.32,
+      "pnl_cny": -265.7,
+      "pnl_pct": -2.95,
       "cost_pending": false,
-      "day_change_cny": 8.38,
+      "day_change_cny": 5.58,
       "day_basis": "prev_snapshot",
       "price_source": "腾讯实时",
-      "price_ts": "2026-11-23 12:18:19",
+      "price_ts": "2026-11-23 12:24:18",
       "pending": false,
       "note": "",
-      "weight": 2.63
+      "weight": 6.77
     },
     {
       "id": "008163",
@@ -201,7 +203,7 @@
       "price_ts": "2026-11-23",
       "pending": false,
       "note": "",
-      "weight": 11.61
+      "weight": 11.62
     },
     {
       "id": "VWO",
@@ -210,20 +212,20 @@
       "group": "traditional",
       "shares": 1.0,
       "cost_price": 57.22,
-      "price": 53.77,
+      "price": 53.72,
       "currency": "USD",
-      "change_pct": 6.21,
-      "value_native": 53.77,
-      "value_cny": 359.26,
+      "change_pct": 6.11,
+      "value_native": 53.72,
+      "value_cny": 358.92,
       "cost_native": 57.22,
       "cost_cny": 382.31,
-      "pnl_cny": -23.05,
-      "pnl_pct": -6.03,
+      "pnl_cny": -23.38,
+      "pnl_pct": -6.12,
       "cost_pending": false,
-      "day_change_cny": -1.27,
+      "day_change_cny": -1.6,
       "day_basis": "prev_snapshot",
       "price_source": "腾讯实时",
-      "price_ts": "2026-11-23 12:18:19",
+      "price_ts": "2026-11-23 12:24:19",
       "pending": false,
       "note": "",
       "weight": 0.28
@@ -235,20 +237,20 @@
       "group": "traditional",
       "shares": 1.0,
       "cost_price": 69.9,
-      "price": 65.72,
+      "price": 65.68,
       "currency": "USD",
-      "change_pct": 3.29,
-      "value_native": 65.72,
-      "value_cny": 439.1,
+      "change_pct": 3.23,
+      "value_native": 65.68,
+      "value_cny": 438.83,
       "cost_native": 69.9,
       "cost_cny": 467.03,
-      "pnl_cny": -27.93,
-      "pnl_pct": -5.98,
+      "pnl_cny": -28.2,
+      "pnl_pct": -6.04,
       "cost_pending": false,
-      "day_change_cny": -0.33,
+      "day_change_cny": -0.6,
       "day_basis": "prev_snapshot",
       "price_source": "腾讯实时",
-      "price_ts": "2026-11-23 12:18:18",
+      "price_ts": "2026-11-23 12:24:16",
       "pending": false,
       "note": "",
       "weight": 0.34
@@ -259,24 +261,24 @@
       "asset_class": "加密货币",
       "group": "crypto",
       "shares": 44.08149848,
-      "price": 74.38,
+      "price": 74.22,
       "currency": "USDT",
-      "change_pct": -2.87,
-      "value_native": 3278.78,
-      "value_cny": 21906.67,
-      "day_change_cny": -647.95,
+      "change_pct": -3.08,
+      "value_native": 3271.73,
+      "value_cny": 21859.55,
+      "day_change_cny": -695.08,
       "day_basis": "prev_snapshot",
       "price_source": "Bitget 实时价",
-      "price_ts": "2026-11-24T01:18:13+08:00",
+      "price_ts": "2026-11-24T01:24:00+08:00",
       "pending": false,
       "note": "Bitget 现货 0.230498 + 理财 43.851",
       "cost_pending_usdt": 0,
       "cost_cny": 23912.27,
       "cost_price": 81.1896,
-      "pnl_cny": -2005.6,
-      "pnl_pct": -8.39,
+      "pnl_cny": -2052.72,
+      "pnl_pct": -8.58,
       "cost_source": "净入金校准 + Bitget 成交",
-      "weight": 16.94
+      "weight": 16.92
     },
     {
       "id": "BGB",
@@ -284,21 +286,21 @@
       "asset_class": "加密货币",
       "group": "crypto",
       "shares": 6.67744906,
-      "price": 1.5697,
+      "price": 1.5695,
       "currency": "USDT",
-      "change_pct": -0.04,
+      "change_pct": -0.06,
       "value_native": 10.48,
-      "value_cny": 70.03,
-      "day_change_cny": -0.03,
+      "value_cny": 70.02,
+      "day_change_cny": -0.04,
       "day_basis": "prev_snapshot",
       "price_source": "Bitget 实时价",
-      "price_ts": "2026-11-24T01:18:13+08:00",
+      "price_ts": "2026-11-24T01:24:00+08:00",
       "pending": false,
       "note": "Bitget 现货 6.67745 + 理财 0",
       "cost_pending_usdt": 0,
       "cost_cny": 0.0,
       "cost_price": 0.0,
-      "pnl_cny": 70.03,
+      "pnl_cny": 70.02,
       "pnl_pct": null,
       "cost_source": "净入金校准 + Bitget 成交",
       "weight": 0.05
@@ -317,7 +319,7 @@
       "day_change_cny": 0.0,
       "day_basis": "prev_snapshot",
       "price_source": "面值",
-      "price_ts": "2026-11-24T01:18:13+08:00",
+      "price_ts": "2026-11-24T01:24:00+08:00",
       "pending": false,
       "note": "Bitget 账户",
       "weight": 0.0
@@ -328,22 +330,22 @@
       "asset_class": "加密货币",
       "group": "crypto",
       "shares": 0.10092743,
-      "price": 3658.41,
+      "price": 3654.4,
       "currency": "USDT",
-      "change_pct": -0.05,
-      "value_native": 369.23,
-      "value_cny": 2466.98,
-      "day_change_cny": -1.14,
+      "change_pct": -0.16,
+      "value_native": 368.83,
+      "value_cny": 2464.28,
+      "day_change_cny": -3.84,
       "day_basis": "prev_snapshot",
       "price_source": "Bitget 实时价",
-      "price_ts": "2026-11-24T01:18:13+08:00",
+      "price_ts": "2026-11-24T01:24:00+08:00",
       "pending": false,
       "note": "Bitget 现货 0.00022743 + 理财 0.1007",
       "cost_pending_usdt": 0,
       "cost_cny": 2544.96,
       "cost_price": 3774.0563,
-      "pnl_cny": -77.98,
-      "pnl_pct": -3.06,
+      "pnl_cny": -80.68,
+      "pnl_pct": -3.17,
       "cost_source": "净入金校准 + Bitget 成交",
       "weight": 1.91
     },
@@ -353,24 +355,24 @@
       "asset_class": "加密货币",
       "group": "crypto",
       "shares": 0.1001192,
-      "price": 62006.0,
+      "price": 61860.06,
       "currency": "USDT",
-      "change_pct": -1.53,
-      "value_native": 6207.99,
-      "value_cny": 41477.73,
-      "day_change_cny": -646.41,
+      "change_pct": -1.77,
+      "value_native": 6193.38,
+      "value_cny": 41380.11,
+      "day_change_cny": -744.04,
       "day_basis": "prev_snapshot",
       "price_source": "Bitget 实时价",
-      "price_ts": "2026-11-24T01:18:13+08:00",
+      "price_ts": "2026-11-24T01:24:00+08:00",
       "pending": false,
       "note": "Bitget 现货 6.9523e-06 + 理财 0.100112",
       "cost_pending_usdt": 0,
       "cost_cny": 45973.84,
       "cost_price": 68727.333,
-      "pnl_cny": -4496.11,
-      "pnl_pct": -9.78,
+      "pnl_cny": -4593.73,
+      "pnl_pct": -9.99,
       "cost_source": "净入金校准 + Bitget 成交",
-      "weight": 32.07
+      "weight": 32.03
     },
     {
       "id": "USDC",
@@ -386,7 +388,7 @@
       "day_change_cny": 0.0,
       "day_basis": "prev_snapshot",
       "price_source": "面值",
-      "price_ts": "2026-11-24T01:18:13+08:00",
+      "price_ts": "2026-11-24T01:24:00+08:00",
       "pending": false,
       "note": "Bitget 账户",
       "weight": 0.0
@@ -408,7 +410,7 @@
       "pending": false,
       "updated_at": "",
       "note": "",
-      "weight": 24.31
+      "weight": 24.34
     }
   ],
   "crypto_meta": {
@@ -416,14 +418,14 @@
     "url": "Bitget 私有接口（现货+理财）",
     "price_mode": "live",
     "live_price_count": 4,
-    "updated_at": "2026-11-24T01:18:13+08:00",
+    "updated_at": "2026-11-24T01:24:00+08:00",
     "snapshot_date": "2026-11-24",
     "coin_count": 6,
-    "total_usdt": 9866.87,
+    "total_usdt": 9844.81,
     "net_deposit_usdt": 10810.45
   },
   "events": {
-    "updated_at": "2026-11-24T01:18:31+08:00",
+    "updated_at": "2026-11-24T01:24:24+08:00",
     "window": {
       "start": "2026-08-28",
       "end": "2026-11-24"
@@ -2127,63 +2129,63 @@
         "day": "2026-11-24",
         "coin": "XAUT",
         "qty": 3.42e-06,
-        "value_usdt": 0.012516,
+        "value_usdt": 0.012512,
         "count": 2
       },
       {
         "day": "2026-11-24",
         "coin": "BTC",
         "qty": 2.284e-07,
-        "value_usdt": 0.014348,
+        "value_usdt": 0.014162,
         "count": 2
       },
       {
         "day": "2026-11-23",
         "coin": "XAUT",
         "qty": 4.104000000000001e-05,
-        "value_usdt": 0.15019199999999994,
+        "value_usdt": 0.15014400000000003,
         "count": 24
       },
       {
         "day": "2026-11-23",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-23",
         "coin": "BTC",
         "qty": 2.7408000000000018e-06,
-        "value_usdt": 0.17217600000000005,
+        "value_usdt": 0.16994400000000004,
         "count": 24
       },
       {
         "day": "2026-11-22",
         "coin": "XAUT",
         "qty": 4.104000000000001e-05,
-        "value_usdt": 0.15019199999999994,
+        "value_usdt": 0.15014400000000003,
         "count": 24
       },
       {
         "day": "2026-11-22",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-22",
         "coin": "BTC",
         "qty": 2.7408000000000018e-06,
-        "value_usdt": 0.17217600000000005,
+        "value_usdt": 0.16994400000000004,
         "count": 24
       },
       {
         "day": "2026-11-21",
         "coin": "XAUT",
         "qty": 4.104000000000001e-05,
-        "value_usdt": 0.15019199999999994,
+        "value_usdt": 0.15014400000000003,
         "count": 24
       },
       {
@@ -2197,21 +2199,21 @@
         "day": "2026-11-21",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-21",
         "coin": "BTC",
         "qty": 2.5165000000000012e-06,
-        "value_usdt": 0.158087,
+        "value_usdt": 0.15603700000000004,
         "count": 24
       },
       {
         "day": "2026-11-20",
         "coin": "XAUT",
         "qty": 4.104000000000001e-05,
-        "value_usdt": 0.15019199999999994,
+        "value_usdt": 0.15014400000000003,
         "count": 24
       },
       {
@@ -2225,21 +2227,21 @@
         "day": "2026-11-20",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-20",
         "coin": "BTC",
         "qty": 2.349599999999999e-06,
-        "value_usdt": 0.1476,
+        "value_usdt": 0.14568000000000003,
         "count": 24
       },
       {
         "day": "2026-11-19",
         "coin": "XAUT",
         "qty": 4.104000000000001e-05,
-        "value_usdt": 0.15019199999999994,
+        "value_usdt": 0.15014400000000003,
         "count": 24
       },
       {
@@ -2253,21 +2255,21 @@
         "day": "2026-11-19",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-19",
         "coin": "BTC",
         "qty": 2.349599999999999e-06,
-        "value_usdt": 0.1476,
+        "value_usdt": 0.14568000000000003,
         "count": 24
       },
       {
         "day": "2026-11-18",
         "coin": "XAUT",
         "qty": 1.8809999999999998e-05,
-        "value_usdt": 0.068838,
+        "value_usdt": 0.06881599999999999,
         "count": 11
       },
       {
@@ -2281,14 +2283,14 @@
         "day": "2026-11-18",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-18",
         "coin": "BTC",
         "qty": 2.349599999999999e-06,
-        "value_usdt": 0.1476,
+        "value_usdt": 0.14568000000000003,
         "count": 24
       },
       {
@@ -2302,14 +2304,14 @@
         "day": "2026-11-17",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-17",
         "coin": "BTC",
         "qty": 2.349599999999999e-06,
-        "value_usdt": 0.1476,
+        "value_usdt": 0.14568000000000003,
         "count": 24
       },
       {
@@ -2323,14 +2325,14 @@
         "day": "2026-11-16",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-16",
         "coin": "BTC",
         "qty": 2.349599999999999e-06,
-        "value_usdt": 0.1476,
+        "value_usdt": 0.14568000000000003,
         "count": 24
       },
       {
@@ -2344,14 +2346,14 @@
         "day": "2026-11-15",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-15",
         "coin": "BTC",
         "qty": 2.349599999999999e-06,
-        "value_usdt": 0.1476,
+        "value_usdt": 0.14568000000000003,
         "count": 24
       },
       {
@@ -2372,14 +2374,14 @@
         "day": "2026-11-14",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-14",
         "coin": "BTC",
         "qty": 2.292099999999999e-06,
-        "value_usdt": 0.14399299999999993,
+        "value_usdt": 0.142116,
         "count": 24
       },
       {
@@ -2400,14 +2402,14 @@
         "day": "2026-11-13",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-13",
         "coin": "BTC",
         "qty": 2.2741999999999993e-06,
-        "value_usdt": 0.14286000000000004,
+        "value_usdt": 0.14101199999999997,
         "count": 24
       },
       {
@@ -2428,14 +2430,14 @@
         "day": "2026-11-12",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-12",
         "coin": "BTC",
         "qty": 2.2698999999999996e-06,
-        "value_usdt": 0.14259700000000003,
+        "value_usdt": 0.14075399999999996,
         "count": 24
       },
       {
@@ -2456,14 +2458,14 @@
         "day": "2026-11-11",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-11",
         "coin": "BTC",
         "qty": 2.2670000000000013e-06,
-        "value_usdt": 0.14240399999999998,
+        "value_usdt": 0.140575,
         "count": 24
       },
       {
@@ -2484,14 +2486,14 @@
         "day": "2026-11-10",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-10",
         "coin": "BTC",
         "qty": 2.262200000000001e-06,
-        "value_usdt": 0.142111,
+        "value_usdt": 0.14026800000000006,
         "count": 24
       },
       {
@@ -2512,7 +2514,7 @@
         "day": "2026-11-09",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
@@ -2526,7 +2528,7 @@
         "day": "2026-11-09",
         "coin": "BTC",
         "qty": 2.2579e-06,
-        "value_usdt": 0.14183399999999996,
+        "value_usdt": 0.14001000000000005,
         "count": 24
       },
       {
@@ -2547,14 +2549,14 @@
         "day": "2026-11-08",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-08",
         "coin": "BTC",
         "qty": 2.255e-06,
-        "value_usdt": 0.14165499999999995,
+        "value_usdt": 0.13983099999999998,
         "count": 24
       },
       {
@@ -2575,14 +2577,14 @@
         "day": "2026-11-07",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-07",
         "coin": "BTC",
         "qty": 2.2507000000000007e-06,
-        "value_usdt": 0.14137799999999998,
+        "value_usdt": 0.13955400000000004,
         "count": 24
       },
       {
@@ -2603,14 +2605,14 @@
         "day": "2026-11-06",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-06",
         "coin": "BTC",
         "qty": 2.248800000000001e-06,
-        "value_usdt": 0.14126400000000003,
+        "value_usdt": 0.13943999999999998,
         "count": 24
       },
       {
@@ -2631,21 +2633,21 @@
         "day": "2026-11-05",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-05",
         "coin": "BTC",
         "qty": 4.7509999999999975e-07,
-        "value_usdt": 0.029845000000000003,
+        "value_usdt": 0.029460000000000017,
         "count": 24
       },
       {
         "day": "2026-11-05",
         "coin": "BGB",
         "qty": 0.32865928,
-        "value_usdt": 0.5172129999999999,
+        "value_usdt": 0.5158980000000001,
         "count": 18
       },
       {
@@ -2673,21 +2675,21 @@
         "day": "2026-11-04",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-11-04",
         "coin": "BTC",
         "qty": 4.300000000000001e-09,
-        "value_usdt": 0.00027699999999999985,
+        "value_usdt": 0.00025799999999999993,
         "count": 24
       },
       {
         "day": "2026-11-04",
         "coin": "BGB",
         "qty": 0.4407790500000001,
-        "value_usdt": 0.6936539999999999,
+        "value_usdt": 0.6918960000000001,
         "count": 24
       },
       {
@@ -2708,7 +2710,7 @@
         "day": "2026-11-03",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
@@ -2722,7 +2724,7 @@
         "day": "2026-11-03",
         "coin": "BGB",
         "qty": 0.43227695,
-        "value_usdt": 0.680276,
+        "value_usdt": 0.6785489999999997,
         "count": 24
       },
       {
@@ -2743,14 +2745,14 @@
         "day": "2026-11-02",
         "coin": "SOL",
         "qty": 0.0052506,
-        "value_usdt": 0.39841499999999996,
+        "value_usdt": 0.39053899999999997,
         "count": 2
       },
       {
         "day": "2026-11-02",
         "coin": "BGB",
         "qty": 0.43972487999999993,
-        "value_usdt": 0.6919940000000001,
+        "value_usdt": 0.6902330000000001,
         "count": 24
       },
       {
@@ -2771,21 +2773,21 @@
         "day": "2026-11-01",
         "coin": "SOL",
         "qty": 0.0052506,
-        "value_usdt": 0.39841499999999996,
+        "value_usdt": 0.39053899999999997,
         "count": 2
       },
       {
         "day": "2026-11-01",
         "coin": "BTC",
         "qty": 1.952e-06,
-        "value_usdt": 0.12262200000000001,
+        "value_usdt": 0.12104199999999996,
         "count": 21
       },
       {
         "day": "2026-11-01",
         "coin": "BGB",
         "qty": 0.044458330000000004,
-        "value_usdt": 0.069964,
+        "value_usdt": 0.06978699999999999,
         "count": 2
       },
       {
@@ -2806,14 +2808,14 @@
         "day": "2026-10-31",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-31",
         "coin": "BTC",
         "qty": 2.2216999999999994e-06,
-        "value_usdt": 0.13957,
+        "value_usdt": 0.13775599999999996,
         "count": 24
       },
       {
@@ -2834,14 +2836,14 @@
         "day": "2026-10-30",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-30",
         "coin": "BTC",
         "qty": 2.1987999999999988e-06,
-        "value_usdt": 0.138115,
+        "value_usdt": 0.13633899999999996,
         "count": 24
       },
       {
@@ -2862,14 +2864,14 @@
         "day": "2026-10-29",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-29",
         "coin": "BTC",
         "qty": 7.622000000000001e-07,
-        "value_usdt": 0.04787699999999999,
+        "value_usdt": 0.047259,
         "count": 42
       },
       {
@@ -2890,7 +2892,7 @@
         "day": "2026-10-28",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
@@ -2904,7 +2906,7 @@
         "day": "2026-10-28",
         "coin": "BTC",
         "qty": 6.909999999999992e-08,
-        "value_usdt": 0.0043339999999999984,
+        "value_usdt": 0.0042819999999999985,
         "count": 23
       },
       {
@@ -2925,7 +2927,7 @@
         "day": "2026-10-27",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
@@ -2939,7 +2941,7 @@
         "day": "2026-10-27",
         "coin": "BTC",
         "qty": 1.808e-07,
-        "value_usdt": 0.011358,
+        "value_usdt": 0.01121,
         "count": 2
       },
       {
@@ -2960,14 +2962,14 @@
         "day": "2026-10-26",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-26",
         "coin": "BTC",
         "qty": 2.1686e-06,
-        "value_usdt": 0.13623100000000005,
+        "value_usdt": 0.13445999999999997,
         "count": 24
       },
       {
@@ -2988,14 +2990,14 @@
         "day": "2026-10-25",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-25",
         "coin": "BTC",
         "qty": 2.1633000000000005e-06,
-        "value_usdt": 0.13588900000000004,
+        "value_usdt": 0.13413699999999998,
         "count": 24
       },
       {
@@ -3016,14 +3018,14 @@
         "day": "2026-10-24",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-24",
         "coin": "BTC",
         "qty": 2.1550999999999995e-06,
-        "value_usdt": 0.135373,
+        "value_usdt": 0.133621,
         "count": 24
       },
       {
@@ -3044,14 +3046,14 @@
         "day": "2026-10-23",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-23",
         "coin": "BTC",
         "qty": 2.1435999999999993e-06,
-        "value_usdt": 0.134659,
+        "value_usdt": 0.13291200000000003,
         "count": 24
       },
       {
@@ -3072,14 +3074,14 @@
         "day": "2026-10-22",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-22",
         "coin": "BTC",
         "qty": 2.133499999999999e-06,
-        "value_usdt": 0.13402399999999998,
+        "value_usdt": 0.13230099999999992,
         "count": 24
       },
       {
@@ -3100,14 +3102,14 @@
         "day": "2026-10-21",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-21",
         "coin": "BTC",
         "qty": 2.1220000000000006e-06,
-        "value_usdt": 0.13329099999999997,
+        "value_usdt": 0.13158699999999993,
         "count": 24
       },
       {
@@ -3135,14 +3137,14 @@
         "day": "2026-10-20",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-20",
         "coin": "BTC",
         "qty": 2.114400000000001e-06,
-        "value_usdt": 0.13281599999999996,
+        "value_usdt": 0.13111199999999998,
         "count": 24
       },
       {
@@ -3170,14 +3172,14 @@
         "day": "2026-10-19",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-19",
         "coin": "BTC",
         "qty": 2.1044000000000006e-06,
-        "value_usdt": 0.13219499999999995,
+        "value_usdt": 0.13049100000000002,
         "count": 24
       },
       {
@@ -3205,14 +3207,14 @@
         "day": "2026-10-18",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-18",
         "coin": "BTC",
         "qty": 2.0908000000000004e-06,
-        "value_usdt": 0.131347,
+        "value_usdt": 0.12964299999999998,
         "count": 24
       },
       {
@@ -3240,14 +3242,14 @@
         "day": "2026-10-17",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-17",
         "coin": "BTC",
         "qty": 2.0832e-06,
-        "value_usdt": 0.13087200000000002,
+        "value_usdt": 0.12916799999999998,
         "count": 24
       },
       {
@@ -3275,14 +3277,14 @@
         "day": "2026-10-16",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-16",
         "coin": "BTC",
         "qty": 2.0767999999999993e-06,
-        "value_usdt": 0.130472,
+        "value_usdt": 0.128768,
         "count": 24
       },
       {
@@ -3310,14 +3312,14 @@
         "day": "2026-10-15",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-15",
         "coin": "BTC",
         "qty": 2.0606000000000002e-06,
-        "value_usdt": 0.12945200000000004,
+        "value_usdt": 0.12776800000000002,
         "count": 24
       },
       {
@@ -3345,14 +3347,14 @@
         "day": "2026-10-14",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-14",
         "coin": "BTC",
         "qty": 2.0424000000000006e-06,
-        "value_usdt": 0.12830400000000006,
+        "value_usdt": 0.126648,
         "count": 24
       },
       {
@@ -3380,14 +3382,14 @@
         "day": "2026-10-13",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
         "day": "2026-10-13",
         "coin": "BTC",
         "qty": 2.0424000000000006e-06,
-        "value_usdt": 0.12830400000000006,
+        "value_usdt": 0.126648,
         "count": 24
       },
       {
@@ -3408,7 +3410,7 @@
         "day": "2026-10-12",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
@@ -3443,7 +3445,7 @@
         "day": "2026-10-11",
         "coin": "SOL",
         "qty": 0.00523809,
-        "value_usdt": 0.397466,
+        "value_usdt": 0.389609,
         "count": 1
       },
       {
@@ -3499,7 +3501,7 @@
         "day": "2026-10-09",
         "coin": "BGB",
         "qty": 0.48972699,
-        "value_usdt": 0.770684,
+        "value_usdt": 0.768725,
         "count": 15
       },
       {
@@ -3527,7 +3529,7 @@
         "day": "2026-10-08",
         "coin": "BGB",
         "qty": 0.7699290199999999,
-        "value_usdt": 1.2116399999999998,
+        "value_usdt": 1.2085569999999997,
         "count": 24
       },
       {
@@ -3555,7 +3557,7 @@
         "day": "2026-10-07",
         "coin": "BGB",
         "qty": 0.7748290099999999,
-        "value_usdt": 1.219349,
+        "value_usdt": 1.216249,
         "count": 24
       },
       {
@@ -3583,7 +3585,7 @@
         "day": "2026-10-06",
         "coin": "BGB",
         "qty": 0.7961102500000001,
-        "value_usdt": 1.2528390000000003,
+        "value_usdt": 1.2496530000000006,
         "count": 24
       },
       {
@@ -3611,7 +3613,7 @@
         "day": "2026-10-05",
         "coin": "BGB",
         "qty": 0.92698529,
-        "value_usdt": 1.4587960000000002,
+        "value_usdt": 1.45509,
         "count": 24
       },
       {
@@ -3632,7 +3634,7 @@
         "day": "2026-10-04",
         "coin": "BGB",
         "qty": 1.2087080400000003,
-        "value_usdt": 1.9021430000000004,
+        "value_usdt": 1.8973100000000003,
         "count": 47
       },
       {
@@ -3653,7 +3655,7 @@
         "day": "2026-10-03",
         "coin": "BGB",
         "qty": 1.3534517600000002,
-        "value_usdt": 2.1299259999999993,
+        "value_usdt": 2.1245139999999996,
         "count": 48
       },
       {
@@ -3674,14 +3676,14 @@
         "day": "2026-10-02",
         "coin": "SOL",
         "qty": 0.00521801,
-        "value_usdt": 0.395943,
+        "value_usdt": 0.388116,
         "count": 1
       },
       {
         "day": "2026-10-02",
         "coin": "BGB",
         "qty": 1.01109353,
-        "value_usdt": 1.5911570000000006,
+        "value_usdt": 1.5871130000000004,
         "count": 33
       },
       {
@@ -3702,7 +3704,7 @@
         "day": "2026-10-01",
         "coin": "BGB",
         "qty": 0.39954152000000004,
-        "value_usdt": 0.6287579999999998,
+        "value_usdt": 0.6271599999999999,
         "count": 24
       },
       {
@@ -3786,7 +3788,7 @@
         "day": "2026-09-30",
         "coin": "BTC",
         "qty": 0.07037129,
-        "value_usdt": 4420.647029,
+        "value_usdt": 4363.442208,
         "direction": "入金",
         "channel": "BTC",
         "ref": "1489194560397934592"
@@ -3796,7 +3798,7 @@
         "day": "2026-09-30",
         "coin": "SOL",
         "qty": 43.68293406,
-        "value_usdt": 3314.661036,
+        "value_usdt": 3249.136635,
         "direction": "入金",
         "channel": "SOL",
         "ref": "1489191032001282048"
@@ -3921,7 +3923,7 @@
         "day": "2026-10-12",
         "coin": "BTC",
         "qty": 4.9e-07,
-        "value_usdt": 0.030781,
+        "value_usdt": 0.030383,
         "kind": "账户间划转",
         "ref": "1493301806126735360"
       },
@@ -3948,7 +3950,7 @@
         "day": "2026-10-03",
         "coin": "BGB",
         "qty": 2.51349157,
-        "value_usdt": 3.955482,
+        "value_usdt": 3.945428,
         "kind": "账户间划转",
         "ref": "1489949251145379841"
       },
@@ -3957,7 +3959,7 @@
         "day": "2026-10-03",
         "coin": "BTC",
         "qty": 5.3e-05,
-        "value_usdt": 3.329402,
+        "value_usdt": 3.286318,
         "kind": "账户间划转",
         "ref": "1489949251145379842"
       },
@@ -3966,7 +3968,7 @@
         "day": "2026-10-02",
         "coin": "BGB",
         "qty": 1.01655392,
-        "value_usdt": 1.599751,
+        "value_usdt": 1.595685,
         "kind": "账户间划转",
         "ref": "1489902910629294080"
       },
@@ -3984,7 +3986,7 @@
         "day": "2026-10-01",
         "coin": "BGB",
         "qty": 0.27266871,
-        "value_usdt": 0.429099,
+        "value_usdt": 0.428008,
         "kind": "账户间划转",
         "ref": "1489460543036141568"
       },
@@ -4002,7 +4004,7 @@
         "day": "2026-09-30",
         "coin": "BTC",
         "qty": 0.07037129,
-        "value_usdt": 4420.647029,
+        "value_usdt": 4363.442208,
         "kind": "账户间划转",
         "ref": "1489194658584756224"
       },
@@ -4011,7 +4013,7 @@
         "day": "2026-09-30",
         "coin": "SOL",
         "qty": 43.68293406,
-        "value_usdt": 3314.661036,
+        "value_usdt": 3249.136635,
         "kind": "账户间划转",
         "ref": "1489191147252383744"
       },
@@ -4138,7 +4140,7 @@
         "date": "2026-09-30 21:26",
         "coin": "BGB",
         "qty": 0.00205151,
-        "value_usdt": 0.003228,
+        "value_usdt": 0.00322,
         "kind": "闪兑",
         "ref": "1489182967582867457"
       },
@@ -4154,7 +4156,7 @@
         "date": "2026-10-06 21:38",
         "coin": "BGB",
         "qty": 0.09054258,
-        "value_usdt": 0.142487,
+        "value_usdt": 0.142125,
         "kind": "闪兑",
         "ref": "1491360115764674561"
       },
@@ -4162,7 +4164,7 @@
         "date": "2026-10-06 21:38",
         "coin": "BGB",
         "qty": 1.89944458,
-        "value_usdt": 2.989156,
+        "value_usdt": 2.981558,
         "kind": "闪兑",
         "ref": "1491360115764674562"
       },
@@ -4170,7 +4172,7 @@
         "date": "2026-10-06 21:38",
         "coin": "BGB",
         "qty": 0.88458017,
-        "value_usdt": 1.392064,
+        "value_usdt": 1.388525,
         "kind": "闪兑",
         "ref": "1491360115764674563"
       },
@@ -4202,7 +4204,7 @@
         "date": "2026-10-03 12:49",
         "coin": "BGB",
         "qty": 0.12747967,
-        "value_usdt": 0.200615,
+        "value_usdt": 0.200105,
         "kind": "闪兑",
         "ref": "1490140025962545156"
       },
@@ -4210,7 +4212,7 @@
         "date": "2026-10-03 12:49",
         "coin": "BGB",
         "qty": 0.02320658,
-        "value_usdt": 0.03652,
+        "value_usdt": 0.036427,
         "kind": "闪兑",
         "ref": "1490140025962545155"
       },
@@ -4218,7 +4220,7 @@
         "date": "2026-10-03 12:49",
         "coin": "BGB",
         "qty": 0.29747844,
-        "value_usdt": 0.468142,
+        "value_usdt": 0.466952,
         "kind": "闪兑",
         "ref": "1490140025962545154"
       },
@@ -4242,7 +4244,7 @@
         "date": "2026-10-03 12:49",
         "coin": "BTC",
         "qty": -7e-06,
-        "value_usdt": -0.439732,
+        "value_usdt": -0.434042,
         "kind": "闪兑",
         "ref": "1490140025962545154"
       },
@@ -4250,7 +4252,7 @@
         "date": "2026-10-03 00:03",
         "coin": "BGB",
         "qty": 0.00181577,
-        "value_usdt": 0.002857,
+        "value_usdt": 0.00285,
         "kind": "闪兑",
         "ref": "1489947065937477634"
       },
@@ -4258,7 +4260,7 @@
         "date": "2026-10-03 00:03",
         "coin": "BGB",
         "qty": 0.07680072,
-        "value_usdt": 0.120861,
+        "value_usdt": 0.120554,
         "kind": "闪兑",
         "ref": "1489947065937477633"
       },
@@ -4266,7 +4268,7 @@
         "date": "2026-10-03 00:03",
         "coin": "BGB",
         "qty": 0.12666978,
-        "value_usdt": 0.19934,
+        "value_usdt": 0.198834,
         "kind": "闪兑",
         "ref": "1489947065937477635"
       },
@@ -4282,7 +4284,7 @@
         "date": "2026-10-03 00:03",
         "coin": "SOL",
         "qty": -3.027e-05,
-        "value_usdt": -0.002297,
+        "value_usdt": -0.002251,
         "kind": "闪兑",
         "ref": "1489947065937477634"
       },
@@ -4298,7 +4300,7 @@
         "date": "2026-10-11 10:44",
         "coin": "BGB",
         "qty": 0.23539381,
-        "value_usdt": 0.370439,
+        "value_usdt": 0.369498,
         "kind": "闪兑",
         "ref": "1493007706160021505"
       },
@@ -4314,7 +4316,7 @@
         "date": "2026-10-10 16:45",
         "coin": "BGB",
         "qty": 0.078548,
-        "value_usdt": 0.123611,
+        "value_usdt": 0.123297,
         "kind": "闪兑",
         "ref": "1492736156873703426"
       },
@@ -4322,7 +4324,7 @@
         "date": "2026-10-10 16:45",
         "coin": "BGB",
         "qty": 0.02891109,
-        "value_usdt": 0.045497,
+        "value_usdt": 0.045382,
         "kind": "闪兑",
         "ref": "1492736156873703425"
       },
@@ -4346,7 +4348,7 @@
         "date": "2026-10-10 10:37",
         "coin": "BGB",
         "qty": 0.09163652,
-        "value_usdt": 0.144208,
+        "value_usdt": 0.143842,
         "kind": "闪兑",
         "ref": "1492643539959857153"
       },
@@ -4362,7 +4364,7 @@
         "date": "2026-10-10 03:41",
         "coin": "BGB",
         "qty": 0.0029841,
-        "value_usdt": 0.004696,
+        "value_usdt": 0.004684,
         "kind": "闪兑",
         "ref": "1492538862278721540"
       },
@@ -4370,7 +4372,7 @@
         "date": "2026-10-10 03:41",
         "coin": "BGB",
         "qty": 0.16547324,
-        "value_usdt": 0.260405,
+        "value_usdt": 0.259743,
         "kind": "闪兑",
         "ref": "1492538862278721539"
       },
@@ -4394,7 +4396,7 @@
         "date": "2026-10-09 15:12",
         "coin": "BGB",
         "qty": 0.26185695,
-        "value_usdt": 0.412084,
+        "value_usdt": 0.411037,
         "kind": "闪兑",
         "ref": "1492350324631322627"
       },
@@ -4402,7 +4404,7 @@
         "date": "2026-10-09 15:12",
         "coin": "BGB",
         "qty": 0.02237605,
-        "value_usdt": 0.035213,
+        "value_usdt": 0.035124,
         "kind": "闪兑",
         "ref": "1492350324631322626"
       },
@@ -4410,7 +4412,7 @@
         "date": "2026-10-09 15:12",
         "coin": "BGB",
         "qty": 0.09544145,
-        "value_usdt": 0.150196,
+        "value_usdt": 0.149814,
         "kind": "闪兑",
         "ref": "1492350324631322628"
       },
@@ -4442,7 +4444,7 @@
         "date": "2026-10-09 08:18",
         "coin": "BGB",
         "qty": 0.51266241,
-        "value_usdt": 0.806777,
+        "value_usdt": 0.804726,
         "kind": "闪兑",
         "ref": "1492246159729016834"
       },
@@ -4450,7 +4452,7 @@
         "date": "2026-10-09 08:18",
         "coin": "BGB",
         "qty": 0.04420454,
-        "value_usdt": 0.069565,
+        "value_usdt": 0.069388,
         "kind": "闪兑",
         "ref": "1492246159729016833"
       },
@@ -4474,7 +4476,7 @@
         "date": "2026-10-07 20:50",
         "coin": "BGB",
         "qty": 0.47473386,
-        "value_usdt": 0.747089,
+        "value_usdt": 0.74519,
         "kind": "闪兑",
         "ref": "1491710471883374594"
       },
@@ -4482,7 +4484,7 @@
         "date": "2026-10-07 20:50",
         "coin": "BGB",
         "qty": 0.04435075,
-        "value_usdt": 0.069795,
+        "value_usdt": 0.069617,
         "kind": "闪兑",
         "ref": "1491710471883374593"
       },
@@ -4490,7 +4492,7 @@
         "date": "2026-10-07 20:50",
         "coin": "BGB",
         "qty": 0.18995561,
-        "value_usdt": 0.298933,
+        "value_usdt": 0.298173,
         "kind": "闪兑",
         "ref": "1491710471883374595"
       },
@@ -4522,7 +4524,7 @@
         "date": "2026-10-07 09:32",
         "coin": "BGB",
         "qty": 0.03592076,
-        "value_usdt": 0.056529,
+        "value_usdt": 0.056385,
         "kind": "闪兑",
         "ref": "1491539849706389505"
       },
@@ -4530,7 +4532,7 @@
         "date": "2026-10-07 09:32",
         "coin": "BGB",
         "qty": 0.19828052,
-        "value_usdt": 0.312034,
+        "value_usdt": 0.311241,
         "kind": "闪兑",
         "ref": "1491539849706389506"
       },
@@ -4554,7 +4556,7 @@
         "date": "2026-10-14 07:31",
         "coin": "BGB",
         "qty": 0.09247448,
-        "value_usdt": 0.145527,
+        "value_usdt": 0.145157,
         "kind": "闪兑",
         "ref": "1494046105654444054"
       },
@@ -4570,7 +4572,7 @@
         "date": "2026-10-12 16:19",
         "coin": "BGB",
         "qty": 5.16153846,
-        "value_usdt": 8.122713,
+        "value_usdt": 8.102067,
         "kind": "闪兑",
         "ref": "1493454215821312001"
       },
@@ -4578,7 +4580,7 @@
         "date": "2026-10-12 16:19",
         "coin": "BGB",
         "qty": 0.13376425,
-        "value_usdt": 0.210505,
+        "value_usdt": 0.20997,
         "kind": "闪兑",
         "ref": "1493454215821312002"
       },
@@ -4602,7 +4604,7 @@
         "date": "2026-10-12 06:15",
         "coin": "BGB",
         "qty": 0.26298403,
-        "value_usdt": 0.413858,
+        "value_usdt": 0.412806,
         "kind": "闪兑",
         "ref": "1493302245881987073"
       },
@@ -4618,7 +4620,7 @@
         "date": "2026-10-31 14:07",
         "coin": "BGB",
         "qty": 0.00200579,
-        "value_usdt": 0.003157,
+        "value_usdt": 0.003148,
         "kind": "闪兑",
         "ref": "1500306383270494209"
       },
@@ -4626,7 +4628,7 @@
         "date": "2026-10-31 14:07",
         "coin": "BGB",
         "qty": 0.05259603,
-        "value_usdt": 0.08277,
+        "value_usdt": 0.08256,
         "kind": "闪兑",
         "ref": "1500306383270494210"
       },
@@ -4650,7 +4652,7 @@
         "date": "2026-10-28 20:00",
         "coin": "BGB",
         "qty": 0.70129834,
-        "value_usdt": 1.103633,
+        "value_usdt": 1.100828,
         "kind": "闪兑",
         "ref": "1499308021633171457"
       },
@@ -4666,7 +4668,7 @@
         "date": "2026-11-05 00:14",
         "coin": "BGB",
         "qty": 0.00020318,
-        "value_usdt": 0.00032,
+        "value_usdt": 0.000319,
         "kind": "闪兑",
         "ref": "1501908799308873729"
       },
@@ -4674,7 +4676,7 @@
         "date": "2026-11-05 00:14",
         "coin": "BGB",
         "qty": 0.04820236,
-        "value_usdt": 0.075856,
+        "value_usdt": 0.075663,
         "kind": "闪兑",
         "ref": "1501908799308873730"
       },
@@ -4706,7 +4708,7 @@
         "date": "2026-11-04 01:16",
         "coin": "BGB",
         "qty": 0.041043,
-        "value_usdt": 0.064589,
+        "value_usdt": 0.064425,
         "kind": "闪兑",
         "ref": "1501561886093000706"
       },
@@ -4730,7 +4732,7 @@
         "date": "2026-11-13 00:50",
         "coin": "BGB",
         "qty": 4.31820294,
-        "value_usdt": 6.795556,
+        "value_usdt": 6.778283,
         "kind": "闪兑",
         "ref": "1504816787912835076"
       },
@@ -4738,7 +4740,7 @@
         "date": "2026-11-13 00:50",
         "coin": "BGB",
         "qty": 0.04597886,
-        "value_usdt": 0.072357,
+        "value_usdt": 0.072173,
         "kind": "闪兑",
         "ref": "1504816787912835073"
       },
@@ -4746,7 +4748,7 @@
         "date": "2026-11-13 00:50",
         "coin": "BGB",
         "qty": 0.44761189,
-        "value_usdt": 0.704407,
+        "value_usdt": 0.702616,
         "kind": "闪兑",
         "ref": "1504816787912835075"
       },
@@ -4796,36 +4798,36 @@
   "pnl_breakdown": {
     "prev_date": "2026-11-23",
     "fx_usdcny": 6.6813,
-    "generated_at": "2026-11-24T01:18:37+08:00",
+    "generated_at": "2026-11-24T01:24:31+08:00",
     "groups": [
       {
         "key": "traditional",
         "name": "传统股票 & 基金",
-        "pnl_cny": -296.94,
-        "unrealized_cny": -296.94,
+        "pnl_cny": 168.35,
+        "unrealized_cny": 168.35,
         "realized_cny": 0.0,
         "realized_entries": [],
-        "pnl_pct": -0.92,
-        "cost_cny": 32257.66,
-        "day_cny": 42.53,
-        "day_pct": 0.13,
+        "pnl_pct": 0.53,
+        "cost_cny": 31804.14,
+        "day_cny": 29.37,
+        "day_pct": 0.09,
         "items": [
           {
             "id": "QQQM",
             "name": "纳指100 ETF（QQQM）",
-            "shares": 2.9753,
+            "shares": 0.0,
             "prev_shares": 2.9753,
             "prev_price": 267.62,
             "prev_date": "2026-11-23",
-            "price": 268.42,
+            "price": 268.17,
             "currency": "USD",
             "fx": 6.6813,
             "cost_price": 292.182,
-            "cost_cny": 5808.29,
-            "value_cny": 5335.92,
-            "day_change_cny": 15.9,
+            "cost_cny": 0.0,
+            "value_cny": 0.0,
+            "day_change_cny": 10.93,
             "day_basis": "prev_snapshot",
-            "pnl_cny": -472.36,
+            "pnl_cny": 0.0,
             "price_source": "腾讯实时"
           },
           {
@@ -4835,33 +4837,33 @@
             "prev_shares": 1.6694,
             "prev_price": 662.94,
             "prev_date": "2026-11-23",
-            "price": 664.72,
+            "price": 664.29,
             "currency": "USD",
             "fx": 6.6813,
             "cost_price": 694.902,
             "cost_cny": 7750.82,
-            "value_cny": 7414.18,
-            "day_change_cny": 19.85,
+            "value_cny": 7409.38,
+            "day_change_cny": 15.06,
             "day_basis": "prev_snapshot",
-            "pnl_cny": -336.65,
+            "pnl_cny": -341.44,
             "price_source": "腾讯实时"
           },
           {
             "id": "QQQI",
             "name": "纳指100高收益 ETF（QQQI）",
-            "shares": 10.4484,
+            "shares": 26.9426,
             "prev_shares": 10.4484,
             "prev_price": 48.52,
             "prev_date": "2026-11-23",
-            "price": 48.64,
+            "price": 48.6,
             "currency": "USD",
             "fx": 6.6813,
-            "cost_price": 52.422,
-            "cost_cny": 3659.55,
-            "value_cny": 3395.53,
-            "day_change_cny": 8.38,
+            "cost_price": 50.076,
+            "cost_cny": 9014.32,
+            "value_cny": 8748.62,
+            "day_change_cny": 5.58,
             "day_basis": "prev_snapshot",
-            "pnl_cny": -264.02,
+            "pnl_cny": -265.7,
             "price_source": "腾讯实时"
           },
           {
@@ -4889,15 +4891,15 @@
             "prev_shares": 1.0,
             "prev_price": 53.96,
             "prev_date": "2026-11-23",
-            "price": 53.77,
+            "price": 53.72,
             "currency": "USD",
             "fx": 6.6813,
             "cost_price": 57.22,
             "cost_cny": 382.31,
-            "value_cny": 359.26,
-            "day_change_cny": -1.27,
+            "value_cny": 358.92,
+            "day_change_cny": -1.6,
             "day_basis": "prev_snapshot",
-            "pnl_cny": -23.05,
+            "pnl_cny": -23.38,
             "price_source": "腾讯实时"
           },
           {
@@ -4907,15 +4909,15 @@
             "prev_shares": 1.0,
             "prev_price": 65.77,
             "prev_date": "2026-11-23",
-            "price": 65.72,
+            "price": 65.68,
             "currency": "USD",
             "fx": 6.6813,
             "cost_price": 69.9,
             "cost_cny": 467.03,
-            "value_cny": 439.1,
-            "day_change_cny": -0.33,
+            "value_cny": 438.83,
+            "day_change_cny": -0.6,
             "day_basis": "prev_snapshot",
-            "pnl_cny": -27.93,
+            "pnl_cny": -28.2,
             "price_source": "腾讯实时"
           }
         ]
@@ -4923,12 +4925,12 @@
       {
         "key": "crypto",
         "name": "加密货币",
-        "pnl_cny": -6509.66,
-        "pnl_pct": -8.99,
+        "pnl_cny": -6657.11,
+        "pnl_pct": -9.19,
         "cost_cny": 72431.07,
         "realized_cny": 0.0,
-        "day_cny": -1295.53,
-        "day_pct": -1.93,
+        "day_cny": -1443.0,
+        "day_pct": -2.15,
         "items": [
           {
             "id": "SOL",
@@ -4937,15 +4939,15 @@
             "prev_shares": 44.08149848,
             "prev_price": 76.58,
             "prev_date": "2026-11-23",
-            "price": 74.38,
+            "price": 74.22,
             "currency": "USDT",
             "fx": 6.6813,
             "cost_price": 81.1896,
             "cost_cny": 23912.27,
-            "value_cny": 21906.67,
-            "day_change_cny": -647.95,
+            "value_cny": 21859.55,
+            "day_change_cny": -695.08,
             "day_basis": "prev_snapshot",
-            "pnl_cny": -2005.6,
+            "pnl_cny": -2052.72,
             "price_source": "Bitget 实时价"
           },
           {
@@ -4955,15 +4957,15 @@
             "prev_shares": 6.67744906,
             "prev_price": 1.5704,
             "prev_date": "2026-11-23",
-            "price": 1.5697,
+            "price": 1.5695,
             "currency": "USDT",
             "fx": 6.6813,
             "cost_price": 0.0,
             "cost_cny": 0.0,
-            "value_cny": 70.03,
-            "day_change_cny": -0.03,
+            "value_cny": 70.02,
+            "day_change_cny": -0.04,
             "day_basis": "prev_snapshot",
-            "pnl_cny": 70.03,
+            "pnl_cny": 70.02,
             "price_source": "Bitget 实时价"
           },
           {
@@ -4973,15 +4975,15 @@
             "prev_shares": 0.1009223,
             "prev_price": 3660.1,
             "prev_date": "2026-11-23",
-            "price": 3658.41,
+            "price": 3654.4,
             "currency": "USDT",
             "fx": 6.6813,
             "cost_price": 3774.0563,
             "cost_cny": 2544.96,
-            "value_cny": 2466.98,
-            "day_change_cny": -1.14,
+            "value_cny": 2464.28,
+            "day_change_cny": -3.84,
             "day_basis": "prev_snapshot",
-            "pnl_cny": -77.98,
+            "pnl_cny": -80.68,
             "price_source": "Bitget 实时价"
           },
           {
@@ -4991,15 +4993,15 @@
             "prev_shares": 0.10011886,
             "prev_price": 62972.34,
             "prev_date": "2026-11-23",
-            "price": 62006.0,
+            "price": 61860.06,
             "currency": "USDT",
             "fx": 6.6813,
             "cost_price": 68727.333,
             "cost_cny": 45973.84,
-            "value_cny": 41477.73,
-            "day_change_cny": -646.41,
+            "value_cny": 41380.11,
+            "day_change_cny": -744.04,
             "day_basis": "prev_snapshot",
-            "pnl_cny": -4496.11,
+            "pnl_cny": -4593.73,
             "price_source": "Bitget 实时价"
           }
         ]
@@ -5205,31 +5207,31 @@
     },
     {
       "date": "2026-11-24",
-      "total_cny": 129331.73,
-      "traditional_cny": 31960.73,
-      "crypto_cny": 65924.0,
+      "total_cny": 129196.04,
+      "traditional_cny": 31972.49,
+      "crypto_cny": 65776.55,
       "cash_cny": 31449.59,
-      "day_change_cny": -1253.0,
-      "day_change_pct": -0.96,
+      "day_change_cny": -1413.63,
+      "day_change_pct": -1.08,
       "fx_usdcny": 6.6813,
-      "crypto_usdt": 9866.87,
-      "crypto_coin_cny": 65921.41,
+      "crypto_usdt": 9844.81,
+      "crypto_coin_cny": 65773.96,
       "stable_cash_cny": 2.59,
-      "total_pnl_cny": -6806.6,
-      "traditional_pnl_cny": -296.94,
-      "crypto_pnl_cny": -6509.66
+      "total_pnl_cny": -6488.76,
+      "traditional_pnl_cny": 168.35,
+      "crypto_pnl_cny": -6657.11
     }
   ],
   "analysis": {
     "date": "2026-11-24",
-    "generated_at": "2026-11-24T01:18:37+08:00",
+    "generated_at": "2026-11-24T01:24:31+08:00",
     "price_mode": "live",
-    "headline": "今日资产 {total}，下跌 {day_abs}（{pct}）；波动主要来自 SOL。",
+    "headline": "今日资产 {total}，下跌 {day_abs}（{pct}）；波动主要来自 BTC。",
     "tone": "neg",
     "bullets": [
       {
         "label": "盈亏",
-        "text": "总资产 {total}，今日 {day}（{pct}）；传统 {trad_day}，加密货币 {crypto_day}。拖累 SOL {down1}、BTC {down2}。累计总盈亏 {pnl_total}（{pnl_pct}），其中加密 {pnl_crypto}、传统 {pnl_trad}。近 13 日累计 {range_chg}（{range_pct}），最佳 11-23（{best_day}）、最差 11-14（{worst_day}）。",
+        "text": "总资产 {total}，今日 {day}（{pct}）；传统 {trad_day}，加密货币 {crypto_day}。拖累 BTC {down1}、SOL {down2}。累计总盈亏 {pnl_total}（{pnl_pct}），其中加密 {pnl_crypto}、传统 {pnl_trad}。近 13 日累计 {range_chg}（{range_pct}），最佳 11-23（{best_day}）、最差 11-14（{worst_day}）。",
         "tone": "neg"
       },
       {
@@ -5244,7 +5246,7 @@
       },
       {
         "label": "理财生息",
-        "text": "今日派息 0.03 USDT（BTC、XAUT，4 笔）；近 30 日 65.31，约 {earn30}，折年化约 {earn_apr}。",
+        "text": "今日派息 0.03 USDT（BTC、XAUT，4 笔）；近 30 日 65.03，约 {earn30}，折年化约 {earn_apr}。",
         "tone": "muted"
       },
       {
@@ -5254,61 +5256,61 @@
       },
       {
         "label": "待办",
-        "text": "份额已 3 天未更新，建议核对持仓。",
+        "text": "1 个标的待填份额：QQQM。",
         "tone": "warn"
       }
     ],
     "values": {
       "total": {
-        "v": 129331.73,
+        "v": 129196.04,
         "kind": "money"
       },
       "day": {
-        "v": -1253.0,
+        "v": -1413.63,
         "kind": "signed"
       },
       "pct": {
-        "v": -0.96,
+        "v": -1.08,
         "kind": "pct"
       },
       "trad_day": {
-        "v": 42.53,
+        "v": 29.37,
         "kind": "signed"
       },
       "crypto_day": {
-        "v": -1295.53,
+        "v": -1443.0,
         "kind": "signed"
       },
       "down1": {
-        "v": -647.95,
+        "v": -744.04,
         "kind": "signed"
       },
       "down2": {
-        "v": -646.41,
+        "v": -695.08,
         "kind": "signed"
       },
       "pnl_total": {
-        "v": -6806.6,
+        "v": -6488.76,
         "kind": "signed"
       },
       "pnl_pct": {
-        "v": -6.5,
+        "v": -6.22,
         "kind": "pct"
       },
       "pnl_crypto": {
-        "v": -6509.66,
+        "v": -6657.11,
         "kind": "signed"
       },
       "pnl_trad": {
-        "v": -296.94,
+        "v": 168.35,
         "kind": "signed"
       },
       "range_chg": {
-        "v": -7500.72,
+        "v": -7661.35,
         "kind": "signed"
       },
       "range_pct": {
-        "v": -5.83,
+        "v": -5.95,
         "kind": "pct"
       },
       "best_day": {
@@ -5320,27 +5322,27 @@
         "kind": "signed"
       },
       "w_crypto": {
-        "v": 50.97,
+        "v": 50.91,
         "kind": "ratio"
       },
       "w_trad": {
-        "v": 24.71,
+        "v": 24.75,
         "kind": "ratio"
       },
       "w_cash": {
-        "v": 24.32,
+        "v": 24.34,
         "kind": "ratio"
       },
       "val_btc": {
-        "v": 41477.73,
+        "v": 41380.11,
         "kind": "money"
       },
       "share_btc": {
-        "v": 62.92,
+        "v": 62.91,
         "kind": "ratio"
       },
       "val_sol": {
-        "v": 21906.67,
+        "v": 21859.55,
         "kind": "money"
       },
       "share_sol": {
@@ -5368,11 +5370,11 @@
         "kind": "money"
       },
       "earn30": {
-        "v": 436.35,
+        "v": 434.49,
         "kind": "money"
       },
       "earn_apr": {
-        "v": 8.05,
+        "v": 8.04,
         "kind": "ratio"
       },
       "real_total": {
@@ -5389,11 +5391,11 @@
         "kind": "usdt"
       },
       "earn_today": {
-        "v": 0.026864,
+        "v": 0.026674,
         "kind": "usdt"
       },
       "earn30_usdt": {
-        "v": 65.308137,
+        "v": 65.030323,
         "kind": "usdt"
       },
       "earn_cnt": {
@@ -5401,19 +5403,19 @@
         "kind": "int"
       },
       "crypto_day_pct": {
-        "v": -1.93,
+        "v": -2.15,
         "kind": "pct"
       },
       "pnl_crypto_pct": {
-        "v": -8.99,
+        "v": -9.19,
         "kind": "pct"
       },
       "pnl_trad_pct": {
-        "v": -0.92,
+        "v": 0.53,
         "kind": "pct"
       },
       "crypto_account": {
-        "v": 65924.0,
+        "v": 65776.55,
         "kind": "money"
       },
       "stable_cash": {
@@ -5433,15 +5435,15 @@
         "kind": "int"
       },
       "shares_age": {
-        "v": 3,
+        "v": 1,
         "kind": "int"
       },
       "val_bgb": {
-        "v": 70.03,
+        "v": 70.02,
         "kind": "money"
       },
       "val_xaut": {
-        "v": 2466.98,
+        "v": 2464.28,
         "kind": "money"
       },
       "share_stable_in_cash": {
@@ -5453,15 +5455,15 @@
         "kind": "ratio"
       },
       "trad_cost": {
-        "v": 32257.66,
+        "v": 31804.14,
         "kind": "money"
       },
       "trad_cost_gap": {
-        "v": -296.9300000000003,
+        "v": 168.35000000000218,
         "kind": "signed"
       },
       "crypto_cost_base": {
-        "v": 65924.0,
+        "v": 65776.55,
         "kind": "money"
       },
       "item_count": {
@@ -5469,7 +5471,7 @@
         "kind": "int"
       },
       "btc_share_total": {
-        "v": 32.070807372637795,
+        "v": 32.028930608089844,
         "kind": "ratio"
       },
       "trade_cnt": {
@@ -5489,16 +5491,16 @@
         "kind": "int"
       },
       "day_abs": {
-        "v": 1253.0,
+        "v": 1413.63,
         "kind": "abs"
       }
     },
-    "day_change_cny": -1253.0,
-    "day_change_pct": -0.96,
+    "day_change_cny": -1413.63,
+    "day_change_pct": -1.08,
     "source": "rules",
     "facts": [
       "总资产 {total}，今日 {day}（{pct}）",
-      "今日单日贡献：无正贡献标的；拖累：SOL {down1}、BTC {down2}",
+      "今日单日贡献：无正贡献标的；拖累：BTC {down1}、SOL {down2}",
       "传统日变动 {trad_day}，加密日变动 {crypto_day}，加密日涨幅 {crypto_day_pct}",
       "累计总盈亏 {pnl_total}（{pnl_pct}），其中加密 {pnl_crypto}（{pnl_crypto_pct}）、传统 {pnl_trad}（{pnl_trad_pct}）",
       "近 {range_days} 日累计 {range_chg}（{range_pct}），最佳 11-23（{best_day}）、最差 11-14（{worst_day}）",
