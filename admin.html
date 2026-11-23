@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-version="1.3.9">
+<html lang="zh-CN" data-page-version="1.4.0">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -41,9 +41,9 @@
   })();
   </script>
   <link rel="stylesheet" href="css/style.css?v=20261112a">
-  <link rel="stylesheet" href="css/admin.css?v=1.3.9">
+  <link rel="stylesheet" href="css/admin.css?v=1.4.0">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-  <script src="js/admin.js?v=1.3.9" defer></script>
+  <script src="js/admin.js?v=1.4.0" defer></script>
   <style>
     /* 传统交易台账：卡片式录入，窄屏不横向滚动 */
     .ledger-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
@@ -139,7 +139,7 @@
     <section class="card">
       <div class="card-head">
         <h2>传统交易台账（卖出记录）</h2>
-        <p class="card-desc">每卖出一笔就登记一条：时间、卖出份额、成交价、卖出金额。已实现盈亏 = 卖出金额 − 卖出份额 × 该标的当前成本价（平均成本法，卖出后成本价不变）。卖出金额不填时按「份额 × 成交价」自动计算。</p>
+        <p class="card-desc">每卖出一笔就登记一条：时间、卖出份额、成交价、卖出金额，填完点该行「确认登记」（未确认的行不会计入已实现盈亏）。已实现盈亏 = 卖出金额 − 卖出份额 × 该标的当前成本价（平均成本法，卖出后成本价不变）。卖出金额不填时按「份额 × 成交价」自动计算。</p>
       </div>
       <div class="ledger-list" id="ledger-body"></div>
       <div class="cash-form">

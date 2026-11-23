@@ -35,6 +35,15 @@ body, a, button, input, select, textarea, .seg-btn, .cal-cell {
 .btn.primary:hover { background: #166534; }
 .btn:disabled { opacity: .55; cursor: not-allowed; }
 
+/* 交易台账：单笔「确认登记」按钮与状态徽标 */
+.btn.tiny { padding: 5px 10px; font-size: 12px; border-radius: 7px; }
+.btn.tiny.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.ldg-state { font-size: 12px; color: var(--muted); }
+.ldg-state.ok { color: #15803d; font-weight: 600; }
+.ldg-state.wait { color: #b45309; }
+html[data-theme="dark"] .ldg-state.ok { color: #4ade80; }
+html[data-theme="dark"] .ldg-state.wait { color: #fbbf24; }
+
 .upload-zone {
   border: 1.5px dashed var(--line-strong);
   border-radius: 12px;
