@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-23T20:12:59+08:00",
+  "updated_at": "2026-11-23T21:19:34+08:00",
   "since": "2026-11-13 12:00",
   "fills": 16,
   "cost_total_usdt": {
@@ -18,8 +18,7 @@
   },
   "qty_net_recent": {
     "USDC": -4560.5753,
-    "BTC": 0.014305,
-    "BGB": -10.0
+    "BTC": 0.014052
   },
   "converts": 1,
   "convert_cost_usdt": 0.0,
