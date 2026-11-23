@@ -257,9 +257,14 @@
     return state.holdings.trade_ledger;
   }
 
+  function ledgerCost(r) {
+    // 清仓把持仓行删掉后，仍沿用登记时快照的成本价
+    return tradCost(r && r.id) || Number(r && r.cost_price) || 0;
+  }
+
   function ledgerRowPnl(r) {
     var amt = Number(r.amount) || (Number(r.shares) || 0) * (Number(r.price) || 0);
-    return amt - (Number(r.shares) || 0) * tradCost(r.id);
+    return amt - (Number(r.shares) || 0) * ledgerCost(r);
   }
 
   function tradCost(id) {
@@ -271,7 +276,12 @@
   }
 
   function tradOptions(sel) {
-    var rows = state.holdings.traditional || [];
+    var rows = (state.holdings.traditional || []).slice();
+    // 已清仓/已删掉的标的也要能保留在台账里，否则下拉会默认跳到第一个标的上
+    var selKey = String(sel || "").toUpperCase();
+    if (selKey && !rows.some(function (r) { return String(r.id || "").toUpperCase() === selKey; })) {
+      rows.unshift({ id: sel, name: sel + "（已清仓）", currency: "USD" });
+    }
     return rows.map(function (r) {
       return '<option value="' + esc(r.id) + '"' + (String(r.id).toUpperCase() === String(sel || "").toUpperCase() ? " selected" : "") +
         ">" + esc(r.id) + "</option>";
@@ -303,7 +313,8 @@
       (r.price === "" || r.price === undefined ? "" : r.price) + '"></label>' +
       '<label>卖出金额<input type="number" step="0.01" min="0" inputmode="decimal" data-lidx="' + idx + '" data-lfield="amount" value="' +
       (Number(r.amount) ? Number(r.amount) : "") + '" placeholder="' + (calc ? num(calc, 2) : "按份额×价自动") + '"></label>' +
-      '<label>成本价（自动取持仓）<span class="ldg-static">' + (cp ? num(cp, 4) : '<span class="muted">先填持仓成本价</span>') + "</span></label>" +
+      '<label>成本价<input type="number" step="0.0001" min="0" inputmode="decimal" data-lidx="' + idx + '" data-lfield="cost_price" value="' +
+      (Number(r.cost_price) || cp ? (Number(r.cost_price) || cp) : "") + '" placeholder="默认取持仓成本">' + "</label>" +
       '<label>备注<input type="text" data-lidx="' + idx + '" data-lfield="note" value="' + esc(r.note || "") + '" placeholder="选填"></label>' +
       '<div class="ldg-foot">' +
       '<span class="ldg-state ' + (Number(r.id) && Number(r.shares) > 0 ? "wait" : "wait") + '">' +
@@ -318,6 +329,10 @@
     var list = $("ledger-list");     // 已登记记录列表（只读行）
     if (!body) return;
     var rows = ledgerRows();
+    // 老记录缺成本价快照的，用当前持仓成本补一次，避免显示成全是盈利
+    rows.forEach(function (r) {
+      if (!Number(r.cost_price) && tradCost(r.id)) r.cost_price = tradCost(r.id);
+    });
     var done = rows.map(function (r, i) { return { r: r, i: i }; }).filter(function (x) { return x.r.confirmed; });
     var drafts = rows.map(function (r, i) { return { r: r, i: i }; }).filter(function (x) { return !x.r.confirmed; });
 
@@ -335,7 +350,9 @@
           (r.note ? '<div class="li-sub">' + esc(r.note) + "</div>" : "") +
           "</div>" +
           '<div class="li-right">' +
-          '<span class="li-pnl ' + (pnl >= 0 ? "pos" : "neg") + '">' + (pnl >= 0 ? "+" : "−") + ledgerMoney(r, pnl) + "</span>" +
+          (ledgerCost(r) > 0
+            ? '<span class="li-pnl ' + (pnl >= 0 ? "pos" : "neg") + '">' + (pnl >= 0 ? "+" : "−") + ledgerMoney(r, pnl) + "</span>"
+            : '<span class="li-pnl muted">成本待填</span>') +
           '<button class="row-del" data-ledit="' + x.i + '" type="button">编辑</button>' +
           "</div></div>";
       }).join("") : "";
@@ -397,7 +414,8 @@
       // 否则 Number("1.")=1 再回填会把小数点吃掉，导致小数根本输不进去。
       row[field] = el.value;
       row.confirmed = false;   // 改动后需重新确认，避免看着是已登记其实没提交
-      if (row.id && tradCost(row.id)) row.cost_price = tradCost(row.id);
+      // 手动改成本价时不要被持仓成本覆盖；其它字段改动时才自动带出持仓成本
+      if (field !== "cost_price" && row.id && tradCost(row.id) && !Number(row.cost_price)) row.cost_price = tradCost(row.id);
       markDirty();
       refreshLedgerRowState(idx);
       updateLedgerHint();
@@ -446,13 +464,13 @@
         if (!crow.id) msg = "请先选择卖出标的";
         else if (!(Number(crow.shares) > 0)) msg = "卖出份额需大于 0";
         else if (!(Number(crow.price) > 0) && !(Number(crow.amount) > 0)) msg = "成交价或卖出金额至少要填一个";
-        else if (!(tradCost(crow.id) > 0)) msg = "该标的还没有成本价，请先在上方持仓表填成本价";
+        else if (!(Number(crow.cost_price) > 0)) msg = "成本价需大于 0（该标的已无持仓成本，请在成本价格里手动填）";
         if (msg) { toast(msg); return; }
         crow.confirmed = true;
         crow.shares = Number(crow.shares) || 0;
         crow.price = Number(crow.price) || 0;
         crow.amount = crow.amount === "" ? "" : Number(crow.amount) || 0;
-        crow.cost_price = tradCost(crow.id);
+        crow.cost_price = Number(crow.cost_price) || tradCost(crow.id) || 0;
         // 快照币种和名称：之后即使清仓把该标的从持仓表删掉，已实现盈亏仍能正确计价/显示
         var hitRow = (state.holdings.traditional || []).filter(function (t) {
           return String(t.id || "").toUpperCase() === String(crow.id).toUpperCase();
@@ -470,6 +488,13 @@
       if (ebtn) {
         var erow = ledgerRows()[Number(ebtn.getAttribute("data-ledit"))];
         if (!erow) return;
+        if (!Number(erow.cost_price) && tradCost(erow.id)) erow.cost_price = tradCost(erow.id);
+        if (!erow.currency) {
+          var th = (state.holdings.traditional || []).filter(function (t) {
+            return String(t.id || "").toUpperCase() === String(erow.id || "").toUpperCase();
+          })[0];
+          if (th && th.currency) erow.currency = th.currency;
+        }
         erow.confirmed = false;   // 回到表单，重新「保存修改」后才计入
         markDirty();
         renderLedger();
