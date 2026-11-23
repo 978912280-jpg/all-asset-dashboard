@@ -196,7 +196,11 @@
       if (!btn) return;
       var idx = Number(btn.getAttribute("data-del"));
       var item = state.holdings.traditional[idx];
-      if (!confirm("确定删除标的「" + (item.name || item.symbol) + "」？")) return;
+      var sh = Number(item.shares) || 0;
+      var warn = sh > 0
+        ? "「" + (item.name || item.symbol) + "」当前还有 " + num(sh, 6) + " 份持仓，删除会把它的份额、市值和成本一起从总资产里移走（已实现盈亏不受影响）。确定删除？"
+        : "确定删除标的「" + (item.name || item.symbol) + "」？该标的已清仓，已实现的卖出记录不受影响。";
+      if (!confirm(warn)) return;
       state.holdings.traditional.splice(idx, 1);
       markDirty();
       renderTable();
@@ -423,6 +427,12 @@
         crow.price = Number(crow.price) || 0;
         crow.amount = crow.amount === "" ? "" : Number(crow.amount) || 0;
         crow.cost_price = tradCost(crow.id);
+        // 快照币种和名称：之后即使清仓把该标的从持仓表删掉，已实现盈亏仍能正确计价/显示
+        var hitRow = (state.holdings.traditional || []).filter(function (t) {
+          return String(t.id || "").toUpperCase() === String(crow.id).toUpperCase();
+        })[0];
+        crow.currency = (hitRow && hitRow.currency) || crow.currency || "USD";
+        crow.name = (hitRow && (hitRow.name || hitRow.symbol)) || crow.name || crow.id;
         if (!crow.date) crow.date = todayStr();
         markDirty();
         renderLedger();

@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.4.0"
+PAGE_VERSION = "1.4.1"
 PAGE_DATE = ""  # 留空则使用构建当天日期，避免版本括号里的日期长期不变
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -1056,7 +1056,7 @@ def main():
             if not hid:
                 continue
             h = cmap.get(hid) or {}
-            cur = str(h.get("currency") or e.get("currency") or "USD").upper()
+            cur = str(h.get("currency") or e.get("currency") or "USD").upper()  # 清仓删标的后仍可按台账快照计价
             try:
                 shares = float(e.get("shares") or 0)
                 price = float(e.get("price") or 0)
@@ -1077,6 +1077,7 @@ def main():
                 "price_cny": r2(price * fx, 4),
                 "cost_price_cny": r2(cp * fx, 4),
                 "note": str(e.get("note") or ""),
+                "name": str(e.get("name") or h.get("name") or h.get("symbol") or hid),
             })
         rows.sort(key=lambda x: x["date"], reverse=True)
         return rows
