@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.4.0",
     "base_currency": "CNY",
-    "updated_at": "2026-11-24T01:23:46+08:00",
+    "updated_at": "2026-11-24T01:31:01+08:00",
     "_comment": "本文件是全维度资产统计的唯一份额来源：只需要维护每个传统标的的 shares（持有份额）与 cost_price（每份持仓成本价，按该标的币种计价），价格与市值、盈亏全部由后台 build.py 抓取并计算。"
   },
   "fx": {
@@ -90,7 +90,18 @@
     }
   ],
   "poolx": [],
-  "trade_ledger": [],
+  "trade_ledger": [
+    {
+      "date": "2026-11-24",
+      "id": "QQQM",
+      "shares": 2.9753,
+      "price": 268.0504,
+      "amount": "",
+      "note": "",
+      "confirmed": true,
+      "cost_price": 292.182
+    }
+  ],
   "rtokens": {
     "enabled": true,
     "_comment": "代币化美股（Bitget Stock Plus rToken）。份额与成本价都由 scripts/bitget_rtoken.py 从 Bitget 现货份额 + 成交/闪兑记录自动算出（写入 data/rtoken.json），本块无需手填；cost_price 仅在某笔成交抓不到时兜底；cost_since 为成本累计起点（卖出正股换 rToken 的日期）。",
