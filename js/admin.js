@@ -286,16 +286,20 @@
         '<div class="ldg-foot"><button class="row-del" data-ldel="' + idx + '" type="button">删除</button></div>' +
         "</div>";
     }).join("");
+    updateLedgerHint();
+  }
+
+  function updateLedgerHint() {
     var hint = $("ledger-hint");
-    if (hint) {
-      var realized = rows.reduce(function (a, r) {
-        var amt2 = Number(r.amount) || (Number(r.shares) || 0) * (Number(r.price) || 0);
-        return a + (amt2 - (Number(r.shares) || 0) * tradCost(r.id));
-      }, 0);
-      hint.textContent = rows.length
-        ? rows.length + " 笔卖出 · 已实现合计 " + (realized >= 0 ? "+" : "−") + num(Math.abs(realized), 2) + "（原币）"
-        : "未登记时传统只算未实现盈亏";
-    }
+    if (!hint) return;
+    var rows = ledgerRows();
+    var realized = rows.reduce(function (a, r) {
+      var amt2 = Number(r.amount) || (Number(r.shares) || 0) * (Number(r.price) || 0);
+      return a + (amt2 - (Number(r.shares) || 0) * tradCost(r.id));
+    }, 0);
+    hint.textContent = rows.length
+      ? rows.length + " 笔卖出 · 已实现合计 " + (realized >= 0 ? "+" : "−") + num(Math.abs(realized), 2) + "（原币）"
+      : "未登记时传统只算未实现盈亏";
   }
 
   function bindLedger() {
@@ -314,19 +318,42 @@
       if (!field || isNaN(idx)) return;
       var row = ledgerRows()[idx];
       if (!row) return;
-      if (field === "shares" || field === "price" || field === "amount") {
-        row[field] = el.value === "" ? "" : Math.max(0, Number(el.value) || 0);
-      } else {
-        row[field] = el.value;
-      }
+      // 数字字段保留用户输入的原始文本（含小数点、"1." 这种半成品），
+      // 否则 Number("1.")=1 再回填会把小数点吃掉，导致小数根本输不进去。
+      row[field] = el.value;
       if (row.id && tradCost(row.id)) row.cost_price = tradCost(row.id);
       markDirty();
-      renderLedger();
+      updateLedgerHint();
     });
     body.addEventListener("change", function (e) {
       var el = e.target;
-      if (el.tagName === "SELECT") { markDirty(); renderLedger(); }
+      if (el.tagName === "SELECT") { markDirty(); renderLedger(); return; }
+      var field = el.getAttribute("data-lfield");
+      if (field === "shares" || field === "price" || field === "amount") {
+        var idx = Number(el.getAttribute("data-lidx"));
+        var row = ledgerRows()[idx];
+        if (row) {
+          var v = String(el.value).trim();
+          row[field] = v === "" ? "" : Math.max(0, Number(v) || 0);
+          el.value = row[field] === "" ? "" : String(row[field]);
+        }
+        markDirty();
+        updateLedgerHint();
+      }
     });
+    body.addEventListener("blur", function (e) {
+      var el = e.target;
+      if (el.tagName !== "INPUT") return;
+      var field = el.getAttribute("data-lfield");
+      if (field !== "shares" && field !== "price" && field !== "amount") return;
+      var idx = Number(el.getAttribute("data-lidx"));
+      var row = ledgerRows()[idx];
+      if (!row) return;
+      var v = String(el.value).trim().replace(/[^0-9.]/g, "");
+      row[field] = v === "" ? "" : Math.max(0, Number(v) || 0);
+      el.value = row[field] === "" ? "" : String(row[field]);
+      updateLedgerHint();
+    }, true);
     body.addEventListener("click", function (e) {
       var btn = e.target.closest("[data-ldel]");
       if (!btn) return;
@@ -614,6 +641,17 @@
 
   function payload() {
     var h = JSON.parse(JSON.stringify(state.holdings));
+    // 台账数值统一转成数字（输入框里可能残留 "1." 这类中间态）
+    if (Array.isArray(h.trade_ledger)) {
+      h.trade_ledger = h.trade_ledger.filter(function (r) {
+        return r && r.id && Number(r.shares) > 0;
+      }).map(function (r) {
+        r.shares = Number(r.shares) || 0;
+        r.price = Number(r.price) || 0;
+        r.amount = r.amount === "" || r.amount === undefined ? "" : Number(r.amount) || 0;
+        return r;
+      });
+    }
     // 每次网页保存份额都刷新 meta.updated_at，首页「份额 N 天未更新」以它为准
     h.meta = h.meta || {};
     h.meta.updated_at = cstStamp();
