@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.4.1",
     "base_currency": "CNY",
-    "updated_at": "2026-11-24T01:31:01+08:00",
+    "updated_at": "2026-11-24T01:36:34+08:00",
     "_comment": "本文件是全维度资产统计的唯一份额来源：只需要维护每个传统标的的 shares（持有份额）与 cost_price（每份持仓成本价，按该标的币种计价），价格与市值、盈亏全部由后台 build.py 抓取并计算。"
   },
   "fx": {
@@ -18,16 +18,6 @@
     "_comment": "加密货币资产直接抓取『加密货币资产仪表台』(bitget-pnl-dashboard) 的最新快照，现货+理财合并，无需在本文件维护币的份额；include_coins 为空表示统计全部币种。"
   },
   "traditional": [
-    {
-      "id": "QQQM",
-      "name": "纳指100 ETF（QQQM）",
-      "symbol": "QQQM",
-      "currency": "USD",
-      "asset_class": "美股基金",
-      "shares": 0,
-      "note": "定投纳指，每月约 1350 USD",
-      "cost_price": 292.182
-    },
     {
       "id": "VOO",
       "name": "标普500 ETF（VOO）",
