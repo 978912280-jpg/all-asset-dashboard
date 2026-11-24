@@ -54,8 +54,17 @@
       })
       .catch(function () {
         state.serverMode = false;
-        return fetch("data/holdings.json?t=" + Date.now())
-          .then(function (r) { return r.json(); })
+        // 走 GitHub 接口读最新一份：Pages 的 data/holdings.json 会被 CDN 缓存，
+        // 直接读本地文件可能拿到旧版本，保存时会把台账/持仓整份覆盖掉。
+        return fetch("https://api.github.com/repos/" + gh.repo + "/contents/data/holdings.json?ref=" + gh.branch + "&t=" + Date.now(), {
+          cache: "no-store",
+          headers: { Accept: "application/vnd.github.raw" },
+        })
+          .then(function (r) { if (!r.ok) throw new Error("gh " + r.status); return r.text(); })
+          .then(function (txt) { return JSON.parse(txt); })
+          .catch(function () {
+            return fetch("data/holdings.json?t=" + Date.now()).then(function (r) { return r.json(); });
+          })
           .then(function (h) { state.holdings = h; ensureCash(); });
       })
       .then(function () {
@@ -806,7 +815,8 @@
     // 每次网页保存份额都刷新 meta.updated_at，首页「份额 N 天未更新」以它为准
     h.meta = h.meta || {};
     h.meta.updated_at = cstStamp();
-    h.meta.version = (h.meta.version || "1.2.1");
+    var pv = document.documentElement.getAttribute("data-page-version");
+    h.meta.version = pv || h.meta.version || "1.2.1";
     return h;
   }
 
