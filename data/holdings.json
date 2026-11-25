@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.4.4",
     "base_currency": "CNY",
-    "updated_at": "2026-11-24T17:17:39+08:00",
+    "updated_at": "2026-11-25T15:55:43+08:00",
     "_comment": "本文件是全维度资产统计的唯一份额来源：只需要维护每个传统标的的 shares（持有份额）与 cost_price（每份持仓成本价，按该标的币种计价），价格与市值、盈亏全部由后台 build.py 抓取并计算。"
   },
   "fx": {
@@ -37,16 +37,6 @@
       "shares": 26.9426,
       "note": "",
       "cost_price": 50.076
-    },
-    {
-      "id": "008163",
-      "name": "南方红利低波50ETF联接A",
-      "symbol": "008163",
-      "currency": "CNY",
-      "asset_class": "国内基金",
-      "shares": 13339.91,
-      "cost_price": 1.0637,
-      "note": ""
     },
     {
       "id": "VWO",
@@ -92,6 +82,18 @@
       "cost_price": 292.182,
       "currency": "USD",
       "name": "纳指100 ETF（QQQM）"
+    },
+    {
+      "date": "2026-11-25",
+      "id": "008163",
+      "shares": 13339.91,
+      "price": 1.1254,
+      "amount": "",
+      "note": "",
+      "confirmed": true,
+      "cost_price": 1.0637,
+      "currency": "CNY",
+      "name": "南方红利低波50ETF联接A"
     }
   ],
   "rtokens": {
