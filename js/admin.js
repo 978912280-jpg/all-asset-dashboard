@@ -63,6 +63,7 @@
           .then(function (r) { if (!r.ok) throw new Error("gh " + r.status); return r.text(); })
           .then(function (txt) { return JSON.parse(txt); })
           .catch(function () {
+            state.loadStale = true;   // 接口读不到，回退到可能被 CDN 缓存的本地文件
             return fetch("data/holdings.json?t=" + Date.now()).then(function (r) { return r.json(); });
           })
           .then(function (h) { state.holdings = h; ensureCash(); });
@@ -74,6 +75,9 @@
       })
       .then(function (d) { state.dashboard = d; })
       .then(function () {
+        if (state.loadStale) {
+          ghMsg("⚠ 未能读取最新数据（GitHub 接口限流或不可达），本次可能载入旧缓存；保存前会自动核对远端台账。", "warn");
+        }
         $("mode-badge").textContent = state.serverMode
           ? "本地后台模式：可直接保存并重建"
           : "静态模式：用下方 GitHub Token 直连更新";
@@ -1026,11 +1030,36 @@
       ghMsg("仓库格式应为 owner/repo", "warn");
       return false;
     }
-    setSaveBusy(true, "提交中…");
+    var data = payload();
+    // 保存前先核对远端台账：本地若基于旧缓存，可能把别人/自己刚登记的记录整个盖掉
+    var localIds = (data.trade_ledger || []).map(function (r) { return String(r.id) + "|" + String(r.date) + "|" + String(r.shares); });
+    ghFetch("/repos/" + gh.repo + "/contents/data/holdings.json?ref=" + gh.branch + "&t=" + Date.now())
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (body) {
+        var remoteLedger = [];
+        try {
+          var txt = decodeURIComponent(escape(atob(String(body.content || "").replace(/\n/g, ""))));
+          remoteLedger = (JSON.parse(txt).trade_ledger || []);
+        } catch (e) {}
+        var missing = remoteLedger.filter(function (r) {
+          return localIds.indexOf(String(r.id) + "|" + String(r.date) + "|" + String(r.shares)) < 0;
+        });
+        if (missing.length && !confirm("远端还有 " + missing.length + " 条台账记录本地没有（如 " +
+            missing[0].id + " " + missing[0].date + "）。可能是页面读到了旧缓存，继续保存会把它们删掉。仍要保存？")) {
+          setSaveBusy(false);
+          ghMsg("已取消保存：请先刷新页面重新读取最新数据。", "warn");
+          return null;
+        }
+        return doPut();
+      })
+      .catch(function () { return doPut(); });
+
+    function doPut() {
+      setSaveBusy(true, "提交中…");
     var dispatchAt = Date.now();
     ghMsg("正在提交 data/holdings.json …", "");
 
-    ghPutHoldings(payload())
+    return ghPutHoldings(data)
       .then(function (res) {
         if (res.status === 409) return ghPutHoldings(payload()); // sha 冲突时重取一次
         if (!res.ok) {
@@ -1064,6 +1093,7 @@
         toast("保存失败：" + e.message);
         setSaveBusy(false);
       });
+    }
     return true;
   }
 
