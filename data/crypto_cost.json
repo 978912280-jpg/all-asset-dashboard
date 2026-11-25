@@ -20,11 +20,11 @@
   "net_deposit": {
     "baseline_usdt": 15065.0,
     "baseline_total_usdt": 17296.0,
-    "stock_part_usdt": 3451.34,
+    "stock_part_usdt": 3906.34,
     "baseline_date": "2026-11-13",
     "deposit_after": 1947.37,
     "withdraw_after": 3781.04,
-    "computed_usdt": 12010.99,
+    "computed_usdt": 11555.99,
     "computed_total_usdt": 15462.33
   }
 }
