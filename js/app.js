@@ -1290,7 +1290,11 @@
       return '<div class="pa-group">' +
         '<div class="pa-head"><span class="pa-name">' + escapeHtml(g.name) + "</span>" +
         (function () {
-          var un = Number(g.pnl_cny || 0), re = Number(g.realized_cny || 0), tot = un + re;
+          var re = Number(g.realized_cny || 0);
+          // g.pnl_cny 已经是「未实现 + 已实现」的总额，未实现要单独取，不能再减一次
+          var un = (g.unrealized_cny === null || g.unrealized_cny === undefined)
+            ? Number(g.pnl_cny || 0) - re : Number(g.unrealized_cny);
+          var tot = Number(g.pnl_cny || 0);
           var den = Number(g.cost_cny || 0);
           var p = den ? Math.round(tot / den * 10000) / 100 : null;
           return '<span class="pa-metric">总盈亏 ' +
@@ -1325,8 +1329,14 @@
   }
 
   function totalPnlOf(pb) {
+    // 底部「未实现盈亏」只累加未实现部分，否则会把已实现算两遍
     return (pb.groups || []).filter(function (g) { return g.key !== "cash"; })
-      .reduce(function (a, g) { return a + (g.pnl_cny || 0); }, 0);
+      .reduce(function (a, g) {
+        var re = Number(g.realized_cny || 0);
+        var un = (g.unrealized_cny === null || g.unrealized_cny === undefined)
+          ? Number(g.pnl_cny || 0) - re : Number(g.unrealized_cny);
+        return a + un;
+      }, 0);
   }
   function totalDayOf(pb) {
     return (pb.groups || []).filter(function (g) { return g.key !== "cash"; })
