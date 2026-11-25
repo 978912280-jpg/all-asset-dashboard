@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.4.7",
     "base_currency": "CNY",
-    "updated_at": "2026-11-25T23:17:17+08:00",
+    "updated_at": "2026-11-25T23:34:54+08:00",
     "_comment": "本文件是全维度资产统计的唯一份额来源：只需要维护每个传统标的的 shares（持有份额）与 cost_price（每份持仓成本价，按该标的币种计价），价格与市值、盈亏全部由后台 build.py 抓取并计算。"
   },
   "fx": {
@@ -34,9 +34,9 @@
       "symbol": "QQQI",
       "currency": "USD",
       "asset_class": "美股基金",
-      "shares": 26.9426,
+      "shares": 36.9057,
       "note": "",
-      "cost_price": 50.076
+      "cost_price": 48.879
     },
     {
       "id": "VWO",
@@ -72,7 +72,7 @@
       "id": "us_stock",
       "name": "美股账户现金",
       "currency": "USD",
-      "amount_usd": 445
+      "amount_usd": 0.28
     }
   ],
   "poolx": [],
