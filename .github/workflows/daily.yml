@@ -86,8 +86,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           STAMP="$(TZ=Asia/Shanghai date +%F)"
+          # 每次构建前留一份持仓/台账快照，误覆盖时可从这里恢复
+          if [ -f data/holdings.json ]; then
+            cp data/holdings.json data/holdings_backup.json
+            COUNT=$(python3 -c 'import json;d=json.load(open("data/holdings.json"));print("传统 %d 个标的 / 台账 %d 条" % (len(d.get("traditional") or []), len(d.get("trade_ledger") or [])))')
+            echo "台账快照：$COUNT"
+          fi
           commit_if_any() {
             git add data/dashboard.json data/snapshots.json
+            if [ -f data/holdings_backup.json ]; then git add data/holdings_backup.json; fi
             # 成本账本可能因 API 未配置而不存在，单独判断，避免 pathspec 失败导致整次 add 回滚
             if [ -f data/bitget_ledger.json ]; then git add data/bitget_ledger.json; fi
             if [ -f data/bitget_account.json ]; then git add data/bitget_account.json; fi
