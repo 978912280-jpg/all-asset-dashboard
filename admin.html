@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-version="1.4.4">
+<html lang="zh-CN" data-page-version="1.4.5">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -41,9 +41,9 @@
   })();
   </script>
   <link rel="stylesheet" href="css/style.css?v=20261112a">
-  <link rel="stylesheet" href="css/admin.css?v=1.4.4">
+  <link rel="stylesheet" href="css/admin.css?v=1.4.5">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-  <script src="js/admin.js?v=1.4.4" defer></script>
+  <script src="js/admin.js?v=1.4.5" defer></script>
   <style>
     /* 传统交易台账：卡片式录入，窄屏不横向滚动 */
     .ledger-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
@@ -144,10 +144,17 @@
       </div>
       <div class="cash-form" id="cash-form">
         <label>支付宝现金（CNY）
-          <input id="alipay-amount" type="number" step="0.01" min="0" placeholder="0.00" aria-label="支付宝现金金额">
+          <input id="alipay-amount" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0.00" aria-label="支付宝现金金额">
         </label>
         <span class="cash-note" id="alipay-pill">—</span>
       </div>
+      <div class="cash-form" id="usd-cash-form">
+        <label>美股账户现金（USD）
+          <input id="usd-cash-amount" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0.00" aria-label="美股账户现金余额">
+        </label>
+        <span class="cash-note" id="usd-cash-pill">—</span>
+      </div>
+      <p class="card-desc" style="margin:8px 0 0">美股账户里没买成股票 / 还没转成 rToken 的美元余额填这里，构建时按当日汇率折成人民币，和支付宝现金一起归入「现金」。</p>
     </section>
 
     <section class="card">

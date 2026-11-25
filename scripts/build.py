@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.4.4"
+PAGE_VERSION = "1.4.5"
 PAGE_DATE = ""  # 留空则使用构建当天日期，避免版本括号里的日期长期不变
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -1084,14 +1084,20 @@ def main():
 
     # 手工维护的现金账户（支付宝余额等），与稳定币一起计入「现金」组
     cash_rows = []
+    cash_detail = []
     for ca in (holdings.get("cash_accounts") or []):
         cur = str(ca.get("currency") or "CNY").upper()
-        if cur == "USD":
-            amt = float(ca.get("amount_usd") or 0) * rate
-        else:
-            amt = float(ca.get("amount_cny") or 0)
+        native = float(ca.get("amount_usd") or 0) if cur == "USD" else float(ca.get("amount_cny") or 0)
+        amt = native * rate if cur == "USD" else native
         if amt <= 0:
             continue
+        cash_detail.append({
+            "id": str(ca.get("id") or ca.get("name")),
+            "name": ca.get("name") or ("美股账户现金" if cur == "USD" else "支付宝现金"),
+            "currency": cur,
+            "amount": r2(native, 2),
+            "value_cny": r2(amt, 2),
+        })
         cash_rows.append({
             "id": str(ca.get("id") or ca.get("name")),
             "name": ca.get("name") or "支付宝现金",
@@ -1411,6 +1417,7 @@ def main():
             "cash_cny": r2(cash_cny, 2),
             "stable_cash_cny": r2(stable_cash_cny, 2),
             "fiat_cash_cny": r2(fiat_cash_cny, 2),
+            "cash_detail": cash_detail,
             "crypto_account_cny": r2(crypto_account_cny, 2),
             "traditional_weight": weight(trad_cny),
             "crypto_weight": weight(crypto_cny),

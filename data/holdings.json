@@ -1,145 +1,149 @@
 {
-  "meta": {
-    "version": "1.4.4",
-    "base_currency": "CNY",
-    "updated_at": "2026-11-25T22:48:28+08:00",
-    "_comment": "本文件是全维度资产统计的唯一份额来源：只需要维护每个传统标的的 shares（持有份额）与 cost_price（每份持仓成本价，按该标的币种计价），价格与市值、盈亏全部由后台 build.py 抓取并计算。"
+ "meta": {
+  "version": "1.4.5",
+  "base_currency": "CNY",
+  "updated_at": "2026-11-24T01:36:34+08:00",
+  "_comment": "本文件是全维度资产统计的唯一份额来源：只需要维护每个传统标的的 shares（持有份额）与 cost_price（每份持仓成本价，按该标的币种计价），价格与市值、盈亏全部由后台 build.py 抓取并计算。"
+ },
+ "fx": {
+  "usdcny_fallback": 7.12,
+  "_comment": "USD/USDT → CNY 汇率：优先联网抓取，失败时使用此兜底值。"
+ },
+ "crypto": {
+  "enabled": true,
+  "asset_class": "加密货币",
+  "source_url": "https://978912280-jpg.github.io/bitget-pnl-dashboard/data/history.json",
+  "include_coins": [],
+  "exclude_coins": [],
+  "_comment": "加密货币资产直接抓取『加密货币资产仪表台』(bitget-pnl-dashboard) 的最新快照，现货+理财合并，无需在本文件维护币的份额；include_coins 为空表示统计全部币种。"
+ },
+ "traditional": [
+  {
+   "id": "VOO",
+   "name": "标普500 ETF（VOO）",
+   "symbol": "VOO",
+   "currency": "USD",
+   "asset_class": "美股基金",
+   "shares": 1.6694,
+   "note": "",
+   "cost_price": 694.902
   },
-  "fx": {
-    "usdcny_fallback": 7.12,
-    "_comment": "USD/USDT → CNY 汇率：优先联网抓取，失败时使用此兜底值。"
+  {
+   "id": "QQQI",
+   "name": "纳指100高收益 ETF（QQQI）",
+   "symbol": "QQQI",
+   "currency": "USD",
+   "asset_class": "美股基金",
+   "shares": 26.9426,
+   "note": "",
+   "cost_price": 50.076
   },
-  "crypto": {
-    "enabled": true,
-    "asset_class": "加密货币",
-    "source_url": "https://978912280-jpg.github.io/bitget-pnl-dashboard/data/history.json",
-    "include_coins": [],
-    "exclude_coins": [],
-    "_comment": "加密货币资产直接抓取『加密货币资产仪表台』(bitget-pnl-dashboard) 的最新快照，现货+理财合并，无需在本文件维护币的份额；include_coins 为空表示统计全部币种。"
+  {
+   "id": "008163",
+   "name": "南方红利低波50ETF联接A",
+   "symbol": "008163",
+   "currency": "CNY",
+   "asset_class": "国内基金",
+   "shares": 13339.91,
+   "cost_price": 1.0637,
+   "note": ""
   },
-  "traditional": [
-    {
-      "id": "VOO",
-      "name": "标普500 ETF（VOO）",
-      "symbol": "VOO",
-      "currency": "USD",
-      "asset_class": "美股基金",
-      "shares": 1.6694,
-      "note": "",
-      "cost_price": 694.902
-    },
-    {
-      "id": "QQQI",
-      "name": "纳指100高收益 ETF（QQQI）",
-      "symbol": "QQQI",
-      "currency": "USD",
-      "asset_class": "美股基金",
-      "shares": 26.9426,
-      "note": "",
-      "cost_price": 50.076
-    },
-    {
-      "id": "VWO",
-      "name": "富时新兴市场指数",
-      "symbol": "VWO",
-      "currency": "USD",
-      "asset_class": "美股基金",
-      "shares": 1,
-      "cost_price": 57.22,
-      "note": "",
-      "added_at": "2026-11-12"
-    },
-    {
-      "id": "VEA",
-      "name": "富时发达市场指数",
-      "symbol": "VEA",
-      "currency": "USD",
-      "asset_class": "美股基金",
-      "shares": 1,
-      "cost_price": 69.9,
-      "note": "",
-      "added_at": "2026-11-12"
-    }
-  ],
-  "cash_accounts": [
-    {
-      "id": "alipay",
-      "name": "支付宝现金",
-      "currency": "CNY",
-      "amount_cny": 11594
-    }
-  ],
-  "poolx": [],
-  "trade_ledger": [
-    {
-      "date": "2026-11-24",
-      "id": "QQQM",
-      "shares": 2.9753,
-      "price": 268.0504,
-      "amount": "",
-      "note": "",
-      "confirmed": true,
-      "cost_price": 292.182,
-      "currency": "USD",
-      "name": "纳指100 ETF（QQQM）"
-    },
-    {
-      "date": "2026-11-25",
-      "id": "008163",
-      "shares": 13339.91,
-      "price": 1.1254,
-      "amount": "",
-      "note": "",
-      "confirmed": true,
-      "cost_price": 1.0637,
-      "currency": "CNY",
-      "name": "南方红利低波50ETF联接A"
-    }
-  ],
-  "rtokens": {
-    "enabled": true,
-    "_comment": "代币化美股（Bitget Stock Plus rToken）。份额与成本价都由 scripts/bitget_rtoken.py 从 Bitget 现货份额 + 成交/闪兑记录自动算出（写入 data/rtoken.json），本块无需手填；cost_price 仅在某笔成交抓不到时兜底；cost_since 为成本累计起点（卖出正股换 rToken 的日期）。",
-    "tickers": [
-      "NVDA",
-      "TSLA",
-      "AAPL",
-      "MSFT",
-      "AMZN",
-      "GOOGL",
-      "GOOG",
-      "META",
-      "AVGO",
-      "AMD",
-      "NFLX",
-      "SPY",
-      "QQQ",
-      "VOO",
-      "COIN",
-      "MSTR",
-      "PLTR",
-      "TSM",
-      "BABA",
-      "JPM",
-      "V",
-      "MA",
-      "KO",
-      "PEP",
-      "DIS",
-      "INTC",
-      "ORCL",
-      "CRM",
-      "UBER",
-      "SHOP",
-      "HOOD",
-      "ARM",
-      "MU",
-      "SMCI",
-      "ASML",
-      "SONY"
-    ],
-    "extra_tickers": [],
-    "cost_price": {},
-    "manual": [],
-    "cost_since": "2026-11-23"
+  {
+   "id": "VWO",
+   "name": "富时新兴市场指数",
+   "symbol": "VWO",
+   "currency": "USD",
+   "asset_class": "美股基金",
+   "shares": 1,
+   "cost_price": 57.22,
+   "note": "",
+   "added_at": "2026-11-12"
+  },
+  {
+   "id": "VEA",
+   "name": "富时发达市场指数",
+   "symbol": "VEA",
+   "currency": "USD",
+   "asset_class": "美股基金",
+   "shares": 1,
+   "cost_price": 69.9,
+   "note": "",
+   "added_at": "2026-11-12"
   }
+ ],
+ "cash_accounts": [
+  {
+   "id": "alipay",
+   "name": "支付宝现金",
+   "currency": "CNY",
+   "amount_cny": 31447.0
+  },
+  {
+   "id": "us_stock",
+   "name": "美股账户现金",
+   "currency": "USD",
+   "amount_usd": 0.0
+  }
+ ],
+ "poolx": [],
+ "trade_ledger": [
+  {
+   "date": "2026-11-24",
+   "id": "QQQM",
+   "shares": 2.9753,
+   "price": 268.0504,
+   "amount": "",
+   "note": "",
+   "confirmed": true,
+   "cost_price": 292.182,
+   "currency": "USD",
+   "name": "纳指100 ETF（QQQM）"
+  }
+ ],
+ "rtokens": {
+  "enabled": true,
+  "_comment": "代币化美股（Bitget Stock Plus rToken）。份额与成本价都由 scripts/bitget_rtoken.py 从 Bitget 现货份额 + 成交/闪兑记录自动算出（写入 data/rtoken.json），本块无需手填；cost_price 仅在某笔成交抓不到时兜底；cost_since 为成本累计起点（卖出正股换 rToken 的日期）。",
+  "tickers": [
+   "NVDA",
+   "TSLA",
+   "AAPL",
+   "MSFT",
+   "AMZN",
+   "GOOGL",
+   "GOOG",
+   "META",
+   "AVGO",
+   "AMD",
+   "NFLX",
+   "SPY",
+   "QQQ",
+   "VOO",
+   "COIN",
+   "MSTR",
+   "PLTR",
+   "TSM",
+   "BABA",
+   "JPM",
+   "V",
+   "MA",
+   "KO",
+   "PEP",
+   "DIS",
+   "INTC",
+   "ORCL",
+   "CRM",
+   "UBER",
+   "SHOP",
+   "HOOD",
+   "ARM",
+   "MU",
+   "SMCI",
+   "ASML",
+   "SONY"
+  ],
+  "extra_tickers": [],
+  "cost_price": {},
+  "manual": [],
+  "cost_since": "2026-11-23"
+ }
 }

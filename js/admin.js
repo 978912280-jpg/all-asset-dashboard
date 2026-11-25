@@ -217,42 +217,63 @@
   }
 
 
+  var CASH_DEFS = {
+    alipay: { name: "支付宝现金", currency: "CNY", field: "amount_cny" },
+    us_stock: { name: "美股账户现金", currency: "USD", field: "amount_usd" },
+  };
+
   function ensureCash() {
-    if (!state.holdings.cash_accounts || !state.holdings.cash_accounts.length) {
-      state.holdings.cash_accounts = [{
-        id: "alipay", name: "支付宝现金", currency: "CNY", amount_cny: 0,
-      }];
-    }
+    if (!Array.isArray(state.holdings.cash_accounts)) state.holdings.cash_accounts = [];
+    Object.keys(CASH_DEFS).forEach(function (id) {
+      var d = CASH_DEFS[id];
+      if (!state.holdings.cash_accounts.some(function (c) { return c && c.id === id; })) {
+        var row = { id: id, name: d.name, currency: d.currency };
+        row[d.field] = 0;
+        state.holdings.cash_accounts.push(row);
+      }
+    });
   }
 
   function cashBy(id) {
     ensureCash();
+    var d = CASH_DEFS[id] || { name: "现金", currency: "CNY", field: "amount_cny" };
     var list = state.holdings.cash_accounts;
     var hit = list.filter(function (c) { return c.id === id; })[0];
     if (!hit) {
-      hit = { id: "alipay", name: "支付宝现金", currency: "CNY", amount_cny: 0 };
+      hit = { id: id, name: d.name, currency: d.currency };
+      hit[d.field] = 0;
       list.push(hit);
     }
     return hit;
   }
 
+  function cashVal(id) {
+    var c = cashBy(id);
+    return Number(c[CASH_DEFS[id] ? CASH_DEFS[id].field : "amount_cny"]) || 0;
+  }
+
   function renderCash() {
-    var a = cashBy("alipay");
-    var av = Number(a.amount_cny) || 0;
-    var inp = $("alipay-amount");
-    if (inp && document.activeElement !== inp) inp.value = av ? String(av) : "";
-    var pill = $("alipay-pill");
-    if (pill) pill.textContent = av > 0 ? "当前 ¥" + num(av, 2) : "未填写则不计入现金";
+    [["alipay", "alipay-amount", "alipay-pill", "¥"],
+     ["us_stock", "usd-cash-amount", "usd-cash-pill", "$"]].forEach(function (t) {
+      var v = cashVal(t[0]);
+      var inp = $(t[1]);
+      if (inp && document.activeElement !== inp) inp.value = v ? String(v) : "";
+      var pill = $(t[2]);
+      if (pill) pill.textContent = v > 0 ? "当前 " + t[3] + num(v, 2) : "未填写则不计入现金";
+    });
   }
 
   function bindCash() {
-    var inp = $("alipay-amount");
-    if (!inp) return;
-    inp.addEventListener("input", function () {
-      var v = Number(inp.value);
-      cashBy("alipay").amount_cny = isNaN(v) ? 0 : Math.max(0, v);
-      markDirty();
-      renderCash();
+    [["alipay", "alipay-amount"], ["us_stock", "usd-cash-amount"]].forEach(function (t) {
+      var inp = $(t[1]);
+      if (!inp) return;
+      inp.addEventListener("input", function () {
+        var v = Number(inp.value);
+        var c = cashBy(t[0]);
+        c[CASH_DEFS[t[0]].field] = isNaN(v) ? 0 : Math.max(0, v);
+        markDirty();
+        renderCash();
+      });
     });
   }
 

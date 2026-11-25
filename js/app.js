@@ -332,7 +332,12 @@
         value: money(s.cash_cny || 0),
         small: true,
         delta: '<span class="muted">稳定币 ≈ $' + num((s.stable_cash_cny || 0) / (fxRate || 1), 2) + " USDT</span>" +
-          ((s.fiat_cash_cny ? '<br><span class="muted">支付宝现金 ¥' + num(s.fiat_cash_cny, 2) + "</span>" : "")),
+          ((s.cash_detail && s.cash_detail.length)
+            ? s.cash_detail.map(function (c) {
+                return '<br><span class="muted">' + escapeHtml(c.name || "现金") + " " +
+                  (c.currency === "USD" ? "$" : "¥") + num(c.amount, 2) + "</span>";
+              }).join("")
+            : (s.fiat_cash_cny ? '<br><span class="muted">现金余额 ¥' + num(s.fiat_cash_cny, 2) + "</span>" : "")),
       },
     ];
     $("kpi-grid").innerHTML = cards.map(function (c) {
