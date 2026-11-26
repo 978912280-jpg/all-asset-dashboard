@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.4.8",
     "base_currency": "CNY",
-    "updated_at": "2026-11-25T23:34:54+08:00",
+    "updated_at": "2026-11-26T22:41:01+08:00",
     "_comment": "本文件是全维度资产统计的唯一份额来源：只需要维护每个传统标的的 shares（持有份额）与 cost_price（每份持仓成本价，按该标的币种计价），价格与市值、盈亏全部由后台 build.py 抓取并计算。"
   },
   "fx": {
@@ -66,7 +66,7 @@
       "id": "alipay",
       "name": "支付宝现金",
       "currency": "CNY",
-      "amount_cny": 11594
+      "amount_cny": 667
     },
     {
       "id": "us_stock",
