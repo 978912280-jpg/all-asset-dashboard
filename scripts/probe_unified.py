@@ -20,13 +20,12 @@ SECRET = os.environ.get("BITGET_SECRET")
 PASS = os.environ.get("BITGET_PASSPHRASE")
 
 CANDIDATES = [
-    ("V3-现金宝持仓", "/api/v3/earn/cashplus/positions", {}),
-    ("V3-链上精选资产", "/api/v3/earn/elite-assets", {}),
-    ("V3-理财资产A", "/api/v3/earn/assets", {}),
-    ("V3-理财资产B", "/api/v3/earn/account/positions", {}),
-    ("V3-理财资产C", "/api/v3/earn/savings/assets", {}),
-    ("V3-账户信息", "/api/v3/account/info", {}),
-    ("V3-资金账户(无参数)", "/api/v3/account/funding-assets", {}),
+    ("V3-流水SPOT", "/api/v3/account/financial-records", {"category": "SPOT", "startTime": "%d" % (NOW - 7*86400*1000), "endTime": "%d" % NOW, "limit": "50"}),
+    ("V3-流水OTHER", "/api/v3/account/financial-records", {"category": "OTHER", "startTime": "%d" % (NOW - 7*86400*1000), "endTime": "%d" % NOW, "limit": "50"}),
+    ("V3-流水COIN", "/api/v3/account/financial-records", {"category": "COIN-FUTURES", "startTime": "%d" % (NOW - 7*86400*1000), "endTime": "%d" % NOW, "limit": "50"}),
+    ("V3-闪兑记录", "/api/v3/account/convert-records", {"startTime": "%d" % (NOW - 7*86400*1000), "endTime": "%d" % NOW, "limit": "50"}),
+    ("V3-充值记录", "/api/v3/account/deposit-records", {"startTime": "%d" % (NOW - 7*86400*1000), "endTime": "%d" % NOW, "limit": "50"}),
+    ("V3-提现记录", "/api/v3/account/withdrawal-records", {"startTime": "%d" % (NOW - 7*86400*1000), "endTime": "%d" % NOW, "limit": "50"}),
 ]
 
 
