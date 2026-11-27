@@ -1,5 +1,5 @@
 {
- "updated_at": "2026-11-28T05:30:29+08:00",
+ "updated_at": "2026-11-28T05:39:18+08:00",
  "window": {
   "start": "2026-09-01",
   "end": "2026-11-28"
@@ -4985,11 +4985,11 @@
  "net_deposit": {
   "baseline_usdt": 15065.0,
   "baseline_total_usdt": 17296.0,
-  "stock_part_usdt": 3906.34,
+  "stock_part_usdt": 3159.33,
   "baseline_date": "2026-11-13",
   "deposit_after": 3575.75,
   "withdraw_after": 3812.04,
-  "computed_usdt": 13153.37,
+  "computed_usdt": 13900.38,
   "computed_total_usdt": 17059.71
  },
  "counts": {
