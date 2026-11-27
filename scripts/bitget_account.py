@@ -66,10 +66,15 @@ def fetch_v3(key, secret, passphrase, log=print):
     except Exception as e:  # noqa: BLE001
         log("      [warn] v3 资产接口失败：%s" % str(e)[:90])
 
+    profit = {}
     try:
         data = L._get(V3_SAVINGS, {}, key, secret, passphrase, timeout=20)
         rs = (data.get("resultList") if isinstance(data, dict) else None) or []
         raw["savings"] = {"count": len(rs)}
+        for r in rs:
+            c = str(r.get("productCoin") or r.get("coin") or "").upper()
+            if c:
+                profit[c] = round(profit.get(c, 0.0) + _num(r.get("totalProfit")), 10)
         for r in rs:
             if str(r.get("status") or "") not in ("in_holding", ""):
                 continue
@@ -90,6 +95,7 @@ def fetch_v3(key, secret, passphrase, log=print):
         except Exception as e:  # noqa: BLE001
             log("      [warn] v3 持仓接口(%s)失败：%s" % (ptype, str(e)[:80]))
 
+    raw["earn_profit"] = profit
     return (coins, raw, "uta") if ok else (None, raw, None)
 
 
@@ -142,6 +148,7 @@ def main():
         "updated_at": datetime.now(CST).strftime("%Y-%m-%dT%H:%M:%S+08:00"),
         "source": "bitget_account",
         "mode": mode,
+        "earn_profit": (raw or {}).get("earn_profit") or {},
         "coins": {c: {k: round(vv, 10) for k, vv in d.items()} for c, d in sorted(coins.items())},
     }
     OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

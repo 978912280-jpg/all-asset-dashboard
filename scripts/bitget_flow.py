@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 """Bitget 流水归档：交易 / 理财生息 / 出入金 / 内部划转。
 
-数据来源全部是 Bitget 只读接口：
+统一账户（UTA）下经典 v2 接口返回 40085，本脚本优先走 v3：
+  - /api/v3/trade/fills                     成交
+  - /api/v3/account/financial-records       账户流水（SPOT / OTHER 两类）
+  - /api/v3/account/deposit-records         链上充值（30 天窗口）
+  - /api/v3/account/withdrawal-records      链上提现（30 天窗口）
+  - /api/v3/earn/savings/assets             理财累计收益（用于推算每日生息）
+历史数据：每次只按窗口抓增量，与 crypto_events.json 已有记录按 ref 合并，旧记录永不丢弃。
+
+v2 接口（仅在未升级统一账户时使用）：
   - /api/v2/spot/trade/fills              成交（交易记录）
   - /api/v2/spot/account/bills            账户账单（生息、划转、闪兑、空投）
   - /api/v2/spot/wallet/deposit-records    链上充值（外部入金）
@@ -91,6 +99,89 @@ def value_usdt(coin, qty, prices):
     if not p:
         return None
     return round(qty * p, 6)
+
+
+V3_OTHER_TYPES = {
+    "TRANSFER_IN": ("transfer", "账户间划转"),
+    "TRANSFER_OUT": ("transfer", "账户间划转"),
+    "FINANCIAL_TRANSFER_IN": ("transfer", "理财账户划入"),
+    "FINANCIAL_TRANSFER_OUT": ("transfer", "理财账户划出"),
+    "SMALL_ASSET_SOURCE_TOKEN_USER_OUT": ("trade_bill", "闪兑"),
+    "SMALL_ASSET_TARGET_TOKEN_USER_IN": ("trade_bill", "闪兑"),
+}
+V3_SPOT_TYPES = {
+    "ORDER_DEALT_IN": ("trade_bill", "买入"),
+    "ORDER_DEALT_OUT": ("trade_bill", "卖出"),
+    "ORDER_PLF_FEE_OUT": ("trade_bill", "手续费"),
+}
+
+
+def pull_financial_records(category, key, secret, passphrase, start_ms, end_ms, log=print):
+    """v3 账户流水：7 天切片 + cursor 翻页。"""
+    out, cur = [], start_ms
+    while cur < end_ms:
+        nxt = min(cur + 7 * 86400 * 1000, end_ms)
+        cursor, pages = None, 0
+        while pages < 20:
+            params = {"category": category, "startTime": str(cur), "endTime": str(nxt), "limit": "100"}
+            if cursor:
+                params["cursor"] = cursor
+            try:
+                data = L._get("/api/v3/account/financial-records", params, key, secret, passphrase, timeout=20)
+            except Exception as e:  # noqa: BLE001
+                log("      [warn] v3 流水(%s) %s~%s：%s" % (category, dstr(cur, "%m-%d"), dstr(nxt, "%m-%d"), str(e)[:80]))
+                break
+            rows = (data.get("list") if isinstance(data, dict) else None) or []
+            if not rows:
+                break
+            out.extend(rows)
+            cursor = (data.get("cursor") if isinstance(data, dict) else None) or rows[-1].get("id")
+            pages += 1
+            if len(rows) < 100 or not cursor:
+                break
+            time.sleep(0.08)
+        cur = nxt
+    return out
+
+
+def bill_from_v3(r, category):
+    """把 v3 流水记录规范成旧账单形状，交给 classify_bill 之后的分支复用。"""
+    t = str(r.get("type") or "").upper()
+    mapping = V3_SPOT_TYPES if category == "SPOT" else V3_OTHER_TYPES
+    kind = mapping.get(t)
+    if not kind:
+        return None
+    return {
+        "billId": r.get("id"),
+        "bizOrderId": r.get("id"),
+        "coin": str(r.get("coin") or "").upper(),
+        "size": r.get("amount"),
+        "cTime": r.get("ts"),
+        "_board": kind[0],
+        "_sub": kind[1],
+        "_type": t,
+    }
+
+
+def pull_v3_wallet(path, key, secret, passphrase, start_ms, end_ms, log=print):
+    """v3 充提记录：接口限制时间区间，按 10 天切片。"""
+    out, cur = [], start_ms
+    while cur < end_ms:
+        nxt = min(cur + 10 * 86400 * 1000, end_ms)
+        try:
+            rows = L._get(path, {"startTime": str(cur), "endTime": str(nxt), "limit": "20"},
+                          key, secret, passphrase, timeout=20)
+        except Exception as e:  # noqa: BLE001
+            log("      [warn] v3 %s %s~%s：%s" % (path.split("/")[-1], dstr(cur, "%m-%d"), dstr(nxt, "%m-%d"), str(e)[:80]))
+            cur = nxt
+            continue
+        for r in rows or []:
+            if str(r.get("status") or "success").lower() != "success":
+                continue
+            out.append(r)
+        cur = nxt
+        time.sleep(0.08)
+    return out
 
 
 def pull_bills(key, secret, passphrase, start_ms, end_ms, log=print):
@@ -246,14 +337,42 @@ def main():
         })
     print("      成交：%d 笔" % len(trades))
 
-    # ---- 账单（生息 / 划转 / 闪兑 / 空投） ----
-    bills = pull_bills(key, secret, passphrase, start, now)
+    # ---- 账单（生息 / 划转 / 闪兑 / 空投）：UTA 下走 v3 流水，经典账户回退 v2 ----
     earn, transfers, misc_trades = [], [], []
+    stock_total_v3 = 0.0
+    bills = []
+    v3_ok = False
+    try:
+        rows_v3 = []
+        for cat in ("SPOT", "OTHER"):
+            rows_v3 += pull_financial_records(cat, key, secret, passphrase, start, now)
+        keep = 0
+        for r in rows_v3:
+            cat = str(r.get("category") or "OTHER").upper()
+            b = bill_from_v3(r, "SPOT" if cat == "SPOT" else "OTHER")
+            if b:
+                bills.append(b)
+                keep += 1
+            t = str(r.get("type") or "").upper()
+            if t in ("STOCK_USER_DEPOSIT_OUT", "STOCK_USER_DEPOSIT_IN"):
+                stock_total_v3 += abs(num(r.get("amount")))
+        v3_ok = True
+        print("      v3 流水：%d 条（可用业务 %d 条）" % (len(rows_v3), keep))
+    except Exception as e:  # noqa: BLE001
+        print("      [warn] v3 流水失败，回退 v2 账单：%s" % str(e)[:90])
+
+    if not v3_ok:
+        bills = [r for r in pull_bills(key, secret, passphrase, start, now)
+                 if str(r.get("businessType") or "").upper() != "DEDUCTION_HANDLING_FEE"]
+
     for r in bills:
-        kind = classify_bill(r)
-        if not kind:
-            continue
-        board, sub = kind
+        if v3_ok:
+            board, sub = r["_board"], r["_sub"]
+        else:
+            kind = classify_bill(r)
+            if not kind:
+                continue
+            board, sub = kind
         coin = str(r.get("coin") or "").upper()
         qty = num(r.get("size"))
         if board == "earn":
@@ -266,12 +385,37 @@ def main():
                 "coin": coin, "qty": abs(qty), "value_usdt": None if _v is None else abs(_v),
                 "kind": sub, "ref": r.get("bizOrderId") or r.get("billId"),
             })
-        elif board == "trade_bill" and sub == "闪兑":
+        elif board == "trade_bill" and sub in ("闪兑", "手续费"):
             misc_trades.append({
                 "date": dstr(r.get("cTime")), "coin": coin, "qty": qty,
                 "value_usdt": value_usdt(coin, qty, prices),
-                "kind": "闪兑", "ref": r.get("bizOrderId") or r.get("billId"),
+                "kind": sub, "ref": r.get("bizOrderId") or r.get("billId"),
             })
+
+    EARN_BASE_NEW = None
+    # 统一账户不提供派息流水，用 savings 的累计 totalProfit 差值推算当日生息
+    if v3_ok:
+        try:
+            acct = json.loads((DATA / "bitget_account.json").read_text(encoding="utf-8"))
+            profits = {str(k).upper(): float(v or 0) for k, v in (acct.get("earn_profit") or {}).items()}
+            prev_cost = {}
+            try:
+                prev_cost = json.loads(COST.read_text(encoding="utf-8"))
+            except (ValueError, OSError):
+                prev_cost = {}
+            base_p = (prev_cost.get("earn_profit_baseline") or {}).get("profits") or {}
+            today = datetime.now(CST).strftime("%Y-%m-%d")
+            for coin, tot in profits.items():
+                delta = round(tot - float(base_p.get(coin) or 0), 10)
+                if delta > 0:
+                    v = value_usdt(coin, delta, prices)
+                    earn.append({"day": today, "coin": coin, "qty": delta, "value_usdt": v})
+            if profits:
+                EARN_BASE_NEW = {"date": today, "profits": profits}
+                print("      理财累计收益推算当日生息：%s" % "、".join(
+                    "%s %.8f" % (c, p) for c, p in profits.items()))
+        except (ValueError, OSError) as e:
+            print("      [warn] 生息推算跳过：%s" % str(e)[:80])
 
     # 生息按「日 + 币 + 类型」聚合，页面只吃日汇总
     agg = {}
@@ -286,28 +430,34 @@ def main():
     earn_daily = sorted(agg.values(), key=lambda x: (x["day"], x["coin"]), reverse=True)
 
     # ---- 出入金（链上充提） ----
-    deps = pull_records("/api/v2/spot/wallet/deposit-records", key, secret, passphrase, start, now)
-    wds = pull_records("/api/v2/spot/wallet/withdrawal-records", key, secret, passphrase, start, now)
+    deps, wds = [], []
+    if v3_ok:
+        deps = pull_v3_wallet("/api/v3/account/deposit-records", key, secret, passphrase, start, now)
+        wds = pull_v3_wallet("/api/v3/account/withdrawal-records", key, secret, passphrase, start, now)
+    else:
+        deps = pull_records("/api/v2/spot/wallet/deposit-records", key, secret, passphrase, start, now)
+        wds = pull_records("/api/v2/spot/wallet/withdrawal-records", key, secret, passphrase, start, now)
     flows = []
     for r in deps:
         coin = str(r.get("coin") or "").upper()
-        flows.append({"date": dstr(r.get("cTime")), "day": day(r.get("cTime")), "coin": coin,
+        _t = r.get("createdTime") or r.get("cTime")
+        flows.append({"date": dstr(_t), "day": day(_t), "coin": coin,
                       "qty": num(r.get("size")), "value_usdt": value_usdt(coin, num(r.get("size")), prices),
                       "direction": "入金", "channel": r.get("chain") or r.get("dest") or "",
-                      "ref": r.get("orderId") or r.get("tradeId")})
+                      "ref": r.get("orderId") or r.get("recordId") or r.get("tradeId")})
     for r in wds:
         coin = str(r.get("coin") or "").upper()
-        flows.append({"date": dstr(r.get("cTime")), "day": day(r.get("cTime")), "coin": coin,
+        _t = r.get("createdTime") or r.get("cTime")
+        flows.append({"date": dstr(_t), "day": day(_t), "coin": coin,
                       "qty": num(r.get("size")), "value_usdt": value_usdt(coin, num(r.get("size")), prices),
                       "direction": "出金", "channel": r.get("chain") or "",
-                      "ref": r.get("orderId") or r.get("tradeId")})
+                      "ref": r.get("orderId") or r.get("recordId") or r.get("tradeId")})
     flows.sort(key=lambda x: x["date"], reverse=True)
     print("      出入金：%d 笔（入 %d / 出 %d）" % (
         len(flows), len(deps), len(wds)))
 
-    # ---- 内部划转（账户间，按币种查） ----
-    coins = ["USDC", "USDT", "BTC", "SOL", "BGB"]
-    raw_tr = pull_transfers(key, secret, passphrase, start, now, coins)
+    # ---- 内部划转：v3 下已由流水 TRANSFER_*/FINANCIAL_TRANSFER_* 覆盖，只有经典账户才额外查 ----
+    raw_tr = [] if v3_ok else pull_transfers(key, secret, passphrase, start, now, ["USDC", "USDT", "BTC", "SOL", "BGB"])
     for r in raw_tr:
         ft, tt = str(r.get("fromType")), str(r.get("toType"))
         coin = str(r.get("coin") or "").upper()
@@ -339,16 +489,24 @@ def main():
         base_date = nd.get("baseline_date") or BASELINE_DATE
     except (ValueError, OSError):
         pass
+    if EARN_BASE_NEW:
+        cost["earn_profit_baseline"] = EARN_BASE_NEW
 
     # 划入美股账户金额：以账单 STOCK_USER_DEPOSIT_OUT 为准（transferRecords 只覆盖 uta/spot 互转，
     # 会漏掉部分划出记录，导致口径偏小）。这是唯一权威来源。
     stock_total = 0.0
-    for b in bills:
-        if str(b.get("businessType") or "").upper() == "STOCK_USER_DEPOSIT_OUT":
-            try:
-                stock_total += abs(float(b.get("size") or 0))
-            except (TypeError, ValueError):
-                continue
+    if v3_ok:
+        stock_total = stock_total_v3
+        if stock_total <= 0:
+            stock_total = float((cost.get("net_deposit") or {}).get("stock_part_usdt") or 0)
+            print("      [warn] v3 流水未返回划入美股记录，沿用上次口径：%.2f USDT" % stock_total)
+    else:
+        for b in bills:
+            if str(b.get("businessType") or "").upper() == "STOCK_USER_DEPOSIT_OUT":
+                try:
+                    stock_total += abs(float(b.get("size") or 0))
+                except (TypeError, ValueError):
+                    continue
     print("      划入美股账户（账单口径）：%.2f USDT" % stock_total)
 
     dep_after = sum((f["value_usdt"] or 0) for f in flows
@@ -359,6 +517,49 @@ def main():
     stock_part = round(stock_total, 2)
     # 加密账户口径 = 总净入金 − 全部划入美股（不再用基准日那一个静态值，避免漏算基准日后的划出）
     net = round(net_total - stock_part, 2) if stock_part else round(baseline + dep_after - wd_after, 2)
+
+    # ---- 与历史归档合并：窗口外/接口读不到旧记录一律保留 ----
+    def _merge(new_items, old_items, key_fn):
+        have = {key_fn(x) for x in new_items}
+        kept = [x for x in old_items if key_fn(x) not in have]
+        if kept:
+            print("      保留历史记录：%d 条" % len(kept))
+        return new_items + kept
+
+    prev = {}
+    try:
+        prev = json.loads(EVENTS.read_text(encoding="utf-8")) or {}
+    except (ValueError, OSError):
+        prev = {}
+
+    def k_trade(x):
+        return x.get("ref") or "|".join(str(x.get(k)) for k in ("date", "symbol", "side", "qty"))
+
+    def k_flow(x):
+        return x.get("ref") or "|".join(str(x.get(k)) for k in ("date", "coin", "direction", "qty"))
+
+    def k_tr(x):
+        return x.get("ref") or "|".join(str(x.get(k)) for k in ("date", "coin", "kind", "qty"))
+
+    def k_misc(x):
+        return x.get("ref") or "|".join(str(x.get(k)) for k in ("date", "coin", "kind", "qty"))
+
+    trades = _merge(trades, prev.get("trades") or [], k_trade)
+    flows = _merge(flows, prev.get("flows") or [], k_flow)
+    transfers = _merge(transfers, prev.get("transfers") or [], k_tr)
+    misc_trades = _merge(misc_trades, prev.get("misc") or [], k_misc)
+    earn_daily = _merge(earn_daily, prev.get("earn_daily") or [],
+                        lambda x: "%s|%s" % (x.get("day"), x.get("coin")))
+
+    # 合并后再算一次净入金，确保窗口外的历史充提也算进净入金
+    dep_after = sum((f["value_usdt"] or 0) for f in flows
+                    if f["direction"] == "入金" and f["day"] > base_date)
+    wd_after = sum((f["value_usdt"] or 0) for f in flows
+                   if f["direction"] == "出金" and f["day"] > base_date)
+    net_total = round(baseline_total + dep_after - wd_after, 2)
+    stock_part = round(stock_total, 2)
+    net = round(net_total - stock_part, 2) if stock_part else round(baseline + dep_after - wd_after, 2)
+
 
     payload = {
         "updated_at": datetime.now(CST).strftime("%Y-%m-%dT%H:%M:%S+08:00"),
