@@ -375,6 +375,7 @@ def load_crypto_from_account(cfg, rate, prev_items=None):
             continue
         d = coins.setdefault(c, {"spot": 0.0, "earn": 0.0, "futures": 0.0})
         d["earn"] = round(float(d.get("earn") or 0) + amt, 10)
+        d["manual"] = round(float(d.get("manual") or 0) + amt, 10)
         d["total"] = round(sum(float(d.get(k) or 0) for k in ("spot", "earn", "futures")), 10)
         print("      手工登记持仓：%s %.8f（%s）" % (c, amt, m.get("note") or "接口未暴露"))
     include = set((cfg.get("crypto") or {}).get("include_coins") or [])
@@ -421,7 +422,9 @@ def load_crypto_from_account(cfg, rate, prev_items=None):
             "note": ("Bitget 现货 %.6g + 理财 %.6g" % (
                 float(v.get("spot") or 0), float(v.get("earn") or 0))
                 + (" + 合约保证金 %.6g" % float(v.get("futures") or 0)
-                   if float(v.get("futures") or 0) > 0 else "")) if not is_cash else "Bitget 账户",
+                   if float(v.get("futures") or 0) > 0 else "")
+                + (" + 质押/手工 %.6g" % float(v.get("manual") or 0)
+                   if float(v.get("manual") or 0) > 0 else "")) if not is_cash else "Bitget 账户",
         })
     if not rows:
         return None, None

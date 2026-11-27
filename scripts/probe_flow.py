@@ -39,33 +39,15 @@ def pull(path, params):
 
 
 def main():
-    for cat in ("SPOT", "OTHER", "COIN-FUTURES", "USDT-FUTURES", "MARGIN"):
-        try:
-            rows = pull("/api/v3/account/financial-records",
-                        {"category": cat, "startTime": str(START), "endTime": str(NOW), "limit": "100"})
-        except Exception as e:  # noqa: BLE001
-            print("\n[FAIL] 流水 %s → %s" % (cat, str(e)[:120]))
-            continue
-        types = Counter(str(r.get("type")) for r in rows)
-        print("\n[OK] 流水 %s：%d 条" % (cat, len(rows)))
-        print("  类型分布：%s" % dict(types))
-        samples = {}
-        for r in rows:
-            samples.setdefault(str(r.get("type")), r)
-        for t, r in list(samples.items())[:12]:
-            print("  样例 %-38s %s" % (t, json.dumps(r, ensure_ascii=False)[:260]))
-
     for name, path in (("充值", "/api/v3/account/deposit-records"),
-                       ("提现", "/api/v3/account/withdrawal-records"),
-                       ("划转", "/api/v3/account/transfer-records"),
-                       ("充提2", "/api/v3/account/deposit-withdraw-records")):
-        for params in ({"startTime": str(START), "endTime": str(NOW), "limit": "20"}, {}):
+                       ("提现", "/api/v3/account/withdrawal-records")):
+        for days, params in ((30, {"startTime": str(NOW - 30*86400*1000), "endTime": str(NOW), "limit": "20"}),
+                             (7, {"startTime": str(NOW - 7*86400*1000), "endTime": str(NOW), "limit": "20"})):
             try:
                 data = L._get(path, params, KEY, SECRET, PASS, timeout=20)
-                print("\n[OK] %s %s %s\n%s" % (name, path, params, json.dumps(data, ensure_ascii=False)[:1500]))
-                break
+                print("\n[OK] %s %s %dd\n%s" % (name, path, days, json.dumps(data, ensure_ascii=False)[:2000]))
             except Exception as e:  # noqa: BLE001
-                print("\n[FAIL] %s %s %s → %s" % (name, path, params, str(e)[:100]))
+                print("\n[FAIL] %s %s %dd → %s" % (name, path, days, str(e)[:100]))
 
 
 if __name__ == "__main__":

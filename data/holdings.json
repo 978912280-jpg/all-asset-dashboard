@@ -15,6 +15,14 @@
     "source_url": "https://978912280-jpg.github.io/bitget-pnl-dashboard/data/history.json",
     "include_coins": [],
     "exclude_coins": [],
+    "manual_coins": [
+      {
+        "coin": "SOL",
+        "amount": 43.851,
+        "note": "Bitget 质押赚币（官方 v3 接口未暴露）",
+        "since": "2026-11-28"
+      }
+    ],
     "_comment": "加密货币资产直接抓取『加密货币资产仪表台』(bitget-pnl-dashboard) 的最新快照，现货+理财合并，无需在本文件维护币的份额；include_coins 为空表示统计全部币种。"
   },
   "traditional": [
