@@ -366,6 +366,17 @@ def load_crypto_from_account(cfg, rate, prev_items=None):
     coins = (acct or {}).get("coins") or {}
     if not coins:
         return None, None
+    # 接口读不到的持仓（如理财质押、PoolX）可手工登记：manual_coins=[{coin, amount, note}]
+    manual = (cfg.get("crypto") or {}).get("manual_coins") or []
+    for m in manual:
+        c = str(m.get("coin") or "").upper()
+        amt = float(m.get("amount") or 0)
+        if not c or amt <= 0:
+            continue
+        d = coins.setdefault(c, {"spot": 0.0, "earn": 0.0, "futures": 0.0})
+        d["earn"] = round(float(d.get("earn") or 0) + amt, 10)
+        d["total"] = round(sum(float(d.get(k) or 0) for k in ("spot", "earn", "futures")), 10)
+        print("      手工登记持仓：%s %.8f（%s）" % (c, amt, m.get("note") or "接口未暴露"))
     include = set((cfg.get("crypto") or {}).get("include_coins") or [])
     exclude = set((cfg.get("crypto") or {}).get("exclude_coins") or [])
     rt_excl = rtoken_coin_set(cfg)
