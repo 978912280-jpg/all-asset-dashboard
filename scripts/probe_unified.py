@@ -20,13 +20,13 @@ SECRET = os.environ.get("BITGET_SECRET")
 PASS = os.environ.get("BITGET_PASSPHRASE")
 
 CANDIDATES = [
-    ("V3-资产(全长)", "/api/v3/account/assets", {}),
-    ("V3-持仓(币本位)", "/api/v3/position/current-position", {"category": "COIN-FUTURES"}),
-    ("V3-持仓(币本位+BTCUSD_CM)", "/api/v3/position/current-position", {"category": "COIN-FUTURES", "symbol": "BTCUSD_CM"}),
-    ("V3-持仓(现货)", "/api/v3/position/current-position", {"category": "SPOT"}),
-    ("V3-财务流水(带时间)", "/api/v3/account/financial-records", {"startTime": "%d" % (NOW - 7*86400*1000), "endTime": "%d" % NOW, "limit": "20"}),
-    ("V3-资金账户资产(带币)", "/api/v3/account/funding-assets", {"coin": "BTC"}),
-    ("V3-理财资产", "/api/v3/earn/account/assets", {}),
+    ("V3-现金宝持仓", "/api/v3/earn/cashplus/positions", {}),
+    ("V3-链上精选资产", "/api/v3/earn/elite-assets", {}),
+    ("V3-理财资产A", "/api/v3/earn/assets", {}),
+    ("V3-理财资产B", "/api/v3/earn/account/positions", {}),
+    ("V3-理财资产C", "/api/v3/earn/savings/assets", {}),
+    ("V3-账户信息", "/api/v3/account/info", {}),
+    ("V3-资金账户(无参数)", "/api/v3/account/funding-assets", {}),
 ]
 
 
