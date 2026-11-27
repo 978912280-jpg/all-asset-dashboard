@@ -1153,7 +1153,7 @@
              T(flowMoney(t.value_usdt), "num")]);
       });
       var trTotal = list.reduce(function (a, t) { return a + (t.value_usdt || 0); }, 0);
-      var label = isStock ? "美股账户划转合计（不计入净入金）" : "内部划转合计（不计入净入金）";
+      var label = isStock ? "美股账户划转合计" : "内部划转合计";
       footCells = narrow
         ? [{ t: (isStock ? "美股划转 " : "划转 ") + list.length + " 笔", c: "", s: 2 },
            { t: flowMoney(trTotal), c: "num total-gold", s: 2 }]
@@ -1198,6 +1198,14 @@
       transfers: "账户间划转 / 划入美股账户 · 不计入净入金",
     };
     $("flow-desc").textContent = desc[tab] || "";
+    if ($("flow-hint")) {
+      var ndh = ev.net_deposit || {};
+      var stockNet = ndh.stock_part_usdt;
+      $("flow-hint").hidden = !(tab === "stock" || tab === "transfers");
+      $("flow-hint").textContent = (tab === "stock" || tab === "transfers") && stockNet != null
+        ? "当前净划入美股账户 " + flowMoney(stockNet) + "（$" + num(stockNet, 2) + "，划入 − 划出，属内部划转）"
+        : "";
+    }
   }
 
   function renderRealized() {
