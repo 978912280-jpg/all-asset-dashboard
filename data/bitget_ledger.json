@@ -1,24 +1,27 @@
 {
-  "updated_at": "2026-11-27T17:58:07+08:00",
+  "updated_at": "2026-11-27T23:00:48+08:00",
   "since": "2026-11-13 12:00",
-  "fills": 28,
+  "fills": 31,
   "cost_total_usdt": {
     "BTC": 6980.8149,
     "SOL": 3578.96,
     "BGB": 0.0,
-    "USDC": 3445.2817,
-    "XAUT": 380.9058
+    "USDC": 458.0049,
+    "XAUT": 380.9058,
+    "USDGO": 2990.2342
   },
   "realized_usdt": {},
   "qty_net": {
     "BTC": 0.018634,
-    "USDC": -1500.3882,
+    "USDC": -4487.665,
     "XAUT": 0.1007,
+    "USDGO": 2986.9486,
     "BGB": -10.0
   },
   "qty_net_recent": {
-    "USDC": 3441.027,
-    "BTC": 0.001742
+    "USDC": 453.7502,
+    "BTC": 0.001742,
+    "USDGO": 2986.9486
   },
   "converts": 1,
   "convert_cost_usdt": 0.0,
