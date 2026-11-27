@@ -664,6 +664,7 @@
     var scopeSum = items.reduce(function (a, i) { return a + (i.value_cny || 0); }, 0);
     var scopeLocal = state.group !== "all" && scopeSum > 0;
     function scopeWeight(i) {
+      if (i.group === "futures") return null;   // 合约不计占比
       if (!scopeLocal) {
         // 合约没有占比口径（保证金已计入加密资产），保持空值
         return (i.weight === null || i.weight === undefined) ? null : (i.weight || 0);
