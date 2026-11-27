@@ -8,9 +8,12 @@
 import json
 import os
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bitget_ledger as L  # noqa: E402
+
+NOW = int(time.time() * 1000)
 
 KEY = os.environ.get("BITGET_KEY")
 SECRET = os.environ.get("BITGET_SECRET")
@@ -21,7 +24,7 @@ CANDIDATES = [
     ("V3-持仓(币本位)", "/api/v3/position/current-position", {"category": "COIN-FUTURES"}),
     ("V3-持仓(币本位+BTCUSD_CM)", "/api/v3/position/current-position", {"category": "COIN-FUTURES", "symbol": "BTCUSD_CM"}),
     ("V3-持仓(现货)", "/api/v3/position/current-position", {"category": "SPOT"}),
-    ("V3-财务流水(带时间)", "/api/v3/account/financial-records", {"startTime": "%d" % (now - 7*86400*1000), "endTime": "%d" % now, "limit": "20"}),
+    ("V3-财务流水(带时间)", "/api/v3/account/financial-records", {"startTime": "%d" % (NOW - 7*86400*1000), "endTime": "%d" % NOW, "limit": "20"}),
     ("V3-资金账户资产(带币)", "/api/v3/account/funding-assets", {"coin": "BTC"}),
     ("V3-理财资产", "/api/v3/earn/account/assets", {}),
 ]
