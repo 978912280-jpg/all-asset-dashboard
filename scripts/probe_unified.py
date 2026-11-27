@@ -17,23 +17,13 @@ SECRET = os.environ.get("BITGET_SECRET")
 PASS = os.environ.get("BITGET_PASSPHRASE")
 
 CANDIDATES = [
-    ("UTA-资产", "/api/v2/uta/account/assets", {}),
-    ("UTA-账户设置", "/api/v2/uta/account/settings", {}),
-    ("UTA-当前持仓", "/api/v2/uta/position/current-position", {}),
-    ("UTA-当前持仓(币本位)", "/api/v2/uta/position/current-position", {"productType": "COIN-FUTURES"}),
-    ("UTA-历史持仓", "/api/v2/uta/position/history-position", {"productType": "COIN-FUTURES"}),
-    ("UTA-账单", "/api/v2/uta/account/bill", {"limit": "20"}),
-    ("统一账户-全部余额", "/api/v2/account/all-account-balance", {}),
-    ("统一账户-账户列表", "/api/v2/account/accounts", {}),
-    ("统一账户-单账户", "/api/v2/account/account", {}),
-    ("统一账户-当前持仓", "/api/v2/position/current-position", {}),
-    ("统一账户-当前持仓(币本位)", "/api/v2/position/current-position", {"productType": "COIN-FUTURES"}),
-    ("统一账户-历史持仓", "/api/v2/position/history-position", {"productType": "COIN-FUTURES"}),
-    ("经典-现货资产", "/api/v2/spot/account/assets", {}),
-    ("经典-币本位持仓", "/api/v2/mix/position/all-position", {"productType": "COIN-FUTURES", "marginCoin": "BTC"}),
-    ("理财-资产", "/api/v2/earn/account/assets", {}),
-    ("统一账户-账单", "/api/v2/account/bill", {"limit": "20"}),
-    ("统一账户-流水", "/api/v2/account/bills", {"limit": "20"}),
+    ("V3-资产", "/api/v3/account/assets", {}),
+    ("V3-资金账户资产", "/api/v3/account/funding-assets", {}),
+    ("V3-财务流水", "/api/v3/account/financial-records", {"limit": "20"}),
+    ("V3-当前持仓", "/api/v3/position/current-position", {}),
+    ("V3-持仓列表", "/api/v3/position/positions", {}),
+    ("V3-全部持仓", "/api/v3/position/all-position", {}),
+    ("V3-成交", "/api/v3/trade/fills", {"limit": "20"}),
 ]
 
 
