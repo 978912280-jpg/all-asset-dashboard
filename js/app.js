@@ -1186,7 +1186,7 @@
       if (ndx.computed_total_usdt != null) {
         footHtml += '<tr><td colspan="' + cols.length + '" class="num muted foot-split">' +
           "净入金含已划入美股账户部分；加密账户口径 " + flowMoney(ndx.computed_usdt) +
-          "（收益率按此计算），美股账户批量约为 " + flowMoney(ndx.stock_part_usdt) + "</td></tr>";
+          "（收益率按此计算），划入美股净额 " + flowMoney(ndx.stock_part_usdt) + "</td></tr>";
       }
     }
     foot.innerHTML = footHtml;

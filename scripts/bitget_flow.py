@@ -564,6 +564,13 @@ def main():
     earn_daily = _merge(earn_daily, prev.get("earn_daily") or [],
                         lambda x: "%s|%s" % (x.get("day"), x.get("coin")))
 
+    # 划入美股：净额 = 划入 − 划出（只算划入会把金额算大）
+    dep_stock = sum((t["value_usdt"] or 0) for t in transfers if "划入美股" in str(t.get("kind")))
+    wd_stock = sum((t["value_usdt"] or 0) for t in transfers if "美股账户划出" in str(t.get("kind")))
+    if dep_stock or wd_stock:
+        stock_total = round(dep_stock - wd_stock, 2)
+        print("      划入美股净额：入 %.2f − 出 %.2f = %.2f USDT" % (dep_stock, wd_stock, stock_total))
+
     # 合并后再算一次净入金，确保窗口外的历史充提也算进净入金
     dep_after = sum((f["value_usdt"] or 0) for f in flows
                     if f["direction"] == "入金" and f["day"] > base_date)

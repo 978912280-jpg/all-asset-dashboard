@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-version="1.4.15">
+<html lang="zh-CN" data-page-version="1.5.0">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -38,10 +38,10 @@
     window.__applyTheme = apply;
   })();
   </script>
-  <link rel="stylesheet" href="css/style.css?v=1.4.15">
+  <link rel="stylesheet" href="css/style.css?v=1.5.0">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231f2329'/%3E%3Cpath d='M5 17 L10 11 L13 14 L18 7' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <script src="https://fastly.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" defer></script>
-  <script src="js/app.js?v=1.4.15" defer></script>
+  <script src="js/app.js?v=1.5.0" defer></script>
 </head>
 <body class="locked">
   <div class="pin-lock" id="pin-lock" hidden>
@@ -88,7 +88,7 @@
     <div class="disclaimer" id="disclaimer" hidden>
       <p><strong>计算口径</strong>：市值 = 持有份额 × 最新价格 × 汇率（USD/USDT → CNY）。未实现盈亏 = 市值 − 持仓成本（份额 × 成本价 × 汇率），收益率 = 未实现盈亏 / 持仓成本。传统标的价格取自「全球资产仪表台」已抓取的行情，缺失时回退腾讯实时 / 东方财富基金 / Yahoo；加密资产直连 Bitget 私有接口（现货 + 理财），成本按成交回放的平均成本法自动维护，加密盈亏百分比的分母只算币类成本（剔除稳定币面值）。</p>
       <p><strong>当日浮动收益</strong>：按「上一份快照里的份额 × 当日价差 × 汇率」计算。这样即使某天没及时更新份额、事后才补录，历史日历上的数字也不会被改写；补录当天新增的份额不计入当日盈亏（视为收盘价买入）。若没有更早的快照可用，才退化为「今日份额 × 当日涨跌幅」。</p>
-      <p><strong>资金流水口径</strong>：加密部分直读 Bitget 只读接口，按业务类型分四类——成交归「交易记录」，派息/锁仓收益/活动奖励归「理财记录」（按日汇总，不展示小时明细），链上充提归「出入金」，账户间划转与划入美股账户归「内部划转」。净入金 = 2026-11-13 基准 17296 USDT（转入 Bitget 总额，其中约 2231 USDT 已划入美股账户）+ 基准日之后的链上充值 − 基准日之后的链上提现；加密账户口径为 15065 USDT（剔除划往美股的部分），加密收益率以它作分母。内部划转本身不计入净入金。「已实现盈亏」独立口径，只统计已卖出部分，不与「总盈亏」相加。</p>
+      <p><strong>资金流水口径</strong>：加密部分直读 Bitget 只读接口，按业务类型分四类——成交归「交易记录」，派息/锁仓收益/活动奖励归「理财记录」（按日汇总，不展示小时明细），链上充提归「出入金」，账户间划转与划入美股账户归「内部划转」。净入金 = 2026-11-13 基准 17296 USDT（转入 Bitget 总额，划入美股按净额计（划入 − 划出））+ 基准日之后的链上充值 − 基准日之后的链上提现；加密账户口径为 15065 USDT（剔除划往美股的部分），加密收益率以它作分母。内部划转本身不计入净入金。「已实现盈亏」独立口径，只统计已卖出部分，不与「总盈亏」相加。</p>
       <p><strong>份额来源</strong>：仅 <code>data/holdings.json</code> 中的 shares 为人工维护，价格、市值、占比、日变动全部由后台脚本自动计算。修改份额后需重新运行 <code>python3 scripts/build.py</code> 或等待 GitHub Actions 每日构建。</p>
       <p>本页面仅用于个人资产记录与研究，<strong>不构成任何投资建议</strong>。</p>
     </div>
@@ -247,7 +247,7 @@
                   </table>
                 </div>
                 <p class="empty-tip" id="flow-empty" hidden>暂无记录。</p>
-                <p class="table-hint" id="flow-hint">净入金 = 链上充值 − 链上提现（账户间互转、划入美股账户都属于内部划转，本身不计入净入金）。总额口径 17296 USDT（转入 Bitget 的总额，其中约 2231 已划入美股账户）；加密账户口径 15065 USDT 已剔除划往美股的部分，加密收益率按它计算。流水卡按自然月切换，底栏「净入金」为 2026-11-13 基准加之后链上充提的累计值，「当月累计入金/出金」只统计当前所选月份；理财收益按日汇总。</p>
+                <p class="table-hint" id="flow-hint">净入金 = 链上充值 − 链上提现（账户间互转、划入美股账户都属于内部划转，本身不计入净入金）。总额口径 17296 USDT（转入 Bitget 的总额，划入美股按净额计（划入 − 划出））；加密账户口径 15065 USDT 已剔除划往美股的部分，加密收益率按它计算。流水卡按自然月切换，底栏「净入金」为 2026-11-13 基准加之后链上充提的累计值，「当月累计入金/出金」只统计当前所选月份；理财收益按日汇总。</p>
               </section>
   </section>
 
