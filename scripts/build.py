@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.5.5"
+PAGE_VERSION = "1.5.6"
 PAGE_DATE = ""  # 留空则使用构建当天日期，避免版本括号里的日期长期不变
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -1318,7 +1318,9 @@ def main():
         contract_realized_cny = r2(sum(
             float(c.get("pnl_native") or 0) * btc_price_now * rate for c in contract_closes), 2)
         spot_realized_cny = r2(sum(realized_map.values()) * rate, 2)
-        realized_cny = r2(spot_realized_cny + contract_realized_cny, 2)
+        # 口径：合约平仓的已实现只在明细里留存归档，不进「加密已实现累计」，也不从分组未实现里扣，
+        # 这笔钱通过平仓返还 BTC 使份额变大、单行未实现上升体现，合计与总盈亏各只算一次。
+        realized_cny = spot_realized_cny
         if realized_cny:
             # 现货已实现要从成本账本补回；合约平仓的收益已体现在「返还的 BTC 变成免费份额」里，
             # 只登记到已实现明细，不再额外加进总盈亏，避免同一笔算两次。
