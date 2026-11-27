@@ -535,17 +535,18 @@ def main():
     except (ValueError, OSError):
         prev = {}
 
+    # v2 的 billId/orderId 与 v3 的 id 是两套编号，同一笔会重复，因此按业务字段去重
     def k_trade(x):
-        return x.get("ref") or "|".join(str(x.get(k)) for k in ("date", "symbol", "side", "qty"))
+        return "|".join(str(x.get(k)) for k in ("date", "symbol", "side", "qty", "quote_usdt"))
 
     def k_flow(x):
-        return x.get("ref") or "|".join(str(x.get(k)) for k in ("date", "coin", "direction", "qty"))
+        return "|".join(str(x.get(k)) for k in ("date", "coin", "direction", "qty"))
 
     def k_tr(x):
-        return x.get("ref") or "|".join(str(x.get(k)) for k in ("date", "coin", "kind", "qty"))
+        return "|".join(str(x.get(k)) for k in ("date", "coin", "kind", "qty"))
 
     def k_misc(x):
-        return x.get("ref") or "|".join(str(x.get(k)) for k in ("date", "coin", "kind", "qty"))
+        return "|".join(str(x.get(k)) for k in ("date", "coin", "kind", "qty"))
 
     trades = _merge(trades, prev.get("trades") or [], k_trade)
     flows = _merge(flows, prev.get("flows") or [], k_flow)

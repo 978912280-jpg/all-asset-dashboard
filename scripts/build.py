@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.4.11"
+PAGE_VERSION = "1.4.12"
 PAGE_DATE = ""  # 留空则使用构建当天日期，避免版本括号里的日期长期不变
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -420,10 +420,10 @@ def load_crypto_from_account(cfg, rate, prev_items=None):
             "price_ts": (acct or {}).get("updated_at"),
             "pending": False,
             "note": ("Bitget 现货 %.6g + 理财 %.6g" % (
-                float(v.get("spot") or 0), float(v.get("earn") or 0))
+                float(v.get("spot") or 0), float(v.get("earn") or 0) - float(v.get("manual") or 0))
                 + (" + 合约保证金 %.6g" % float(v.get("futures") or 0)
                    if float(v.get("futures") or 0) > 0 else "")
-                + (" + 质押/手工 %.6g" % float(v.get("manual") or 0)
+                + (" + 质押赚币 %.6g（手工登记）" % float(v.get("manual") or 0)
                    if float(v.get("manual") or 0) > 0 else "")) if not is_cash else "Bitget 账户",
         })
     if not rows:
