@@ -36,16 +36,16 @@ def _num(v):
 
 
 def main():
-    key, secret, pass = (os.environ.get("BITGET_KEY"), os.environ.get("BITGET_SECRET"),
-                         os.environ.get("BITGET_PASSPHRASE"))
-    if not (key and secret and pass):
+    key, secret, phrase = (os.environ.get("BITGET_KEY"), os.environ.get("BITGET_SECRET"),
+                           os.environ.get("BITGET_PASSPHRASE"))
+    if not (key and secret and phrase):
         print("    [warn] 未配置 Bitget 密钥，跳过合约持仓同步")
         return 1
 
     items = []
     for cat in CATEGORIES:
         try:
-            data = L._get(POS_PATH, {"category": cat}, key, secret, pass, timeout=20)
+            data = L._get(POS_PATH, {"category": cat}, key, secret, phrase, timeout=20)
             lst = (data.get("list") if isinstance(data, dict) else None) or []
         except Exception as e:  # noqa: BLE001
             print("      [warn] 读取 %s 持仓失败：%s" % (cat, str(e)[:90]))
