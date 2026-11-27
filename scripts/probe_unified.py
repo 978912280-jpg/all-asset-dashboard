@@ -17,13 +17,13 @@ SECRET = os.environ.get("BITGET_SECRET")
 PASS = os.environ.get("BITGET_PASSPHRASE")
 
 CANDIDATES = [
-    ("V3-资产", "/api/v3/account/assets", {}),
-    ("V3-资金账户资产", "/api/v3/account/funding-assets", {}),
-    ("V3-财务流水", "/api/v3/account/financial-records", {"limit": "20"}),
-    ("V3-当前持仓", "/api/v3/position/current-position", {}),
-    ("V3-持仓列表", "/api/v3/position/positions", {}),
-    ("V3-全部持仓", "/api/v3/position/all-position", {}),
-    ("V3-成交", "/api/v3/trade/fills", {"limit": "20"}),
+    ("V3-资产(全长)", "/api/v3/account/assets", {}),
+    ("V3-持仓(币本位)", "/api/v3/position/current-position", {"category": "COIN-FUTURES"}),
+    ("V3-持仓(币本位+BTCUSD_CM)", "/api/v3/position/current-position", {"category": "COIN-FUTURES", "symbol": "BTCUSD_CM"}),
+    ("V3-持仓(现货)", "/api/v3/position/current-position", {"category": "SPOT"}),
+    ("V3-财务流水(带时间)", "/api/v3/account/financial-records", {"startTime": "%d" % (now - 7*86400*1000), "endTime": "%d" % now, "limit": "20"}),
+    ("V3-资金账户资产(带币)", "/api/v3/account/funding-assets", {"coin": "BTC"}),
+    ("V3-理财资产", "/api/v3/earn/account/assets", {}),
 ]
 
 
@@ -32,7 +32,8 @@ def main():
         try:
             data = L._get(path, params, KEY, SECRET, PASS)
             print("\n[OK] %s %s %s" % (name, path, params))
-            print(json.dumps(data, ensure_ascii=False)[:2000])
+            print("LEN=%d" % len(json.dumps(data, ensure_ascii=False)))
+            print(json.dumps(data, ensure_ascii=False)[:5000])
         except Exception as e:  # noqa: BLE001
             print("\n[FAIL] %s %s %s → %s" % (name, path, params, e))
 
