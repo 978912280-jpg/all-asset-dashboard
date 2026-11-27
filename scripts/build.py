@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.5.2"
+PAGE_VERSION = "1.5.3"
 PAGE_DATE = ""  # 留空则使用构建当天日期，避免版本括号里的日期长期不变
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -492,14 +492,17 @@ def load_futures(rate):
             "name": "%s %s" % (i.get("symbol"), "多单" if side in ("long", "buy") else "空单"),
             "asset_class": "合约（币本位永续）" if i.get("category") == "COIN-FUTURES" else "合约（永续）",
             "group": FUTURES_GROUP,
-            "shares": round(contracts, 4),
+            "shares": round(margin_native, 8),
+            "shares_unit": mc,
+            "contracts": round(contracts, 4),
             "price": i.get("mark_price"),
             "currency": "USD",
             "change_pct": None,
             "cost_price": i.get("avg_price"),
             "cost_cny": r2(margin_cny, 2) if margin_cny is not None else None,
-            "value_native": r2(margin_cny, 2) if margin_cny is not None else None,
-            "value_cny": r2(margin_cny, 2) if margin_cny is not None else None,
+            "value_native": r2((margin_cny or 0) + (pnl_cny or 0), 2),
+            "value_cny": r2((margin_cny or 0) + (pnl_cny or 0), 2) if margin_cny is not None else None,
+            "margin_cny": r2(margin_cny, 2) if margin_cny is not None else None,
             "day_change_cny": r2(day_cny, 2) if day_cny is not None else None,
             "day_basis": "prev_snapshot" if day_cny is not None else "live",
             "pnl_cny": r2(pnl_cny, 2) if pnl_cny is not None else None,
@@ -508,12 +511,6 @@ def load_futures(rate):
             "pending": False,
             "price_source": "Bitget v3 持仓接口",
             "price_ts": f.get("updated_at"),
-            "note": "保证金 %.8g %s（%.2f CNY）· 名义 $%.0f · %sx %s · 强平 %s · 浮盈 %+.8g %s" % (
-                margin_native, mc, margin_cny or 0, notional_usd,
-                ("%g" % float(i.get("leverage") or 0)),
-                "逐仓" if str(i.get("margin_mode")) == "isolated" else "全仓",
-                ("%g" % float(i.get("liq_price") or 0)) if float(i.get("liq_price") or 0) > 0 else "—",
-                pnl_native, mc),
             "margin_native": round(margin_native, 10),
             "margin_coin": mc,
             "notional_usd": r2(notional_usd, 2),
@@ -1324,7 +1321,9 @@ def main():
         crypto_cost_cny = (crypto_meta.get("net_deposit_usdt") or 0) * rate
 
     # 总盈亏 = 传统净盈亏 + 加密净盈亏（现金按面值不产生盈亏）
-    total_pnl = r2(trad_pnl + (crypto_pnl_cny or 0), 2)
+    futures_pnl_add = (futures or {}).get("total_pnl_cny") or 0.0
+    # 币本位合约未实现盈亏以 BTC 计量，平仓会真实增加持仓，必须计入总收益
+    total_pnl = r2(trad_pnl + (crypto_pnl_cny or 0) + futures_pnl_add, 2)
     # 收益率分母：传统成本 + 加密账户净入金（不含闲置现金，避免被现金稀释）
     total_cost_base = r2(trad_cost + crypto_cost_cny, 2)
     total_pnl_pct = round(total_pnl / total_cost_base * 100, 2) if total_cost_base else None

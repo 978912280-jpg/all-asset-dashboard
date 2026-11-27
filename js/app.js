@@ -688,7 +688,9 @@
       var priceTxt = i.price === null || i.price === undefined ? "—" :
         (i.currency === "USD" || i.currency === "USDT" ? "$" : "¥") + num(i.price, i.price < 10 ? 4 : 2);
       var sharesTxt = (i.shares === null || i.shares === undefined)
-        ? '<span class="muted">—</span>' : num(i.shares, i.shares < 1 ? 6 : 4);
+        ? '<span class="muted">—</span>'
+        : num(i.shares, i.shares_unit ? 8 : (i.shares < 1 ? 6 : 4)) +
+          (i.shares_unit ? ' <span class="muted">' + escapeHtml(i.shares_unit) + "</span>" : "");
       var costTxt;
       if (i.group === "cash") {
         costTxt = '<span class="muted">—</span>';
@@ -718,7 +720,7 @@
       return "<tr>" +
         '<td class="name-cell"><div class="nm">' + escapeHtml(i.name) +
         (i.pending ? '<span class="tag pending">待填份额</span>' : "") +
-        "</div>" + (i.note ? '<div class="sub muted">' + escapeHtml(i.note) + "</div>" : "") + "</td>" +
+        "</div></td>" +
         '<td><span class="tag" style="border-color:' + color + '33;color:' + color +
         '">' + escapeHtml(i.asset_class) + "</span></td>" +
         '<td class="num">' + sharesTxt + "</td>" +
@@ -1349,14 +1351,19 @@
     html += '<div class="pa-total">未实现盈亏 <b class="' + cls(sumPnl) + '">' + signedMoney(sumPnl, 2) +
       "</b> ＋ 已实现盈亏 <b class=\"" + cls(realC) + "\">" + signedMoney(realC, 2) +
       "</b> ＝ 总盈亏 <b class=\"" + cls(grand) + "\">" + signedMoney(grand, 2) +
-      "</b> · 当日浮动收益 <b class=\"" + cls(totalDayOf(pb)) + "\">" +
+      "</b>" + (function () {
+        var fg = (pb.groups || []).filter(function (g) { return g.key === "futures"; })[0];
+        return fg && fg.pnl_cny !== null && fg.pnl_cny !== undefined
+          ? '<span class="pa-dim">（含合约 ' + signedMoney(fg.pnl_cny, 2) + "）</span>" : "";
+      })() +
+      " · 当日浮动收益 <b class=\"" + cls(totalDayOf(pb)) + "\">" +
       signedMoney(totalDayOf(pb), 2) + "</b></div>";
     box.innerHTML = html;
   }
 
   function totalPnlOf(pb) {
     // 底部「未实现盈亏」只累加未实现部分，否则会把已实现算两遍
-    return (pb.groups || []).filter(function (g) { return g.key !== "cash" && g.key !== "futures"; })
+    return (pb.groups || []).filter(function (g) { return g.key !== "cash"; })
       .reduce(function (a, g) {
         var re = Number(g.realized_cny || 0);
         var un = (g.unrealized_cny === null || g.unrealized_cny === undefined)
@@ -1365,7 +1372,7 @@
       }, 0);
   }
   function totalDayOf(pb) {
-    return (pb.groups || []).filter(function (g) { return g.key !== "cash" && g.key !== "futures"; })
+    return (pb.groups || []).filter(function (g) { return g.key !== "cash"; })
       .reduce(function (a, g) { return a + (g.day_cny || 0); }, 0);
   }
 
