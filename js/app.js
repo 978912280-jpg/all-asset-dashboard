@@ -717,10 +717,16 @@
         pnlTxt = '<span class="' + cls(pv) + '"><span class="amt">' + signedMoney(pv) +
           "</span>" + sub + "</span>";
       }
+      var fsub = "";
+      if (i.group === "futures" && Number(i.realized_native || 0) !== 0) {
+        var rn = Number(i.realized_native || 0);
+        fsub = '<div class="sub ' + cls(rn) + '">已实现 ' + num(rn, 8) + " " + escapeHtml(i.shares_unit || "") +
+          "（资金费 " + num(Number(i.funding_native || 0), 8) + " · 手续费 " + num(Number(i.fee_native || 0), 8) + "）</div>";
+      }
       return "<tr>" +
         '<td class="name-cell"><div class="nm">' + escapeHtml(i.name) +
         (i.pending ? '<span class="tag pending">待填份额</span>' : "") +
-        "</div></td>" +
+        "</div>" + fsub + "</td>" +
         '<td><span class="tag" style="border-color:' + color + '33;color:' + color +
         '">' + escapeHtml(i.asset_class) + "</span></td>" +
         '<td class="num">' + sharesTxt + "</td>" +

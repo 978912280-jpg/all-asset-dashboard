@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.5.4"
+PAGE_VERSION = "1.5.5"
 PAGE_DATE = ""  # 留空则使用构建当天日期，避免版本括号里的日期长期不变
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -520,6 +520,11 @@ def load_futures(rate):
             "unrealized_native": round(pnl_native, 10),
             "avg_price": i.get("avg_price"),
             "mark_price": i.get("mark_price"),
+            "break_even_price": i.get("break_even_price"),
+            "realized_native": float(i.get("realized_native") or 0),
+            "funding_native": float(i.get("funding_native") or 0),
+            "fee_native": round(float(i.get("open_fee_native") or 0) + float(i.get("close_fee_native") or 0), 10),
+            "realized_cny": r2((float(i.get("realized_native") or 0)) * px * rate, 2) if px else None,
         })
     print("      合约持仓：%d 笔，浮盈 %.2f CNY，保证金 %.2f CNY" % (len(rows), total_pnl, total_margin))
     return {
@@ -528,6 +533,10 @@ def load_futures(rate):
         "items": rows,
         "total_pnl_cny": r2(total_pnl, 2),
         "total_margin_cny": r2(total_margin, 2),
+        "total_realized_cny": r2(sum(r.get("realized_cny") or 0 for r in rows), 2),
+        "total_realized_native": round(sum(r.get("realized_native") or 0 for r in rows), 10),
+        "total_funding_native": round(sum(r.get("funding_native") or 0 for r in rows), 10),
+        "total_fee_native": round(sum(r.get("fee_native") or 0 for r in rows), 10),
         "day_cny": r2(total_day, 2) if any(r.get("day_change_cny") is not None for r in rows) else None,
         "note": "保证金已计入对应币的份额（不重复计入总资产），名义价值仅作风险参考",
     }

@@ -68,6 +68,14 @@ def main():
                 "unrealized_native": round(_num(p.get("unrealisedPnl")), 10),
                 "liq_price": round(_num(p.get("liquidationPrice")), 4),
                 "opened_at": int(_num(p.get("createdTime"))),
+                # 本仓已实现：接口直读 curRealisedPnl + 资金费 + 开/平仓手续费（币本位计价）
+                "cur_realised_native": round(_num(p.get("curRealisedPnl")), 10),
+                "funding_native": round(_num(p.get("totalFunding")), 10),
+                "open_fee_native": round(_num(p.get("openFeeTotal")), 10),
+                "close_fee_native": round(_num(p.get("closeFeeTotal")), 10),
+                "realized_native": round(_num(p.get("curRealisedPnl")) + _num(p.get("totalFunding"))
+                                         + _num(p.get("openFeeTotal")) + _num(p.get("closeFeeTotal")), 10),
+                "break_even_price": round(_num(p.get("breakEvenPrice")), 4),
             })
 
     payload = {
