@@ -20,15 +20,13 @@ SECRET = os.environ.get("BITGET_SECRET")
 PASS = os.environ.get("BITGET_PASSPHRASE")
 
 CANDIDATES = [
-    ("V2-savings", "/api/v2/earn/savings/assets", {}),
-    ("V2-earn资产", "/api/v2/earn/account/assets", {}),
-    ("V3-资金账户", "/api/v3/account/financial-assets", {}),
-    ("V3-划转记录", "/api/v3/account/transfer-records", {"startTime": "%d" % (NOW - 60*86400*1000), "endTime": "%d" % NOW, "limit": "100"}),
-    ("V3-可划转币", "/api/v3/account/transferable-coins", {}),
-    ("V3-理财staking资产", "/api/v3/earn/staking-assets", {}),
-    ("V3-理财页面资产", "/api/v3/earn/savings/assets-v2", {}),
-    ("V3-账户拿币列表", "/api/v3/account/coins", {}),
-    ("V3-账户总览2", "/api/v3/account/overview", {}),
+    ("可划转-现货到资金", "/api/v3/account/transferable-coins", {"fromType": "SPOT", "toType": "FUNDING", "coin": "SOL"}),
+    ("可划转-现货到合约", "/api/v3/account/transferable-coins", {"fromType": "SPOT", "toType": "FUTURES", "coin": "SOL"}),
+    ("可划转-资金到现货", "/api/v3/account/transferable-coins", {"fromType": "FUNDING", "toType": "SPOT", "coin": "SOL"}),
+    ("可划转-理财到现货", "/api/v3/account/transferable-coins", {"fromType": "EARN", "toType": "SPOT", "coin": "SOL"}),
+    ("可划转-现货到理财", "/api/v3/account/transferable-coins", {"fromType": "SPOT", "toType": "EARN", "coin": "SOL"}),
+    ("可划转-不带币", "/api/v3/account/transferable-coins", {"fromType": "SPOT", "toType": "FUNDING"}),
+    ("可划转-小写", "/api/v3/account/transferable-coins", {"fromAccountType": "spot", "toAccountType": "funding"}),
 ]
 
 
