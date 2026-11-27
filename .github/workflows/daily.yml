@@ -49,7 +49,15 @@ jobs:
           BITGET_PASSPHRASE: ${{ secrets.BITGET_PASSPHRASE }}
         run: python3 scripts/bitget_rtoken.py
 
-      - name: 同步 Bitget 账户持仓（现货 + 理财）
+      - name: 同步 Bitget 合约持仓（展示用）
+        continue-on-error: true
+        env:
+          BITGET_KEY: ${{ secrets.BITGET_KEY }}
+          BITGET_SECRET: ${{ secrets.BITGET_SECRET }}
+          BITGET_PASSPHRASE: ${{ secrets.BITGET_PASSPHRASE }}
+        run: python3 scripts/bitget_position.py
+
+      - name: 同步 Bitget 账户持仓（现货 + 理财 + 合约保证金）
         continue-on-error: true
         env:
           BITGET_KEY: ${{ secrets.BITGET_KEY }}
@@ -98,6 +106,7 @@ jobs:
             # 成本账本可能因 API 未配置而不存在，单独判断，避免 pathspec 失败导致整次 add 回滚
             if [ -f data/bitget_ledger.json ]; then git add data/bitget_ledger.json; fi
             if [ -f data/bitget_account.json ]; then git add data/bitget_account.json; fi
+            if [ -f data/bitget_position.json ]; then git add data/bitget_position.json; fi
             if [ -f data/crypto_events.json ]; then git add data/crypto_events.json; fi
             if [ -f data/crypto_cost.json ]; then git add data/crypto_cost.json; fi
             if [ -f data/rtoken.json ]; then git add data/rtoken.json; fi

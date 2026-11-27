@@ -44,8 +44,59 @@ def _get(path, params, key, secret, passphrase, timeout=20):
     return body.get("data") or []
 
 
+def _fetch_fills_v3(key, secret, passphrase, start_ms, log=print):
+    """UTA 统一账户（v3）现货成交，规范成与 v2 相同的字段，供 replay 复用。
+
+    只取 category=SPOT：币本位合约的成交单位是「张/美元」，混进来会污染币的份额。
+    """
+    out, now_ms = [], int(datetime.now(CST).timestamp() * 1000)
+    win = 7 * 86400 * 1000
+    cur = int(start_ms)
+    while cur < now_ms:
+        nxt = min(cur + win, now_ms)
+        rows = _get("/api/v3/trade/fills",
+                    {"category": "SPOT", "startTime": str(cur), "endTime": str(nxt), "limit": "1000"},
+                    key, secret, passphrase)
+        data = rows if isinstance(rows, list) else (rows.get("list") if isinstance(rows, dict) else []) or []
+        for r in data:
+            sym = str(r.get("symbol") or "").upper()
+            coin = sym[:-4] if sym.endswith("USDT") else ""
+            if not coin:
+                continue
+            fee_total, fee_coin = 0.0, ""
+            for fd in (r.get("feeDetail") or []):
+                try:
+                    fee_total += float(fd.get("fee") or 0)
+                except (TypeError, ValueError):
+                    pass
+                fee_coin = fee_coin or str(fd.get("feeCoin") or "")
+            out.append({
+                "coin": coin, "symbol": sym, "side": r.get("side"),
+                "size": r.get("execQty"), "priceAvg": r.get("execPrice"),
+                "amount": r.get("execValue"),
+                "feeDetail": {"totalFee": fee_total, "feeCoin": fee_coin},
+                "cTime": r.get("createdTime"),
+                "tradeId": r.get("execId"),
+            })
+        cur = nxt
+        time.sleep(0.25)
+    out.sort(key=lambda x: int(x.get("cTime") or 0))
+    log("    Bitget 成交记录（v3）：%d 笔" % len(out))
+    return out
+
+
 def fetch_fills(key, secret, passphrase, start_ms, log=print):
     """翻页拉取 start_ms 之后的所有现货成交，按时间升序返回。"""
+    try:
+        return _fetch_fills_v2(key, secret, passphrase, start_ms, log=log)
+    except Exception as e:  # noqa: BLE001
+        if "40085" not in str(e):
+            raise
+        log("    [warn] 账户已升级统一账户（40085），改用 v3 成交接口")
+        return _fetch_fills_v3(key, secret, passphrase, start_ms, log=log)
+
+
+def _fetch_fills_v2(key, secret, passphrase, start_ms, log=print):
     out, cursor, pages = [], None, 0
     while pages < 30:
         params = {"limit": "100", "startTime": str(start_ms)}
@@ -198,6 +249,7 @@ def fetch_converts(key, secret, passphrase, start_ms, log=print):
     返回 [{ts, id, out:[(coin,size)], in:[(coin,size)]}]，size 均为正数。
     """
     rows, cur, now_ms = [], int(start_ms), int(datetime.now(CST).timestamp() * 1000)
+    use_v3 = False
     while cur < now_ms:
         nxt = min(cur + 5 * 86400 * 1000, now_ms)
         cursor, pages = None, 0
@@ -206,8 +258,19 @@ def fetch_converts(key, secret, passphrase, start_ms, log=print):
             if cursor:
                 params["idLessThan"] = cursor
             try:
-                chunk = _get("/api/v2/spot/account/bills", params, key, secret, passphrase)
+                if use_v3:
+                    chunk = _get("/api/v3/account/financial-records",
+                                 {"category": "OTHER", "startTime": str(cur), "endTime": str(nxt), "limit": "500"},
+                                 key, secret, passphrase)
+                    chunk = chunk.get("list") if isinstance(chunk, dict) else chunk
+                    chunk = chunk or []
+                else:
+                    chunk = _get("/api/v2/spot/account/bills", params, key, secret, passphrase)
             except Exception as e:  # noqa: BLE001
+                if "40085" in str(e) and not use_v3:
+                    log("      [warn] 账户为统一账户，闪兑账单改用 v3 流水")
+                    use_v3 = True
+                    continue
                 log("      [warn] 闪兑账单 %s 段读取失败：%s" % (cur, str(e)[:80]))
                 break
             if not chunk:
@@ -222,17 +285,21 @@ def fetch_converts(key, secret, passphrase, start_ms, log=print):
     groups = {}
     for b in rows:
         bt = str(b.get("businessType") or "").upper()
+        if not bt and use_v3:
+            bt = str(b.get("type") or "").upper()
+        if "CONVERT" not in bt and "SMALL_EXCHANGE" not in bt and "SWITCH" not in bt:
+            continue
         if not bt.startswith(("CONVERT_USER", "SMALL_EXCHANGE")):
             continue
         try:
-            size = abs(float(b.get("size") or 0))
+            size = abs(float(b.get("size") or b.get("amount") or 0))
         except (TypeError, ValueError):
             continue
         if size <= 0:
             continue
         coin = str(b.get("coin") or "").upper()
-        oid = str(b.get("bizOrderId") or b.get("billId"))
-        g = groups.setdefault(oid, {"ts": int(b.get("cTime") or 0), "out": [], "in": []})
+        oid = str(b.get("bizOrderId") or b.get("billId") or b.get("id"))
+        g = groups.setdefault(oid, {"ts": int(b.get("cTime") or b.get("ts") or 0), "out": [], "in": []})
         g["out" if bt.endswith("_OUT") else "in"].append((coin, size))
     pairs = [dict(v, id=k) for k, v in groups.items() if v["out"] and v["in"]]
     log("    Bitget 闪兑账单：%d 条明细，%d 组可配对" % (len(rows), len(pairs)))

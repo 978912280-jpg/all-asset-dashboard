@@ -37,6 +37,8 @@ OUT = ROOT / "data" / "rtoken.json"
 HOLDINGS = ROOT / "data" / "holdings.json"
 CST = timezone(timedelta(hours=8))
 SPOT_PATH = "/api/v2/spot/account/assets"
+V3_ASSETS_PATH = "/api/v3/account/assets"
+V3_SAVINGS_PATH = "/api/v3/earn/savings/assets"
 
 # 常见美股代码（可在 holdings.json 的 rtokens.tickers 里增补）
 DEFAULT_TICKERS = [
@@ -74,17 +76,36 @@ def load_cfg():
 
 
 def fetch_spot(key, secret, passphrase, log=print):
-    rows = L._get(SPOT_PATH, {}, key, secret, passphrase, timeout=20)
+    """返回 {COIN: 数量}；统一账户优先 v3（交易账户 + 理财持仓），失败回退 v2 现货。"""
     out = {}
-    for r in rows:
-        c = str(r.get("coin") or "").upper()
-        if not c:
-            continue
-        amt = _num(r.get("available")) + _num(r.get("frozen"))
-        if amt <= 0:
-            continue
-        out[c] = round(out.get(c, 0.0) + amt, 10)
-    log("      现货持仓：%d 个币种" % len(out))
+
+    def add(coin, amt):
+        c = str(coin or "").upper()
+        if c and amt and amt > 0:
+            out[c] = round(out.get(c, 0.0) + float(amt), 10)
+
+    try:
+        rows = L._get(SPOT_PATH, {}, key, secret, passphrase, timeout=20)
+        for r in rows:
+            add(r.get("coin"), float(r.get("available") or 0) + float(r.get("frozen") or 0))
+        return out
+    except Exception as e:  # noqa: BLE001
+        if "40085" not in str(e):
+            raise
+        log("      [warn] 统一账户模式，rToken 识别改用 v3 资产接口")
+
+    try:
+        data = L._get(V3_ASSETS_PATH, {}, key, secret, passphrase, timeout=20)
+        for a in (data.get("assets") if isinstance(data, dict) else None) or []:
+            add(a.get("coin"), float(a.get("equity") or 0))
+    except Exception as e:  # noqa: BLE001
+        log("      [warn] v3 资产接口失败：%s" % str(e)[:90])
+    try:
+        data = L._get(V3_SAVINGS_PATH, {}, key, secret, passphrase, timeout=20)
+        for r in (data.get("resultList") if isinstance(data, dict) else None) or []:
+            add(r.get("productCoin"), float(r.get("holdAmount") or 0))
+    except Exception:  # noqa: BLE001
+        pass
     return out
 
 

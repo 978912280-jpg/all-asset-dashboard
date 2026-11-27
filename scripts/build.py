@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.4.8"
+PAGE_VERSION = "1.4.9"
 PAGE_DATE = ""  # 留空则使用构建当天日期，避免版本括号里的日期长期不变
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -407,8 +407,10 @@ def load_crypto_from_account(cfg, rate, prev_items=None):
             "price_source": "Bitget 实时价" if not is_cash else "面值",
             "price_ts": (acct or {}).get("updated_at"),
             "pending": False,
-            "note": "Bitget 现货 %.6g + 理财 %.6g" % (
-                float(v.get("spot") or 0), float(v.get("earn") or 0)) if not is_cash else "Bitget 账户",
+            "note": ("Bitget 现货 %.6g + 理财 %.6g" % (
+                float(v.get("spot") or 0), float(v.get("earn") or 0))
+                + (" + 合约保证金 %.6g" % float(v.get("futures") or 0)
+                   if float(v.get("futures") or 0) > 0 else "")) if not is_cash else "Bitget 账户",
         })
     if not rows:
         return None, None
@@ -425,6 +427,37 @@ def load_crypto_from_account(cfg, rate, prev_items=None):
         "coin_count": len(rows),
         "total_usdt": r2(coins_total, 2),
     }
+
+
+def load_futures(rate):
+    """读合约持仓（只做展示）：保证金已计入账户 coins.futures，这里不重复加总资产。"""
+    f = _read_json(Path(ROOT) / "data" / "bitget_position.json") or {}
+    items = f.get("items") or []
+    if not items:
+        return None
+    margin_coins = sorted({str(i.get("margin_coin") or "").upper() for i in items if i.get("margin_coin")})
+    live = sources.bitget_prices([c for c in margin_coins if c not in STABLE_COINS])
+    out, total_pnl = [], 0.0
+    for i in items:
+        mc = str(i.get("margin_coin") or "").upper()
+        px = 1.0 if mc in STABLE_COINS else (live.get(mc) or 0)
+        pnl_native = float(i.get("unrealized_native") or 0)
+        pnl_cny = pnl_native * (px or 0) * rate if px else None
+        if pnl_cny is not None:
+            total_pnl += pnl_cny
+        out.append({
+            "symbol": i.get("symbol"), "category": i.get("category"),
+            "pos_side": i.get("posSide"), "contracts": i.get("contracts"),
+            "avg_price": i.get("avg_price"), "mark_price": i.get("mark_price"),
+            "margin_coin": mc, "margin": i.get("margin"),
+            "leverage": i.get("leverage"), "margin_mode": i.get("margin_mode"),
+            "liq_price": i.get("liq_price"),
+            "unrealized_native": round(pnl_native, 10),
+            "pnl_cny": r2(pnl_cny, 2) if pnl_cny is not None else None,
+        })
+    print("      合约持仓：%d 笔，浮盈合计 %.2f CNY" % (len(out), total_pnl))
+    return {"updated_at": f.get("updated_at"), "count": len(out),
+            "items": out, "total_pnl_cny": r2(total_pnl, 2)}
 
 
 def load_crypto(cfg, rate, prev_items=None):
@@ -1015,6 +1048,7 @@ def main():
 
     print("[4/5] 抓取加密货币资产仪表台 …")
     crypto_rows, crypto_meta = load_crypto(holdings, rate, prev_items)
+    futures = load_futures(rate)
     # PoolX 等官方 API 不暴露的仓位：合并 data/holdings.json 手工登记的份额（零成本，摊薄成本价）
     for px in (holdings.get("poolx") or []):
         coin = str(px.get("coin") or "").upper()
@@ -1443,6 +1477,15 @@ def main():
             "rtoken_count": rtoken_meta.get("count") or 0,
             "rtoken_value_usd": rtoken_meta.get("value_usd") or 0,
             "rtoken_updated_at": rtoken_meta.get("updated_at") or "",
+            "futures_pnl_cny": (futures or {}).get("total_pnl_cny"),
+            "futures_note": ("；".join(
+                "%s %s %s 张 · 保证金 %s %s · 浮盈 %s" % (
+                    i["symbol"], "多" if str(i.get("pos_side")).lower() in ("long", "买") else "空",
+                    ("%g" % float(i.get("contracts") or 0)),
+                    ("%.6g" % float(i.get("margin") or 0)), i.get("margin_coin"),
+                    ("+%s" if float(i.get("unrealized_native") or 0) >= 0 else "%s") % ("%.6g" % float(i.get("unrealized_native") or 0))
+                ) for i in (futures or {}).get("items", [])
+            ) + "（保证金已计入币的份额）") if futures else "",
             "crypto_pnl_cny": r2(crypto_pnl_cny, 2),
             "crypto_realized_cny": realized_cny,
             "crypto_day_change_cny": r2(crypto_day, 2),
@@ -1480,6 +1523,7 @@ def main():
                          [r["id"] for r in cash_rows],
             },
         ],
+        "futures": futures,
         "items": trad_rows + crypto_rows + cash_rows,
         "crypto_meta": crypto_meta,
         "events": events,

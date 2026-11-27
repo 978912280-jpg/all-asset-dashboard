@@ -325,7 +325,8 @@
         value: money(s.crypto_cny),
         small: true,
         delta: moneyLine(state.replay ? "当日浮动收益 " : "今日浮动收益 ", s.crypto_day_change_cny, s.crypto_day_change_pct) +
-          "<br>" + moneyLine("总盈亏 ", cryptoPnl, s.crypto_pnl_pct),
+          "<br>" + moneyLine("总盈亏 ", cryptoPnl, s.crypto_pnl_pct) +
+          (s.futures_note ? '<br><span class="muted">合约：' + escapeHtml(s.futures_note) + "</span>" : ""),
       },
       {
         label: '<i class="dot cash"></i>现金',
