@@ -20,12 +20,16 @@ SECRET = os.environ.get("BITGET_SECRET")
 PASS = os.environ.get("BITGET_PASSPHRASE")
 
 CANDIDATES = [
-    ("V3-流水SPOT", "/api/v3/account/financial-records", {"category": "SPOT", "startTime": "%d" % (NOW - 7*86400*1000), "endTime": "%d" % NOW, "limit": "50"}),
-    ("V3-流水OTHER", "/api/v3/account/financial-records", {"category": "OTHER", "startTime": "%d" % (NOW - 7*86400*1000), "endTime": "%d" % NOW, "limit": "50"}),
-    ("V3-流水COIN", "/api/v3/account/financial-records", {"category": "COIN-FUTURES", "startTime": "%d" % (NOW - 7*86400*1000), "endTime": "%d" % NOW, "limit": "50"}),
-    ("V3-闪兑记录", "/api/v3/account/convert-records", {"startTime": "%d" % (NOW - 7*86400*1000), "endTime": "%d" % NOW, "limit": "50"}),
-    ("V3-充值记录", "/api/v3/account/deposit-records", {"startTime": "%d" % (NOW - 7*86400*1000), "endTime": "%d" % NOW, "limit": "50"}),
-    ("V3-提现记录", "/api/v3/account/withdrawal-records", {"startTime": "%d" % (NOW - 7*86400*1000), "endTime": "%d" % NOW, "limit": "50"}),
+    ("V3-闪兑记录60d", "/api/v3/account/convert-records", {"startTime": "%d" % (NOW - 60*86400*1000), "endTime": "%d" % NOW, "limit": "100"}),
+    ("V3-流水OTHER30d", "/api/v3/account/financial-records", {"category": "OTHER", "startTime": "%d" % (NOW - 30*86400*1000), "endTime": "%d" % NOW, "limit": "100"}),
+    ("V3-理财savings", "/api/v3/earn/savings/assets", {}),
+    ("V3-理财elite", "/api/v3/earn/elite-assets", {}),
+    ("V3-理财staking", "/api/v3/earn/staking/assets", {}),
+    ("V3-理财onchain", "/api/v3/earn/onchain/assets", {}),
+    ("V3-理财onchain2", "/api/v3/earn/on-chain/assets", {}),
+    ("V3-理财fixed", "/api/v3/earn/fixed/assets", {}),
+    ("V3-理财cashplus", "/api/v3/earn/cashplus/positions", {}),
+    ("V3-账户概况", "/api/v3/account/assets", {}),
 ]
 
 
