@@ -1297,7 +1297,8 @@
           sym + num(i.prev_price, 4) + (i.prev_date ? ' <span class="pa-dim">(' + i.prev_date + ")</span>" : ""));
         return "<tr>" +
           "<td>" + escapeHtml(i.name || i.id) + "</td>" +
-          "<td>" + (i.shares === null || i.shares === undefined ? "—" : num(i.shares, 6)) + "</td>" +
+          "<td>" + (i.shares === null || i.shares === undefined ? "—" :
+            num(i.shares, i.shares_unit ? 8 : 6) + (i.shares_unit ? ' <span class="pa-dim">' + escapeHtml(i.shares_unit) + "</span>" : "")) + "</td>" +
           "<td>" + (i.cost_price === null || i.cost_price === undefined || i.cost_price === 0 && i.group === "cash" ? "—" :
             sym + num(i.cost_price, i.cost_price < 10 ? 4 : 2)) + "</td>" +
           "<td>" + priceTxt + "</td>" +

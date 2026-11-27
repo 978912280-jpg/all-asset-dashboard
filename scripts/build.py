@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.5.1"
+PAGE_VERSION = "1.5.2"
 PAGE_DATE = ""  # 留空则使用构建当天日期，避免版本括号里的日期长期不变
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -1421,10 +1421,13 @@ def main():
         out = []
         for r in rows:
             prev = prev_items.get(r["id"]) or {}
+            is_fut = (group_key == FUTURES_GROUP) or (r.get("group") == FUTURES_GROUP)
             out.append({
                 "id": r["id"],
                 "name": r["name"],
-                "shares": r.get("shares"),
+                # 合约的「份额」用保证金币数量（如 BTC 0.01998），而不是张数
+                "shares": r.get("margin_native") if is_fut else r.get("shares"),
+                "shares_unit": r.get("margin_coin") if is_fut else None,
                 "prev_shares": prev.get("shares"),
                 "prev_price": prev.get("price"),
                 "prev_date": prev_snapshot_date,
