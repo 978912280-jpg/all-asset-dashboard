@@ -1233,11 +1233,15 @@
     if (cb) {
       cb.innerHTML = cRows.length
         ? cRows.map(function (r) {
-            return "<tr><td class=\"col-name\">" + escapeHtml(r.date || "—") + "</td>" +
-              "<td>" + escapeHtml(r.coin || "") + "</td>" +
+            var cpTxt = (r.cost_price === null || r.cost_price === undefined || r.cost_price === "")
+              ? "—" : curSym() + num(usdToCur(r.cost_price), 2);
+            var nm = r.note ? " title=\"" + escapeHtml(r.note) + "\"" : "";
+            var tag = r.note && r.note.indexOf("合约平仓") === 0 ? ' <span class="tag-sm">合约</span>' : "";
+            return "<tr" + nm + '><td class="col-name">' + escapeHtml(r.date || "—") + "</td>" +
+              "<td>" + escapeHtml(r.coin || "") + tag + "</td>" +
               '<td class="num">' + num(r.shares, 6) + "</td>" +
               '<td class="num">' + curSym() + num(usdToCur(r.price), 2) + "</td>" +
-              '<td class="num">' + curSym() + num(usdToCur(r.cost_price), 2) + "</td>" +
+              '<td class="num">' + cpTxt + "</td>" +
               '<td class="num ' + cls(r.pnl_cny) + '">' + signedMoney(r.pnl_cny, 2) + "</td></tr>";
           }).join("")
         : '<tr><td colspan="6" class="pa-empty">校准日以来还没有卖出记录</td></tr>';

@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.5.3"
+PAGE_VERSION = "1.5.4"
 PAGE_DATE = ""  # 留空则使用构建当天日期，避免版本括号里的日期长期不变
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -1302,9 +1302,20 @@ def main():
     if cost_map:
         crypto_pnl_cny = r2(sum(r["pnl_cny"] or 0 for r in crypto_rows if r["group"] == CRYPTO_GROUP), 2)
         realized_map = load_realized_pnl()
-        realized_cny = r2(sum(realized_map.values()) * rate, 2)
+        # 币本位合约平仓：按平仓时的币本位盈亏计入已实现（同时不再重复计入未实现）
+        contract_closes = (_read_json(Path(ROOT) / "data" / "bitget_ledger.json") or {}).get("contract_closes") or []
+        btc_price_now = next((float(r.get("price") or 0) for r in crypto_rows
+                              if r.get("group") == CRYPTO_GROUP and r.get("id") == "BTC"), 0.0)
+        contract_realized_cny = r2(sum(
+            float(c.get("pnl_native") or 0) * btc_price_now * rate for c in contract_closes), 2)
+        spot_realized_cny = r2(sum(realized_map.values()) * rate, 2)
+        realized_cny = r2(spot_realized_cny + contract_realized_cny, 2)
         if realized_cny:
-            crypto_pnl_cny = r2(crypto_pnl_cny + realized_cny, 2)
+            # 现货已实现要从成本账本补回；合约平仓的收益已体现在「返还的 BTC 变成免费份额」里，
+            # 只登记到已实现明细，不再额外加进总盈亏，避免同一笔算两次。
+            crypto_pnl_cny = r2(crypto_pnl_cny + spot_realized_cny, 2)
+            if contract_realized_cny:
+                print("      合约已实现：%d 笔平仓，%.2f CNY" % (len(contract_closes), contract_realized_cny))
             print("      已实现盈亏：%.2f USDT（%.2f CNY）已计入加密总盈亏" % (
                 sum(realized_map.values()), realized_cny))
         crypto_pnl_usdt = r2(crypto_pnl_cny / rate, 2)
@@ -1457,6 +1468,24 @@ def main():
             "pnl_usdt": e.get("pnl_usdt"), "pnl_cny": pnl_cny,
             "proceeds_usdt": e.get("proceeds"),
         })
+    for c in (contract_closes if cost_map else []):
+        try:
+            pnl_usdt = r2(float(c.get("pnl_native") or 0) * btc_price_now, 4)
+        except (TypeError, ValueError):
+            pnl_usdt = 0.0
+        crypto_detail.append({
+            "date": c.get("date") or "", "coin": c.get("coin") or "BTC",
+            "shares": c.get("margin"), "price": r2(btc_price_now, 2),
+            "cost_price": None, "pnl_usdt": pnl_usdt,
+            "pnl_cny": r2(pnl_usdt * rate, 2),
+            "proceeds_usdt": None,
+            "note": "合约平仓 %s：保证金 %.6g %s 已转回现货，盈亏 %.6g %s" % (
+                c.get("symbol") or "", float(c.get("margin") or 0), c.get("coin") or "BTC",
+                float(c.get("pnl_native") or 0), c.get("coin") or "BTC"),
+        })
+    if contract_closes:
+        print("      盈亏明细：记录 %d 笔合约平仓" % len(contract_closes))
+
     trad_detail = [{"date": x.get("date") or "", "id": x.get("id") or "",
                     "currency": x.get("currency"), "shares": x.get("shares"),
                     "price": x.get("price"), "cost_price": x.get("cost_price"),

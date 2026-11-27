@@ -244,6 +244,7 @@ code {
   vertical-align: middle; white-space: nowrap;
 }
 .tag.pending { color: #b45309; border-color: #fcd34d; background: #fffbeb; }
+.tag-sm { display: inline-block; font-size: 10.5px; padding: 0 5px; border-radius: 6px; margin-left: 5px; vertical-align: middle; color: #7c3aed; border: 1px solid #c4b5fd; background: rgba(124,58,237,.08); }
 .pos { color: var(--up); }
 .neg { color: var(--down); }
 .muted { color: var(--muted); }

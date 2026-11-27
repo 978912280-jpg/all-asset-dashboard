@@ -453,6 +453,75 @@ def merge_fills(api_fills, arch_fills, log=print):
     return merged
 
 
+def fetch_contract_records(key, secret, passphrase, start_ms, log=print):
+    """拉取合约资金流水（COIN-FUTURES），用于还原开/平仓保证金与平仓收益。"""
+    out, cur, now_ms = [], int(start_ms), int(datetime.now(CST).timestamp() * 1000)
+    while cur < now_ms:
+        nxt = min(cur + 7 * 86400 * 1000, now_ms)
+        cursor, pages = None, 0
+        while pages < 20:
+            params = {"category": "COIN-FUTURES", "startTime": str(cur), "endTime": str(nxt), "limit": "100"}
+            if cursor:
+                params["cursor"] = cursor
+            try:
+                data = _get("/api/v3/account/financial-records", params, key, secret, passphrase)
+            except Exception as e:  # noqa: BLE001
+                log("      [warn] 合约流水 %s 段读取失败：%s" % (cur, str(e)[:80]))
+                break
+            rows = (data.get("list") if isinstance(data, dict) else None) or []
+            if not rows:
+                break
+            out.extend(rows)
+            cursor = (data.get("cursor") if isinstance(data, dict) else None) or rows[-1].get("id")
+            pages += 1
+            if len(rows) < 100 or not cursor:
+                break
+        cur = nxt
+    log("    Bitget 合约流水：%d 条" % len(out))
+    return out
+
+
+def contract_realized(records, log=print):
+    """按 FIFO 把「开仓保证金」与「平仓归还」配对，还原每笔平仓的币本位盈亏。
+
+    开仓 MARGIN_OPEN_*：amount 为负（从现货划出保证金）；
+    平仓 MARGIN_CLOSE_*：amount 为正（保证金 + 盈亏 一起划回现货）。
+    盈亏 = 平仓归还 − 被占用的开仓保证金。
+    """
+    opens, entries = {}, []
+    for r in sorted(records or [], key=lambda x: int(x.get("ts") or 0)):
+        t = str(r.get("type") or "").upper()
+        coin = str(r.get("coin") or "").upper()
+        try:
+            amt = float(r.get("amount") or 0)
+        except (TypeError, ValueError):
+            continue
+        sym = str(r.get("symbol") or "") or "合约"
+        if t.startswith("MARGIN_OPEN") and amt < 0:
+            opens.setdefault((sym, coin), []).append({"margin": abs(amt), "ts": int(r.get("ts") or 0)})
+        elif t.startswith("MARGIN_CLOSE") and amt > 0:
+            pool = opens.setdefault((sym, coin), [])
+            used, pnl, left = 0.0, 0.0, amt
+            while pool and left > 1e-12:
+                lot = pool[0]
+                take = min(lot["margin"], left)
+                used += take
+                left -= take
+                lot["margin"] -= take
+                if lot["margin"] <= 1e-12:
+                    pool.pop(0)
+            pnl = round(amt - used, 12)
+            entries.append({
+                "date": datetime.fromtimestamp(int(r.get("ts") or 0) / 1000, CST).strftime("%Y-%m-%d %H:%M"),
+                "symbol": sym, "coin": coin,
+                "margin": round(used, 12), "pnl_native": pnl,
+                "ref": r.get("id"),
+            })
+            log("      合约平仓：%s %s 保证金 %.8g %s，盈亏 %+.8g %s" % (
+                sym, coin, used, coin, pnl, coin))
+    return entries
+
+
 def update(data_path=None, log=print):
     cfg = json.loads(Path(data_path or (Path(__file__).resolve().parent.parent / "data" / "crypto_cost.json")).read_text(encoding="utf-8"))
     key, secret, passphrase = os.environ.get("BITGET_KEY"), os.environ.get("BITGET_SECRET"), os.environ.get("BITGET_PASSPHRASE")
@@ -478,6 +547,12 @@ def update(data_path=None, log=print):
         log("    [warn] 闪兑账单读取失败，按无闪兑处理：%s" % str(e)[:90])
         converts = []
     converts = merge_pairs(converts, archive_converts(start_dt, log=log), log=log)
+    contract_closes = []
+    try:
+        contract_closes = contract_realized(
+            fetch_contract_records(key, secret, passphrase, start_ms, log=log), log=log)
+    except Exception as e:  # noqa: BLE001
+        log("    [warn] 合约平仓流水读取失败：%s" % str(e)[:90])
     holdings = {k: float(v) for k, v in (cal.get("calib_shares") or {}).items()}
     for coin, delta in qty.items():
         holdings[coin] = holdings.get(coin, 0.0) + float(delta)
@@ -505,6 +580,7 @@ def update(data_path=None, log=print):
         "qty_mode": "delta",
         "realized_pnl_usdt": realized_pnl,
         "sell_entries": sell_entries,
+        "contract_closes": contract_closes,
         "source": "bitget_fills",
     }
     LEDGER.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
