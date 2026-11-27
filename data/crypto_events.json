@@ -1,5 +1,5 @@
 {
- "updated_at": "2026-11-28T06:07:01+08:00",
+ "updated_at": "2026-11-28T06:11:46+08:00",
  "window": {
   "start": "2026-09-01",
   "end": "2026-11-28"
@@ -4995,7 +4995,7 @@
  "counts": {
   "trades": 162,
   "earn_daily": 243,
-  "earn_raw": 3,
+  "earn_raw": 0,
   "flows": 17,
   "transfers": 49
  }
