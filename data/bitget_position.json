@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-28T05:21:53+08:00",
+  "updated_at": "2026-11-28T05:23:26+08:00",
   "source": "bitget_v3_position",
   "count": 1,
   "items": [
@@ -9,12 +9,12 @@
       "posSide": "long",
       "contracts": 1192.0,
       "avg_price": 59692.6255,
-      "mark_price": 59779.6,
+      "mark_price": 59759.4,
       "margin_coin": "BTC",
       "margin": 0.01998127,
       "leverage": 1.0,
       "margin_mode": "isolated",
-      "unrealized_native": 2.905e-05,
+      "unrealized_native": 2.231e-05,
       "liq_price": 29974.3,
       "opened_at": 1795812710444
     }
