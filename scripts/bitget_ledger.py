@@ -54,10 +54,21 @@ def _fetch_fills_v3(key, secret, passphrase, start_ms, log=print):
     cur = int(start_ms)
     while cur < now_ms:
         nxt = min(cur + win, now_ms)
-        rows = _get("/api/v3/trade/fills",
-                    {"category": "SPOT", "startTime": str(cur), "endTime": str(nxt), "limit": "100"},
-                    key, secret, passphrase)
+        try:
+            rows = _get("/api/v3/trade/fills",
+                        {"category": "SPOT", "startTime": str(cur), "endTime": str(nxt), "limit": "50"},
+                        key, secret, passphrase)
+        except Exception as e:  # noqa: BLE001
+            log("      [warn] v3 成交 %s~%s 失败：%s" % (
+                datetime.fromtimestamp(cur / 1000, CST).strftime("%m-%d"),
+                datetime.fromtimestamp(nxt / 1000, CST).strftime("%m-%d"), str(e)[:90]))
+            cur = nxt
+            continue
         data = rows if isinstance(rows, list) else (rows.get("list") if isinstance(rows, dict) else []) or []
+        if data:
+            log("      v3 成交窗口 %s~%s：%d 笔" % (
+                datetime.fromtimestamp(cur / 1000, CST).strftime("%m-%d"),
+                datetime.fromtimestamp(nxt / 1000, CST).strftime("%m-%d"), len(data)))
         for r in data:
             sym = str(r.get("symbol") or "").upper()
             coin = sym[:-4] if sym.endswith("USDT") else ""

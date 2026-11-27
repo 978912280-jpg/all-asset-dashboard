@@ -774,18 +774,6 @@
    "ref": "1499986649666011136"
   },
   {
-   "date": "2026-10-30 15:56",
-   "date_day": "2026-10-30",
-   "coin": "BTC",
-   "side": "买入",
-   "qty": 3.8e-05,
-   "price": 78053.1,
-   "quote_usdt": 2.966,
-   "fee": "BGB 0.0012969741678055",
-   "symbol": "BTCUSDT",
-   "ref": "1499971515308556288"
-  },
-  {
    "date": "2026-10-30 14:56",
    "date_day": "2026-10-30",
    "coin": "BTC",
@@ -1948,18 +1936,6 @@
    "fee": "USDC 0.0",
    "symbol": "USDCUSDT",
    "ref": "1487029994468941827"
-  },
-  {
-   "date": "2026-09-24 22:51",
-   "date_day": "2026-09-24",
-   "coin": "USDC",
-   "side": "买入",
-   "qty": 30.0114,
-   "price": 1.00027,
-   "quote_usdt": 30.0195,
-   "fee": "USDC 0.0",
-   "symbol": "USDCUSDT",
-   "ref": "1487029994468941825"
   },
   {
    "date": "2026-09-22 21:07",
@@ -5017,7 +4993,7 @@
   "computed_total_usdt": 17059.71
  },
  "counts": {
-  "trades": 164,
+  "trades": 162,
   "earn_daily": 243,
   "earn_raw": 0,
   "flows": 17,
