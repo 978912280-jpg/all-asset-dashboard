@@ -33,7 +33,7 @@ import sources  # noqa: E402
 CST = timezone(timedelta(hours=8))
 # 页面版本（同时作为缓存键）：与 holdings.json 的 meta.version 保持一致。
 # 发布规则：每次上线改动 +0.0.1；分位到 10 进 1（1.0.9 → 1.1.0）。
-PAGE_VERSION = "1.4.10"
+PAGE_VERSION = "1.4.11"
 PAGE_DATE = ""  # 留空则使用构建当天日期，避免版本括号里的日期长期不变
 TRADITIONAL_GROUP = "traditional"
 CRYPTO_GROUP = "crypto"
@@ -443,35 +443,97 @@ def load_crypto_from_account(cfg, rate, prev_items=None):
     }
 
 
+FUTURES_GROUP = "futures"
+
+
 def load_futures(rate):
-    """读合约持仓（只做展示）：保证金已计入账户 coins.futures，这里不重复加总资产。"""
+    """读合约持仓，生成与现货同形的行，供「持仓明细 → 合约」分类使用。
+
+    口径：保证金已计入账户 coins.futures，因此这里的「市值」= 保证金折合 CNY，
+    名义价值（张数 × 1 USD）只做风险参考，不参与总资产加总。
+    """
     f = _read_json(Path(ROOT) / "data" / "bitget_position.json") or {}
     items = f.get("items") or []
     if not items:
         return None
+
+    # 上一版 dashboard 里的浮盈，用来算当日盈亏（浮盈变动）
+    prev_pnl = {}
+    try:
+        prev = _read_json(Path(ROOT) / "data" / "dashboard.json") or {}
+        for r in ((prev.get("futures") or {}).get("items") or []):
+            prev_pnl[str(r.get("id"))] = r.get("pnl_cny")
+    except (ValueError, OSError):
+        prev_pnl = {}
+
     margin_coins = sorted({str(i.get("margin_coin") or "").upper() for i in items if i.get("margin_coin")})
     live = sources.bitget_prices([c for c in margin_coins if c not in STABLE_COINS])
-    out, total_pnl = [], 0.0
+    rows, total_pnl, total_margin, total_day = [], 0.0, 0.0, 0.0
     for i in items:
         mc = str(i.get("margin_coin") or "").upper()
         px = 1.0 if mc in STABLE_COINS else (live.get(mc) or 0)
+        side = str(i.get("posSide") or "").lower()
+        contracts = float(i.get("contracts") or 0)
+        margin_native = float(i.get("margin") or 0)
         pnl_native = float(i.get("unrealized_native") or 0)
-        pnl_cny = pnl_native * (px or 0) * rate if px else None
+        margin_cny = margin_native * px * rate if px else None
+        pnl_cny = pnl_native * px * rate if px else None
+        notional_usd = contracts if i.get("category") == "COIN-FUTURES" else contracts * float(i.get("mark_price") or 0)
+        notional_cny = notional_usd * rate
+        rid = "%s-%s" % (i.get("symbol"), side or "pos")
+        prev = prev_pnl.get(rid)
+        day_cny = (pnl_cny - prev) if (pnl_cny is not None and prev is not None) else None
         if pnl_cny is not None:
             total_pnl += pnl_cny
-        out.append({
-            "symbol": i.get("symbol"), "category": i.get("category"),
-            "pos_side": i.get("posSide"), "contracts": i.get("contracts"),
-            "avg_price": i.get("avg_price"), "mark_price": i.get("mark_price"),
-            "margin_coin": mc, "margin": i.get("margin"),
-            "leverage": i.get("leverage"), "margin_mode": i.get("margin_mode"),
+        total_margin += margin_cny or 0
+        total_day += day_cny or 0
+        rows.append({
+            "id": rid,
+            "name": "%s %s" % (i.get("symbol"), "多单" if side in ("long", "buy") else "空单"),
+            "asset_class": "合约（币本位永续）" if i.get("category") == "COIN-FUTURES" else "合约（永续）",
+            "group": FUTURES_GROUP,
+            "shares": round(contracts, 4),
+            "price": i.get("mark_price"),
+            "currency": "USD",
+            "change_pct": None,
+            "cost_price": i.get("avg_price"),
+            "cost_cny": r2(margin_cny, 2) if margin_cny is not None else None,
+            "value_native": r2(margin_cny, 2) if margin_cny is not None else None,
+            "value_cny": r2(margin_cny, 2) if margin_cny is not None else None,
+            "day_change_cny": r2(day_cny, 2) if day_cny is not None else None,
+            "day_basis": "prev_snapshot" if day_cny is not None else "live",
+            "pnl_cny": r2(pnl_cny, 2) if pnl_cny is not None else None,
+            "pnl_pct": round(pnl_cny / margin_cny * 100, 2) if (pnl_cny is not None and margin_cny) else None,
+            "weight": None,
+            "pending": False,
+            "price_source": "Bitget v3 持仓接口",
+            "price_ts": f.get("updated_at"),
+            "note": "保证金 %.8g %s（%.2f CNY）· 名义 $%.0f · %sx %s · 强平 %s · 浮盈 %+.8g %s" % (
+                margin_native, mc, margin_cny or 0, notional_usd,
+                ("%g" % float(i.get("leverage") or 0)),
+                "逐仓" if str(i.get("margin_mode")) == "isolated" else "全仓",
+                ("%g" % float(i.get("liq_price") or 0)) if float(i.get("liq_price") or 0) > 0 else "—",
+                pnl_native, mc),
+            "margin_native": round(margin_native, 10),
+            "margin_coin": mc,
+            "notional_usd": r2(notional_usd, 2),
+            "notional_cny": r2(notional_cny, 2),
+            "leverage": i.get("leverage"),
             "liq_price": i.get("liq_price"),
             "unrealized_native": round(pnl_native, 10),
-            "pnl_cny": r2(pnl_cny, 2) if pnl_cny is not None else None,
+            "avg_price": i.get("avg_price"),
+            "mark_price": i.get("mark_price"),
         })
-    print("      合约持仓：%d 笔，浮盈合计 %.2f CNY" % (len(out), total_pnl))
-    return {"updated_at": f.get("updated_at"), "count": len(out),
-            "items": out, "total_pnl_cny": r2(total_pnl, 2)}
+    print("      合约持仓：%d 笔，浮盈 %.2f CNY，保证金 %.2f CNY" % (len(rows), total_pnl, total_margin))
+    return {
+        "updated_at": f.get("updated_at"),
+        "count": len(rows),
+        "items": rows,
+        "total_pnl_cny": r2(total_pnl, 2),
+        "total_margin_cny": r2(total_margin, 2),
+        "day_cny": r2(total_day, 2) if any(r.get("day_change_cny") is not None for r in rows) else None,
+        "note": "保证金已计入对应币的份额（不重复计入总资产），名义价值仅作风险参考",
+    }
 
 
 def load_crypto(cfg, rate, prev_items=None):
@@ -1416,6 +1478,18 @@ def main():
              "day_cny": r2(trad_day, 2),
              "day_pct": round(trad_day / (trad_cny - trad_day) * 100, 2) if (trad_cny - trad_day) else 0.0,
              "items": pnl_rows(trad_rows, "traditional")},
+            ({"key": "futures", "name": "合约（币本位永续）",
+              "pnl_cny": (futures or {}).get("total_pnl_cny"),
+              "unrealized_cny": (futures or {}).get("total_pnl_cny"),
+              "realized_cny": 0.0,
+              "realized_entries": [],
+              "pnl_pct": round((futures or {}).get("total_pnl_cny", 0) / (futures or {}).get("total_margin_cny", 1) * 100, 2)
+              if (futures or {}).get("total_margin_cny") else None,
+              "cost_cny": (futures or {}).get("total_margin_cny"),
+              "day_cny": (futures or {}).get("day_cny"),
+              "day_pct": None,
+              "note": "成本 = 逐仓保证金；名义价值不重复计入总资产",
+              "items": pnl_rows((futures or {}).get("items", []), "futures")} if futures else None),
             {"key": "crypto", "name": "加密货币",
              "pnl_cny": r2(crypto_pnl_cny, 2) if crypto_pnl_cny is not None else None,
              "unrealized_cny": r2((crypto_pnl_cny or 0) - realized_cny, 2) if crypto_pnl_cny is not None else None,
@@ -1427,6 +1501,10 @@ def main():
              "items": pnl_rows([r for r in crypto_rows if r["group"] == CRYPTO_GROUP], "crypto")},
         ],
     }
+    pnl_breakdown["groups"] = [g for g in pnl_breakdown["groups"] if g]
+    for g in pnl_breakdown["groups"]:
+        for it in g.get("items", []):
+            it.setdefault("note", None)
 
     print("[5/5] 写出 dashboard.json …")
     generated_at = now_cst().strftime("%Y-%m-%dT%H:%M:%S+08:00")
@@ -1492,14 +1570,8 @@ def main():
             "rtoken_value_usd": rtoken_meta.get("value_usd") or 0,
             "rtoken_updated_at": rtoken_meta.get("updated_at") or "",
             "futures_pnl_cny": (futures or {}).get("total_pnl_cny"),
-            "futures_note": ("；".join(
-                "%s %s %s 张 · 保证金 %s %s · 浮盈 %s" % (
-                    i["symbol"], "多" if str(i.get("pos_side")).lower() in ("long", "买") else "空",
-                    ("%g" % float(i.get("contracts") or 0)),
-                    ("%.6g" % float(i.get("margin") or 0)), i.get("margin_coin"),
-                    ("+%s" if float(i.get("unrealized_native") or 0) >= 0 else "%s") % ("%.6g" % float(i.get("unrealized_native") or 0))
-                ) for i in (futures or {}).get("items", [])
-            ) + "（保证金已计入币的份额）") if futures else "",
+            "futures_margin_cny": (futures or {}).get("total_margin_cny"),
+            "futures_day_cny": (futures or {}).get("day_cny"),
             "crypto_pnl_cny": r2(crypto_pnl_cny, 2),
             "crypto_realized_cny": realized_cny,
             "crypto_day_change_cny": r2(crypto_day, 2),

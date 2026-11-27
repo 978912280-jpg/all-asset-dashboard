@@ -10,7 +10,7 @@
     donut: null,
     trend: null,
     trendRange: "day",
-    groupColors: { traditional: "#1d4ed8", crypto: "#b45309", cash: "#0f766e" },
+    groupColors: { traditional: "#1d4ed8", crypto: "#b45309", cash: "#0f766e", futures: "#7c3aed" },
     currency: "CNY",
   };
 
@@ -325,8 +325,7 @@
         value: money(s.crypto_cny),
         small: true,
         delta: moneyLine(state.replay ? "当日浮动收益 " : "今日浮动收益 ", s.crypto_day_change_cny, s.crypto_day_change_pct) +
-          "<br>" + moneyLine("总盈亏 ", cryptoPnl, s.crypto_pnl_pct) +
-          (s.futures_note ? '<br><span class="muted">合约：' + escapeHtml(s.futures_note) + "</span>" : ""),
+          "<br>" + moneyLine("总盈亏 ", cryptoPnl, s.crypto_pnl_pct),
       },
       {
         label: '<i class="dot cash"></i>现金',
@@ -639,9 +638,14 @@
 
   // ---------- 明细表 ----------
   function renderTable() {
-    var items = (state.data.items || []).filter(function (i) {
-      return state.group === "all" || i.group === state.group;
-    });
+    var items;
+    if (state.group === "futures") {
+      items = ((state.data.futures || {}).items || []).slice();
+    } else {
+      items = (state.data.items || []).filter(function (i) {
+        return state.group === "all" || i.group === state.group;
+      });
+    }
     var sortKey = state.sortKey || "value_cny";
     var dir = state.sortDir === "asc" ? 1 : -1;
     items.sort(function (a, b) {
@@ -660,7 +664,10 @@
     var scopeSum = items.reduce(function (a, i) { return a + (i.value_cny || 0); }, 0);
     var scopeLocal = state.group !== "all" && scopeSum > 0;
     function scopeWeight(i) {
-      if (!scopeLocal) return i.weight || 0;
+      if (!scopeLocal) {
+        // 合约没有占比口径（保证金已计入加密资产），保持空值
+        return (i.weight === null || i.weight === undefined) ? null : (i.weight || 0);
+      }
       return (i.value_cny || 0) / scopeSum * 100;
     }
 
@@ -710,7 +717,7 @@
       return "<tr>" +
         '<td class="name-cell"><div class="nm">' + escapeHtml(i.name) +
         (i.pending ? '<span class="tag pending">待填份额</span>' : "") +
-        "</div></td>" +
+        "</div>" + (i.note ? '<div class="sub muted">' + escapeHtml(i.note) + "</div>" : "") + "</td>" +
         '<td><span class="tag" style="border-color:' + color + '33;color:' + color +
         '">' + escapeHtml(i.asset_class) + "</span></td>" +
         '<td class="num">' + sharesTxt + "</td>" +
@@ -718,7 +725,7 @@
         '<td class="num">' + priceTxt + "</td>" +
         '<td class="num">' + (i.value_cny === null ? "—" : money(i.value_cny)) + "</td>" +
         '<td class="num">' + pnlTxt + "</td>" +
-        '<td class="num">' + num(scopeWeight(i)) + "%</td>" +
+        '<td class="num">' + (scopeWeight(i) === null ? '<span class="muted">—</span>' : num(scopeWeight(i)) + "%") + "</td>" +
         "</tr>";
     }).join("");
 
@@ -727,8 +734,16 @@
     var sumPnl = items.reduce(function (a, i) {
       return a + ((i.group === "cash" || i.cost_pending) ? 0 : (i.pnl_cny || 0));
     }, 0);
-    var sumW = items.reduce(function (a, i) { return a + scopeWeight(i); }, 0);
+    var sumW = items.reduce(function (a, i) { return a + (scopeWeight(i) || 0); }, 0);
     var sumWTxt = Math.abs(sumW - 100) < 0.05 ? "100.00%" : num(sumW, 2) + "%";
+    if (state.group === "futures") {
+      $("table-foot").innerHTML = "<tr>" +
+        '<td class="name-cell">合计</td><td></td><td></td><td></td><td></td>' +
+        '<td class="num total-gold">' + money(sumVal) + "</td>" +
+        '<td class="num total-gold ' + cls(sumPnl) + '"><span class="amt">' + signedMoney(sumPnl) + "</span></td>" +
+        '<td class="num total-gold">—</td></tr>';
+      return;
+    }
     $("table-foot").innerHTML = "<tr>" +
       '<td class="name-cell">合计</td><td></td><td></td><td></td><td></td>' +
       '<td class="num total-gold">' + money(sumVal) + "</td>" +
@@ -1331,7 +1346,7 @@
 
   function totalPnlOf(pb) {
     // 底部「未实现盈亏」只累加未实现部分，否则会把已实现算两遍
-    return (pb.groups || []).filter(function (g) { return g.key !== "cash"; })
+    return (pb.groups || []).filter(function (g) { return g.key !== "cash" && g.key !== "futures"; })
       .reduce(function (a, g) {
         var re = Number(g.realized_cny || 0);
         var un = (g.unrealized_cny === null || g.unrealized_cny === undefined)
@@ -1340,7 +1355,7 @@
       }, 0);
   }
   function totalDayOf(pb) {
-    return (pb.groups || []).filter(function (g) { return g.key !== "cash"; })
+    return (pb.groups || []).filter(function (g) { return g.key !== "cash" && g.key !== "futures"; })
       .reduce(function (a, g) { return a + (g.day_cny || 0); }, 0);
   }
 
