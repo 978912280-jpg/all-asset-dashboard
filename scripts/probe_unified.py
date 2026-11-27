@@ -17,6 +17,12 @@ SECRET = os.environ.get("BITGET_SECRET")
 PASS = os.environ.get("BITGET_PASSPHRASE")
 
 CANDIDATES = [
+    ("UTA-资产", "/api/v2/uta/account/assets", {}),
+    ("UTA-账户设置", "/api/v2/uta/account/settings", {}),
+    ("UTA-当前持仓", "/api/v2/uta/position/current-position", {}),
+    ("UTA-当前持仓(币本位)", "/api/v2/uta/position/current-position", {"productType": "COIN-FUTURES"}),
+    ("UTA-历史持仓", "/api/v2/uta/position/history-position", {"productType": "COIN-FUTURES"}),
+    ("UTA-账单", "/api/v2/uta/account/bill", {"limit": "20"}),
     ("统一账户-全部余额", "/api/v2/account/all-account-balance", {}),
     ("统一账户-账户列表", "/api/v2/account/accounts", {}),
     ("统一账户-单账户", "/api/v2/account/account", {}),
