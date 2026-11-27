@@ -22,9 +22,17 @@
     "baseline_total_usdt": 17296.0,
     "stock_part_usdt": 0.0,
     "baseline_date": "2026-11-13",
-    "deposit_after": 0,
-    "withdraw_after": 0,
-    "computed_usdt": 15065.0,
-    "computed_total_usdt": 17296.0
+    "deposit_after": 3575.75,
+    "withdraw_after": 3812.04,
+    "computed_usdt": 14828.71,
+    "computed_total_usdt": 17059.71
+  },
+  "earn_profit_baseline": {
+    "date": "2026-11-28",
+    "profits": {
+      "XAUT": 0.00039843,
+      "BTC": 9.10883e-05,
+      "USDGO": 70.36286664
+    }
   }
 }

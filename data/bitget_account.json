@@ -1,7 +1,12 @@
 {
-  "updated_at": "2026-11-28T05:05:53+08:00",
+  "updated_at": "2026-11-28T05:16:16+08:00",
   "source": "bitget_account",
   "mode": "uta",
+  "earn_profit": {
+    "XAUT": 0.00039843,
+    "BTC": 9.10883e-05,
+    "USDGO": 70.36286664
+  },
   "coins": {
     "BGB": {
       "spot": 6.63527245,
