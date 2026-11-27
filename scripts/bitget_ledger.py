@@ -317,6 +317,48 @@ def fetch_converts(key, secret, passphrase, start_ms, log=print):
     return pairs
 
 
+def archive_converts(start_dt, log=print):
+    """从归档的闪兑明细（data/crypto_events.json misc）重建配对，补齐 v3 读不到的闪兑成本转移。"""
+    path = Path(__file__).resolve().parent.parent / "data" / "crypto_events.json"
+    try:
+        ev = json.loads(path.read_text(encoding="utf-8")) or {}
+    except (ValueError, OSError):
+        return []
+    groups = {}
+    for m in (ev.get("misc") or []):
+        if "闪兑" not in str(m.get("kind") or ""):
+            continue
+        try:
+            dt = datetime.strptime(str(m.get("date")), "%Y-%m-%d %H:%M").replace(tzinfo=CST)
+        except (TypeError, ValueError):
+            continue
+        if dt < start_dt:
+            continue
+        coin = str(m.get("coin") or "").upper()
+        qty = float(m.get("qty") or 0)
+        if not coin or not qty:
+            continue
+        g = groups.setdefault(str(m.get("ref")), {"ts": int(dt.timestamp() * 1000), "out": [], "in": []})
+        g["out" if qty < 0 else "in"].append((coin, abs(qty)))
+    pairs = [dict(v, id=k) for k, v in groups.items() if v["out"] and v["in"]]
+    log("    [info] 归档闪兑补齐：%d 组" % len(pairs))
+    return pairs
+
+
+def merge_pairs(api_pairs, arch_pairs, log=print):
+    seen, out = set(), []
+    for pr in list(api_pairs or []) + list(arch_pairs or []):
+        sig = (pr.get("id"),) if pr.get("id") else (pr.get("ts"),
+            tuple(sorted(pr.get("out") or [])), tuple(sorted(pr.get("in") or [])))
+        if sig in seen:
+            continue
+        seen.add(sig)
+        out.append(pr)
+    if len(out) != len(api_pairs or []):
+        log("    [info] 闪兑合并后：接口 %d + 归档 → %d 组" % (len(api_pairs or []), len(out)))
+    return out
+
+
 def apply_converts(pairs, cost, holdings, qty_delta, log=print):
     """把闪兑的「卖出币账面成本」按数量比例转移到「买入币」，不产生已实现盈亏。
 
@@ -345,6 +387,72 @@ def apply_converts(pairs, cost, holdings, qty_delta, log=print):
     return transferred
 
 
+def archive_fills(start_dt, log=print):
+    """从 crypto_events.json 的历史成交重建 fills（统一账户接口只回最近一小段，需要历史补齐）。"""
+    path = Path(__file__).resolve().parent.parent / "data" / "crypto_events.json"
+    try:
+        ev = json.loads(path.read_text(encoding="utf-8")) or {}
+    except (ValueError, OSError):
+        return []
+    out = []
+    for t in (ev.get("trades") or []):
+        try:
+            dt = datetime.strptime(str(t.get("date")), "%Y-%m-%d %H:%M").replace(tzinfo=CST)
+        except (TypeError, ValueError):
+            try:
+                dt = datetime.strptime(str(t.get("date"))[:10], "%Y-%m-%d").replace(tzinfo=CST)
+            except (TypeError, ValueError):
+                continue
+        if dt < start_dt:
+            continue
+        coin = str(t.get("coin") or "").upper()
+        sym = str(t.get("symbol") or (coin + "USDT")).upper()
+        side = "buy" if "买" in str(t.get("side")) else ("sell" if "卖" in str(t.get("side")) else "")
+        if not coin or not side:
+            continue
+        fee_total, fee_coin = 0.0, ""
+        fs = str(t.get("fee") or "").strip().split(" ")
+        if len(fs) == 2:
+            fee_coin = fs[0].upper()
+            try:
+                fee_total = float(fs[1])
+            except ValueError:
+                fee_total = 0.0
+        out.append({
+            "coin": coin, "symbol": sym, "side": side,
+            "size": t.get("qty"), "priceAvg": t.get("price"),
+            "amount": t.get("quote_usdt"),
+            "feeDetail": {"totalFee": fee_total, "feeCoin": fee_coin},
+            "cTime": int(dt.timestamp() * 1000),
+            "tradeId": t.get("ref"),
+            "_src": "archive",
+        })
+    log("    [info] 历史归档补齐成交：%d 笔（起点 %s）" % (len(out), start_dt.strftime("%Y-%m-%d %H:%M")))
+    return out
+
+
+def merge_fills(api_fills, arch_fills, log=print):
+    """接口成交优先，归档补历史；按（时间到分钟、币、方向、数量）去重。"""
+    def key(f):
+        ts = int(f.get("cTime") or 0)
+        return (datetime.fromtimestamp(ts / 1000, CST).strftime("%Y-%m-%d %H:%M"),
+                str(f.get("coin") or "").upper(),
+                str(f.get("side") or ""),
+                round(float(f.get("size") or 0), 10))
+
+    merged, seen = [], set()
+    for f in list(api_fills or []) + list(arch_fills or []):
+        k = key(f)
+        if k in seen:
+            continue
+        seen.add(k)
+        merged.append(f)
+    merged.sort(key=lambda x: int(x.get("cTime") or 0))
+    if len(merged) != len(api_fills or []):
+        log("    [info] 成交合并后：接口 %d + 归档补齐 → %d 笔" % (len(api_fills or []), len(merged)))
+    return merged
+
+
 def update(data_path=None, log=print):
     cfg = json.loads(Path(data_path or (Path(__file__).resolve().parent.parent / "data" / "crypto_cost.json")).read_text(encoding="utf-8"))
     key, secret, passphrase = os.environ.get("BITGET_KEY"), os.environ.get("BITGET_SECRET"), os.environ.get("BITGET_PASSPHRASE")
@@ -359,6 +467,7 @@ def update(data_path=None, log=print):
     start_dt = parse_start(start)
     start_ms = int(start_dt.timestamp() * 1000)
     fills = fetch_fills(key, secret, passphrase, start_ms, log=log)
+    fills = merge_fills(fills, archive_fills(start_dt, log=log), log=log)
     base = cal.get("cost_total_usdt") or {}
     cost, realized, qty, realized_pnl, sell_entries = replay(fills, base, calib_shares=cal.get("calib_shares"), log=log)
     # 闪兑：/fills 看不到，用账单把「卖出币成本」转移给「买入币」（奖励币成本 0 → 仍为 0 成本摊薄）
@@ -367,6 +476,8 @@ def update(data_path=None, log=print):
         converts = fetch_converts(key, secret, passphrase, start_ms, log=log)
     except Exception as e:  # noqa: BLE001
         log("    [warn] 闪兑账单读取失败，按无闪兑处理：%s" % str(e)[:90])
+        converts = []
+    converts = merge_pairs(converts, archive_converts(start_dt, log=log), log=log)
     holdings = {k: float(v) for k, v in (cal.get("calib_shares") or {}).items()}
     for coin, delta in qty.items():
         holdings[coin] = holdings.get(coin, 0.0) + float(delta)
