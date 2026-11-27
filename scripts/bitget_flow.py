@@ -523,11 +523,20 @@ def main():
 
     # ---- 与历史归档合并：窗口外/接口读不到旧记录一律保留 ----
     def _merge(new_items, old_items, key_fn):
-        have = {key_fn(x) for x in new_items}
-        kept = [x for x in old_items if key_fn(x) not in have]
-        if kept:
-            print("      保留历史记录：%d 条" % len(kept))
-        return new_items + kept
+        """历史优先：新抓到的记录若与历史重复则不重复写入，旧的原始记录永不覆盖。"""
+        old_keys = {key_fn(x) for x in old_items}
+        fresh, seen = [], set(old_keys)
+        for x in new_items:
+            k = key_fn(x)
+            if k in seen:
+                continue
+            seen.add(k)
+            fresh.append(x)
+        if len(fresh) != len(new_items):
+            print("      去重后丢弃重复新记录：%d 条" % (len(new_items) - len(fresh)))
+        if old_items:
+            print("      保留历史记录：%d 条" % len(old_items))
+        return fresh + old_items
 
     prev = {}
     try:
@@ -537,7 +546,7 @@ def main():
 
     # v2 的 billId/orderId 与 v3 的 id 是两套编号，同一笔会重复，因此按业务字段去重
     def k_trade(x):
-        return "|".join(str(x.get(k)) for k in ("date", "symbol", "side", "qty", "quote_usdt"))
+        return "|".join([str(x.get("date") or "")[:10]] + [str(x.get(k)) for k in ("symbol", "side", "qty")])
 
     def k_flow(x):
         return "|".join(str(x.get(k)) for k in ("date", "coin", "direction", "qty"))
