@@ -406,6 +406,8 @@ def main():
             base_p = (prev_cost.get("earn_profit_baseline") or {}).get("profits") or {}
             today = datetime.now(CST).strftime("%Y-%m-%d")
             for coin, tot in profits.items():
+                if coin not in base_p:
+                    continue        # 首次见到该币只记录基线，不把累计收益当成今日生息
                 delta = round(tot - float(base_p.get(coin) or 0), 10)
                 if delta > 0:
                     v = value_usdt(coin, delta, prices)
@@ -498,7 +500,8 @@ def main():
     if v3_ok:
         stock_total = stock_total_v3
         if stock_total <= 0:
-            stock_total = float((cost.get("net_deposit") or {}).get("stock_part_usdt") or 0)
+            stored_stock = float((cost.get("net_deposit") or {}).get("stock_part_usdt") or 0)
+            stock_total = stored_stock
             print("      [warn] v3 流水未返回划入美股记录，沿用上次口径：%.2f USDT" % stock_total)
     else:
         for b in bills:

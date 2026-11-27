@@ -55,7 +55,7 @@ def _fetch_fills_v3(key, secret, passphrase, start_ms, log=print):
     while cur < now_ms:
         nxt = min(cur + win, now_ms)
         rows = _get("/api/v3/trade/fills",
-                    {"category": "SPOT", "startTime": str(cur), "endTime": str(nxt), "limit": "1000"},
+                    {"category": "SPOT", "startTime": str(cur), "endTime": str(nxt), "limit": "100"},
                     key, secret, passphrase)
         data = rows if isinstance(rows, list) else (rows.get("list") if isinstance(rows, dict) else []) or []
         for r in data:
